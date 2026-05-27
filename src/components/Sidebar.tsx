@@ -9,6 +9,7 @@ import {
   CheckCircle,
   FileJson,
   Settings,
+  Mail,
   Menu,
   X,
   Zap,
@@ -19,6 +20,7 @@ const NAV_ITEMS = [
   { href: '/prospects', label: 'Prospects', icon: Users },
   { href: '/import', label: 'Hermes Import', icon: FileJson },
   { href: '/approval', label: 'Approval Queue', icon: CheckCircle },
+  { href: '/send-queue', label: 'Send Queue', icon: Mail },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 

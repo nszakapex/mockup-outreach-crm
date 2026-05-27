@@ -1,21 +1,8 @@
 import { NextResponse } from 'next/server';
+import { getRequestOrigin } from '@/lib/server/request';
 import { sendApprovalCard } from '@/lib/server/telegram-approval';
 
 export const dynamic = 'force-dynamic';
-
-function getRequestOrigin(request: Request) {
-  const url = new URL(request.url);
-  const forwardedHost = request.headers.get('x-forwarded-host');
-  const forwardedProto = request.headers.get('x-forwarded-proto');
-  const host = forwardedHost || request.headers.get('host');
-
-  if (host) {
-    const proto = forwardedProto || url.protocol.replace(':', '') || 'https';
-    return `${proto}://${host}`;
-  }
-
-  return url.origin;
-}
 
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message;

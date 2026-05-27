@@ -20,7 +20,7 @@ import ErrorBanner from '@/components/ErrorBanner';
 import { useApprovalQueue } from '@/lib/hooks';
 
 export default function ApprovalPage() {
-  const { prospects, loading, error, refetch, approve, markSent } = useApprovalQueue();
+  const { prospects, loading, error, refetch, approve } = useApprovalQueue();
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
@@ -37,15 +37,6 @@ export default function ApprovalPage() {
     setActionError(null);
     setActionSuccess(null);
     const err = await approve(id);
-    setActing(null);
-    if (err) setActionError(err);
-  };
-
-  const handleMarkSent = async (id: string) => {
-    setActing(`sent:${id}`);
-    setActionError(null);
-    setActionSuccess(null);
-    const err = await markSent(id);
     setActing(null);
     if (err) setActionError(err);
   };
@@ -226,11 +217,19 @@ export default function ApprovalPage() {
                     </Button>
                   )}
                   {isApproved && (
-                    <Button size="sm" variant="primary" onClick={() => handleMarkSent(prospect.id)} disabled={isBusy}>
-                      <Send size={14} /> {isBusy ? 'Marking...' : 'Mark Sent'}
-                    </Button>
+                    <Link
+                      href="/send-queue"
+                      className={`inline-flex items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                        isBusy ? 'pointer-events-none opacity-40' : ''
+                      }`}
+                      style={{
+                        background: 'var(--color-accent)',
+                        color: 'var(--color-paper)',
+                      }}
+                    >
+                      <Send size={14} /> Open Send Queue
+                    </Link>
                   )}
-                  {/* TODO: [Gmail Integration] Add "Send via Gmail" button here */}
                 </div>
               </Card>
             );

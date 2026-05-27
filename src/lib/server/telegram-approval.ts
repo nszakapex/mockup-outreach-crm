@@ -1,4 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
+import 'server-only';
+
+import { getServerSupabase } from './supabase';
 
 const TELEGRAM_TIMEOUT_MS = 10000;
 const CALLBACK_PREFIX = 'mo';
@@ -68,25 +70,6 @@ export function getTelegramConfig() {
     chatId: process.env.TELEGRAM_CHAT_ID?.trim() || '',
     webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET?.trim() || '',
   };
-}
-
-export function getServerSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || '';
-  const key =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() ||
-    '';
-
-  if (!url || !key) {
-    throw new Error('Supabase URL/key env vars are not configured.');
-  }
-
-  return createClient(url, key, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  });
 }
 
 export function buildCallbackData(action: TelegramApprovalAction, prospectId: string) {

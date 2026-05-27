@@ -5,6 +5,7 @@ import { Save, Check, Zap, RefreshCw, Bot, ShieldCheck } from 'lucide-react';
 import Card from '@/components/Card';
 import Button from '@/components/Button';
 import ConnectionPanel from '@/components/ConnectionPanel';
+import GmailStatusPanel from '@/components/GmailStatusPanel';
 import { DEFAULT_SETTINGS, type AppSettings } from '@/lib/types';
 
 function getStoredSettings(): AppSettings {
@@ -66,6 +67,8 @@ export default function SettingsPage() {
         {/* Connection Status */}
         <ConnectionPanel />
 
+        <GmailStatusPanel />
+
         {/* Outreach Settings */}
         <Card title="Outreach Defaults">
           <div className="space-y-4">
@@ -118,9 +121,15 @@ export default function SettingsPage() {
                 <li><code className="font-mono">TELEGRAM_BOT_TOKEN</code></li>
                 <li><code className="font-mono">TELEGRAM_CHAT_ID</code></li>
                 <li><code className="font-mono">TELEGRAM_WEBHOOK_SECRET</code></li>
+                <li><code className="font-mono">GOOGLE_CLIENT_ID</code></li>
+                <li><code className="font-mono">GOOGLE_CLIENT_SECRET</code></li>
+                <li><code className="font-mono">GOOGLE_REFRESH_TOKEN</code></li>
+                <li><code className="font-mono">GMAIL_SENDER_EMAIL</code></li>
+                <li><code className="font-mono">OUTREACH_EMAIL_TEST_MODE</code></li>
+                <li><code className="font-mono">OUTREACH_DAILY_SEND_CAP</code></li>
               </ul>
               <p className="text-xs mt-2" style={{ color: 'var(--color-ink-muted)' }}>
-                Use either Supabase public key variable. Do not expose actual Telegram secrets in browser text.
+                Use either Supabase public key variable. Do not expose actual Telegram or Gmail secrets in browser text.
               </p>
             </div>
           </div>

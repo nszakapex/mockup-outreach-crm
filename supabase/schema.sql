@@ -101,6 +101,23 @@ create table if not exists follow_up_tasks (
 );
 
 -- ─── Opt-outs ───────────────────────────────────────────
+-- --- Outreach Sends ---------------------------------------------------------
+create table if not exists outreach_sends (
+  id                  uuid primary key default uuid_generate_v4(),
+  prospect_id         uuid not null references prospects(id) on delete cascade,
+  email_draft_id      uuid references email_drafts(id) on delete set null,
+  provider            text not null default 'gmail' check (provider in ('gmail', 'test')),
+  to_email            text not null,
+  from_email          text not null,
+  subject             text not null,
+  body                text not null,
+  status              text not null default 'queued' check (status in ('queued', 'sent', 'test_sent', 'failed', 'skipped')),
+  provider_message_id text,
+  error_message       text,
+  sent_at             timestamptz,
+  created_at          timestamptz not null default now()
+);
+
 create table if not exists opt_outs (
   id            uuid primary key default uuid_generate_v4(),
   email         text not null unique,
@@ -121,6 +138,14 @@ create index if not exists idx_email_drafts_prospect on email_drafts(prospect_id
 create index if not exists idx_email_drafts_status on email_drafts(status);
 create index if not exists idx_follow_up_tasks_prospect on follow_up_tasks(prospect_id);
 create index if not exists idx_follow_up_tasks_due on follow_up_tasks(due_date);
+create index if not exists idx_outreach_sends_prospect on outreach_sends(prospect_id);
+create index if not exists idx_outreach_sends_email_draft on outreach_sends(email_draft_id);
+create index if not exists idx_outreach_sends_status on outreach_sends(status);
+create index if not exists idx_outreach_sends_sent_at on outreach_sends(sent_at);
+drop index if exists idx_outreach_sends_unique_success;
+create unique index if not exists idx_outreach_sends_unique_active_send
+  on outreach_sends(prospect_id, email_draft_id)
+  where status in ('queued', 'sent', 'test_sent');
 create index if not exists idx_opt_outs_email on opt_outs(email);
 
 -- ─── Row Level Security ─────────────────────────────────
@@ -130,6 +155,7 @@ alter table audits enable row level security;
 alter table mockups enable row level security;
 alter table email_drafts enable row level security;
 alter table follow_up_tasks enable row level security;
+alter table outreach_sends enable row level security;
 alter table opt_outs enable row level security;
 
 -- Permissive policies for development (tighten for production)
@@ -138,6 +164,8 @@ create policy "Allow all for audits" on audits for all using (true) with check (
 create policy "Allow all for mockups" on mockups for all using (true) with check (true);
 create policy "Allow all for email_drafts" on email_drafts for all using (true) with check (true);
 create policy "Allow all for follow_up_tasks" on follow_up_tasks for all using (true) with check (true);
+drop policy if exists "Allow all for outreach_sends" on outreach_sends;
+create policy "Allow all for outreach_sends" on outreach_sends for all using (true) with check (true);
 create policy "Allow all for opt_outs" on opt_outs for all using (true) with check (true);
 
 -- Public read access for mockups (for /mockups/[slug] public page)

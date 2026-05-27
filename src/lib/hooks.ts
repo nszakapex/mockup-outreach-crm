@@ -436,48 +436,9 @@ export function useApprovalQueue() {
     }
   };
 
-  const markSent = async (prospectId: string): Promise<string | null> => {
-    try {
-      if (getDataSource() === 'supabase') {
-        const { error: prospectError } = await withSupabaseTimeout(
-          db().from('prospects').update({ status: 'sent' }).eq('id', prospectId),
-          'Mark prospect sent'
-        );
-        if (prospectError) return prospectError.message;
-
-        const { error: draftError } = await withSupabaseTimeout(
-          db()
-            .from('email_drafts')
-            .update({ status: 'sent', sent_at: new Date().toISOString() })
-            .eq('prospect_id', prospectId)
-            .in('status', ['approved', 'ready']),
-          'Mark email sent'
-        );
-        if (draftError) return draftError.message;
-
-        const { error: taskError } = await withSupabaseTimeout(
-          db().from('follow_up_tasks').insert({
-            prospect_id: prospectId,
-            task_type: 'follow_up',
-            due_date: new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0],
-            status: 'pending',
-            notes: 'Auto-created: follow up if no reply within 3 days',
-          }),
-          'Create follow-up task'
-        );
-        if (taskError) return taskError.message;
-      }
-
-      setProspects((current) => current.filter((prospect) => prospect.id !== prospectId));
-      return null;
-    } catch (error) {
-      return getErrorMessage(error);
-    }
-  };
-
   const refetch = () => setRefreshKey((key) => key + 1);
 
-  return { prospects, loading, error, dataSource, refetch, approve, markSent };
+  return { prospects, loading, error, dataSource, refetch, approve };
 }
 
 export function useMockupBySlug(slug: string) {

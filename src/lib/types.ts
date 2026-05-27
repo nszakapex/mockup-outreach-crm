@@ -116,6 +116,22 @@ export interface OptOut {
 }
 
 // ─── Joined types ───────────────────────────────────────
+export interface OutreachSend {
+  id: string;
+  prospect_id: string;
+  email_draft_id: string | null;
+  provider: 'gmail' | 'test';
+  to_email: string;
+  from_email: string;
+  subject: string;
+  body: string;
+  status: 'queued' | 'sent' | 'test_sent' | 'failed' | 'skipped';
+  provider_message_id: string | null;
+  error_message: string | null;
+  sent_at: string | null;
+  created_at: string;
+}
+
 export interface ProspectWithRelations extends Prospect {
   audits?: Audit[];
   mockups?: Mockup[];
