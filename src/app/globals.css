@@ -1,26 +1,164 @@
+/* Hallmark · macrostructure: Workbench · genre: modern-minimal · tone: technical-luxury
+ * theme: custom (vibe: "dark navy command center" · paper oklch(15% 0.02 250) · accent oklch(65% 0.20 250) electric-blue + oklch(65% 0.18 155) emerald)
+ * nav: N7 Sidebar rail · footer: none (app shell)
+ * pre-emit critique: P5 H4 E5 S4 R5 V4
+ */
+
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════
+   DESIGN TOKENS — Apex Mockup Outreach CRM
+   Dark navy command center with electric blue
+   and emerald green accents.
+   ═══════════════════════════════════════════ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Paper (backgrounds) */
+  --color-paper:         oklch(15% 0.02 250);
+  --color-paper-2:       oklch(18% 0.02 250);
+  --color-paper-3:       oklch(22% 0.02 250);
+  --color-paper-4:       oklch(26% 0.015 250);
+  --color-paper-hover:   oklch(24% 0.025 250);
+
+  /* Ink (text) */
+  --color-ink:           oklch(95% 0.005 250);
+  --color-ink-2:         oklch(75% 0.01 250);
+  --color-ink-3:         oklch(55% 0.01 250);
+  --color-ink-muted:     oklch(45% 0.01 250);
+
+  /* Accent — Electric Blue */
+  --color-accent:        oklch(65% 0.20 250);
+  --color-accent-hover:  oklch(70% 0.22 250);
+  --color-accent-muted:  oklch(65% 0.20 250 / 0.15);
+  --color-accent-subtle: oklch(65% 0.20 250 / 0.08);
+
+  /* Secondary — Emerald Green */
+  --color-emerald:       oklch(65% 0.18 155);
+  --color-emerald-hover: oklch(70% 0.20 155);
+  --color-emerald-muted: oklch(65% 0.18 155 / 0.15);
+  --color-emerald-subtle:oklch(65% 0.18 155 / 0.08);
+
+  /* Status palette */
+  --color-success:       oklch(70% 0.18 150);
+  --color-warning:       oklch(75% 0.16 85);
+  --color-error:         oklch(65% 0.22 25);
+  --color-info:          oklch(65% 0.16 250);
+
+  /* Borders & dividers */
+  --color-border:        oklch(28% 0.015 250);
+  --color-border-hover:  oklch(35% 0.02 250);
+  --color-divider:       oklch(22% 0.01 250);
+
+  /* Focus ring */
+  --color-focus:         oklch(65% 0.20 250);
+
+  /* Shadows */
+  --shadow-sm:   0 1px 2px oklch(0% 0 0 / 0.3);
+  --shadow-md:   0 4px 12px oklch(0% 0 0 / 0.35);
+  --shadow-lg:   0 8px 24px oklch(0% 0 0 / 0.4);
+  --shadow-card: 0 1px 3px oklch(0% 0 0 / 0.2), 0 0 0 1px oklch(100% 0 0 / 0.03);
+
+  /* Spacing (4pt scale) */
+  --space-xs:  4px;
+  --space-sm:  8px;
+  --space-md:  16px;
+  --space-lg:  24px;
+  --space-xl:  32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+
+  /* Radius */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  20px;
+  --radius-full: 9999px;
+
+  /* Typography scale */
+  --text-xs:      0.75rem;
+  --text-sm:      0.875rem;
+  --text-base:    1rem;
+  --text-lg:      1.125rem;
+  --text-xl:      1.25rem;
+  --text-2xl:     1.5rem;
+  --text-3xl:     1.875rem;
+  --text-4xl:     2.25rem;
+
+  /* Motion */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in:     cubic-bezier(0.55, 0.055, 0.675, 0.19);
+  --ease-in-out: cubic-bezier(0.45, 0, 0.55, 1);
+  --dur-fast:    120ms;
+  --dur-normal:  200ms;
+  --dur-slow:    350ms;
+
+  /* Fonts */
+  --font-display: var(--font-geist-sans), system-ui, sans-serif;
+  --font-body:    var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono:    var(--font-geist-mono), ui-monospace, monospace;
+
+  /* Sidebar */
+  --sidebar-width: 260px;
+  --sidebar-collapsed: 72px;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--color-paper);
+  --color-foreground: var(--color-ink);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ═══════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════ */
+
+html {
+  overflow-x: clip;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--color-accent-muted);
+  color: var(--color-ink);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-hover);
+}
+
+/* ═══════════════════════════════════════════
+   REDUCED MOTION
+   ═══════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 150ms !important;
+  }
 }
