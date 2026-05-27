@@ -337,7 +337,7 @@ export default function SendQueuePage() {
 
                   <div>
                     <div className="text-xs font-medium mb-1.5" style={{ color: 'var(--color-ink-3)' }}>
-                      Mockup
+                      Final Public Mockup URL
                     </div>
                     <a
                       href={item.mockupUrl}

@@ -1,0 +1,713 @@
+/* Hallmark pre-emit critique: P5 H4 E4 S4 R5 V5 */
+
+.shell {
+  --site-bg: oklch(14% 0.03 45);
+  --site-surface: oklch(20% 0.035 45);
+  --site-surface-2: oklch(25% 0.04 45);
+  --site-ink: oklch(96% 0.01 75);
+  --site-muted: oklch(78% 0.03 75);
+  --site-soft: oklch(64% 0.04 75);
+  --site-line: oklch(100% 0 0 / 0.14);
+  --site-accent: oklch(77% 0.16 75);
+  --site-accent-2: oklch(69% 0.15 150);
+  --site-shadow: 0 24px 80px oklch(0% 0 0 / 0.38);
+  min-height: 100vh;
+  overflow-x: clip;
+  background:
+    linear-gradient(180deg, var(--site-bg), oklch(11% 0.025 45)),
+    repeating-linear-gradient(90deg, oklch(100% 0 0 / 0.035) 0 1px, transparent 1px 88px);
+  color: var(--site-ink);
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+}
+
+.shell *,
+.shell *::before,
+.shell *::after {
+  box-sizing: border-box;
+  letter-spacing: 0;
+}
+
+.shell a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.coffee_shop {
+  --site-bg: oklch(16% 0.035 52);
+  --site-surface: oklch(21% 0.04 52);
+  --site-surface-2: oklch(28% 0.05 55);
+  --site-accent: oklch(78% 0.16 75);
+  --site-accent-2: oklch(67% 0.15 145);
+}
+
+.restaurant {
+  --site-bg: oklch(18% 0.045 35);
+  --site-surface: oklch(24% 0.05 35);
+  --site-surface-2: oklch(31% 0.06 38);
+  --site-accent: oklch(73% 0.18 43);
+  --site-accent-2: oklch(76% 0.14 95);
+}
+
+.bar_grill {
+  --site-bg: oklch(13% 0.035 28);
+  --site-surface: oklch(20% 0.045 28);
+  --site-surface-2: oklch(27% 0.06 32);
+  --site-accent: oklch(72% 0.17 53);
+  --site-accent-2: oklch(65% 0.16 24);
+}
+
+.premium_dining {
+  --site-bg: oklch(13% 0.025 250);
+  --site-surface: oklch(21% 0.03 250);
+  --site-surface-2: oklch(28% 0.03 250);
+  --site-accent: oklch(84% 0.1 85);
+  --site-accent-2: oklch(72% 0.07 35);
+}
+
+.nonprofit_cafe {
+  --site-bg: oklch(18% 0.035 155);
+  --site-surface: oklch(24% 0.04 155);
+  --site-surface-2: oklch(31% 0.045 150);
+  --site-accent: oklch(78% 0.14 130);
+  --site-accent-2: oklch(80% 0.12 75);
+}
+
+.food_truck {
+  --site-bg: oklch(15% 0.05 245);
+  --site-surface: oklch(22% 0.06 245);
+  --site-surface-2: oklch(29% 0.075 245);
+  --site-accent: oklch(82% 0.18 92);
+  --site-accent-2: oklch(70% 0.19 25);
+}
+
+.local_service {
+  --site-bg: oklch(16% 0.035 225);
+  --site-surface: oklch(23% 0.045 225);
+  --site-surface-2: oklch(30% 0.055 225);
+  --site-accent: oklch(74% 0.16 205);
+  --site-accent-2: oklch(70% 0.16 145);
+}
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 20px;
+  align-items: center;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 18px 24px;
+  background: oklch(0% 0 0 / 0.18);
+  border-bottom: 1px solid var(--site-line);
+  backdrop-filter: blur(18px);
+}
+
+.brandMark {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--site-ink);
+}
+
+.brandGlyph {
+  display: inline-flex;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--site-line);
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--site-accent), var(--site-accent-2));
+  color: oklch(13% 0.02 60);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.navLinks {
+  display: flex;
+  gap: 20px;
+  color: var(--site-muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.navLinks a,
+.navButton,
+.primaryButton,
+.secondaryButton {
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+}
+
+.navLinks a:hover,
+.navButton:hover,
+.primaryButton:hover,
+.secondaryButton:hover {
+  transform: translateY(-1px);
+}
+
+.navButton,
+.primaryButton,
+.secondaryButton {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.navButton {
+  padding: 10px 14px;
+  border: 1px solid var(--site-line);
+  background: oklch(100% 0 0 / 0.08);
+  color: var(--site-ink);
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.03fr) minmax(320px, 0.97fr);
+  gap: 44px;
+  align-items: center;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 86px 24px 72px;
+}
+
+.heroCopy {
+  min-width: 0;
+}
+
+.templateBadge {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 8px 10px;
+  border: 1px solid var(--site-line);
+  border-radius: 8px;
+  background: oklch(100% 0 0 / 0.08);
+  color: var(--site-muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.templateBadge span {
+  color: var(--site-accent);
+}
+
+.eyebrow,
+.sectionIntro p,
+.offerCopy > p,
+.plannerPanel p:first-child,
+.growthCopy > p,
+.finalCta p:first-child {
+  margin: 0 0 12px;
+  color: var(--site-accent);
+  font-size: 0.84rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  max-width: 880px;
+  margin: 0;
+  color: var(--site-ink);
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-size: 4.75rem;
+  font-weight: 950;
+  line-height: 0.96;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+.lede {
+  max-width: 700px;
+  margin: 26px 0 0;
+  color: var(--site-muted);
+  font-size: 1.16rem;
+  line-height: 1.8;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 34px;
+}
+
+.primaryButton {
+  padding: 13px 18px;
+  border: 1px solid transparent;
+  background: linear-gradient(135deg, var(--site-accent), var(--site-accent-2));
+  color: oklch(12% 0.02 60);
+  box-shadow: 0 14px 35px oklch(0% 0 0 / 0.24);
+}
+
+.secondaryButton {
+  padding: 13px 18px;
+  border: 1px solid var(--site-line);
+  background: oklch(100% 0 0 / 0.06);
+  color: var(--site-ink);
+}
+
+.heroVisual {
+  position: relative;
+  min-height: 520px;
+  overflow: hidden;
+  border: 1px solid var(--site-line);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, oklch(100% 0 0 / 0.12), transparent 48%),
+    repeating-linear-gradient(0deg, oklch(100% 0 0 / 0.045) 0 1px, transparent 1px 32px),
+    var(--site-surface);
+  box-shadow: var(--site-shadow);
+  padding: 24px;
+}
+
+.heroVisual::before {
+  position: absolute;
+  inset: 18px;
+  content: "";
+  border: 1px solid var(--site-line);
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+.visualTopline {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  color: var(--site-muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.visualPlate {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  min-height: 250px;
+  place-items: center;
+  margin: 54px auto 30px;
+  border: 1px solid var(--site-line);
+  border-radius: 8px;
+  background:
+    linear-gradient(160deg, oklch(100% 0 0 / 0.14), transparent),
+    var(--site-surface-2);
+  color: var(--site-accent);
+  text-align: center;
+}
+
+.visualPlate span {
+  max-width: 280px;
+  color: var(--site-ink);
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-size: 2rem;
+  font-weight: 950;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.visualPlate svg {
+  margin-bottom: 14px;
+}
+
+.visualCards {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 10px;
+}
+
+.visualCard {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--site-line);
+  border-radius: 8px;
+  background: oklch(0% 0 0 / 0.18);
+  color: var(--site-muted);
+  font-weight: 800;
+}
+
+.visualCard span {
+  color: var(--site-accent);
+}
+
+.utilityStrip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  max-width: 1180px;
+  margin: 0 auto;
+  border-block: 1px solid var(--site-line);
+  background: oklch(100% 0 0 / 0.045);
+}
+
+.utilityStrip div {
+  display: flex;
+  min-height: 82px;
+  align-items: center;
+  gap: 12px;
+  padding: 18px;
+  border-right: 1px solid var(--site-line);
+  color: var(--site-muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.utilityStrip div:last-child {
+  border-right: 0;
+}
+
+.utilityStrip svg,
+.featureCard .cardNumber,
+.seoGrid svg,
+.timelineHeader svg,
+.timelineRow svg,
+.growthRail svg {
+  color: var(--site-accent);
+}
+
+.section {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 82px 24px;
+}
+
+.sectionIntro {
+  display: grid;
+  grid-template-columns: minmax(160px, 0.4fr) minmax(0, 0.8fr);
+  gap: 32px;
+  align-items: end;
+  margin-bottom: 30px;
+}
+
+.sectionIntro h2,
+.offerCopy h2,
+.plannerPanel h2,
+.growthCopy h2,
+.finalCta h2 {
+  margin: 0;
+  color: var(--site-ink);
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-size: 3rem;
+  font-weight: 950;
+  line-height: 1.02;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.featureCard,
+.offerCard,
+.seoGrid article {
+  min-width: 0;
+  min-height: 230px;
+  padding: 22px;
+  border: 1px solid var(--site-line);
+  border-radius: 8px;
+  background: oklch(100% 0 0 / 0.055);
+}
+
+.featureCard h3,
+.offerCard h3,
+.seoGrid h3 {
+  margin: 18px 0 10px;
+  color: var(--site-ink);
+  font-size: 1.25rem;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+.featureCard p,
+.offerCard p,
+.seoGrid p,
+.offerCopy p,
+.plannerPanel p,
+.growthCopy p,
+.finalCta p {
+  margin: 0;
+  color: var(--site-muted);
+  line-height: 1.7;
+}
+
+.cardNumber {
+  font-size: 0.9rem;
+  font-weight: 950;
+}
+
+.offerSection,
+.plannerSection,
+.growthSection,
+.finalCta {
+  display: grid;
+  grid-template-columns: minmax(0, 0.76fr) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.offerCopy,
+.plannerPanel,
+.growthCopy,
+.finalCta {
+  border: 1px solid var(--site-line);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, oklch(100% 0 0 / 0.08), transparent),
+    var(--site-surface);
+  padding: 28px;
+}
+
+.offerCopy p:last-child,
+.plannerPanel p:last-child,
+.growthCopy p:last-child,
+.finalCta p:last-child {
+  margin-top: 18px;
+}
+
+.offerGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.offerCard span {
+  color: var(--site-accent);
+  font-size: 0.9rem;
+  font-weight: 950;
+}
+
+.stepList {
+  display: grid;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.stepList div,
+.timelineRow,
+.growthRail div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--site-line);
+  border-radius: 8px;
+  background: oklch(0% 0 0 / 0.16);
+  color: var(--site-muted);
+  font-weight: 800;
+}
+
+.stepList span {
+  color: var(--site-accent);
+  font-weight: 950;
+}
+
+.timelinePanel {
+  border: 1px solid var(--site-line);
+  border-radius: 8px;
+  background: var(--site-surface-2);
+  padding: 24px;
+}
+
+.timelineHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  color: var(--site-ink);
+  font-weight: 900;
+}
+
+.timelineRow {
+  margin-top: 10px;
+}
+
+.seoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.growthRail {
+  display: grid;
+  gap: 12px;
+}
+
+.finalCta {
+  max-width: 1180px;
+  margin: 0 auto;
+  align-items: center;
+}
+
+.finalCta .primaryButton {
+  justify-self: end;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 24px 42px;
+  border-top: 1px solid var(--site-line);
+  color: var(--site-soft);
+  font-size: 0.82rem;
+}
+
+.footerUrl {
+  max-width: min(620px, 100%);
+  overflow: hidden;
+  color: var(--site-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 980px) {
+  .nav {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .navLinks {
+    display: none;
+  }
+
+  .hero,
+  .offerSection,
+  .plannerSection,
+  .growthSection,
+  .finalCta {
+    grid-template-columns: 1fr;
+  }
+
+  .hero h1 {
+    font-size: 3.55rem;
+  }
+
+  .sectionIntro {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .featureGrid,
+  .seoGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .finalCta .primaryButton {
+    justify-self: start;
+  }
+}
+
+@media (max-width: 700px) {
+  .nav {
+    padding: 14px 16px;
+  }
+
+  .brandMark {
+    font-size: 0.92rem;
+  }
+
+  .navButton {
+    min-height: 40px;
+    padding: 8px 10px;
+    font-size: 0.82rem;
+  }
+
+  .hero {
+    padding: 48px 16px 44px;
+  }
+
+  .hero h1 {
+    font-size: 2.6rem;
+  }
+
+  .lede {
+    font-size: 1rem;
+  }
+
+  .heroActions,
+  .primaryButton,
+  .secondaryButton {
+    width: 100%;
+  }
+
+  .heroVisual {
+    min-height: 420px;
+    padding: 18px;
+  }
+
+  .visualPlate {
+    min-height: 200px;
+    margin-top: 42px;
+  }
+
+  .visualPlate span {
+    font-size: 1.5rem;
+  }
+
+  .utilityStrip,
+  .featureGrid,
+  .offerGrid,
+  .seoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .utilityStrip div {
+    min-height: 64px;
+    border-right: 0;
+    border-bottom: 1px solid var(--site-line);
+  }
+
+  .utilityStrip div:last-child {
+    border-bottom: 0;
+  }
+
+  .section {
+    padding: 56px 16px;
+  }
+
+  .sectionIntro h2,
+  .offerCopy h2,
+  .plannerPanel h2,
+  .growthCopy h2,
+  .finalCta h2 {
+    font-size: 2.1rem;
+  }
+
+  .offerCopy,
+  .plannerPanel,
+  .growthCopy,
+  .finalCta,
+  .timelinePanel {
+    padding: 20px;
+  }
+
+  .featureCard,
+  .offerCard,
+  .seoGrid article {
+    min-height: auto;
+  }
+}

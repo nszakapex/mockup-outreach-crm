@@ -25,6 +25,7 @@ import LeadScoreBadge from '@/components/LeadScoreBadge';
 import ScoreBar from '@/components/ScoreBar';
 import ErrorBanner from '@/components/ErrorBanner';
 import { upsertAudit, upsertEmailDraft, upsertMockup, useProspect } from '@/lib/hooks';
+import { buildPublicMockupUrl, getMockupTemplateVariant, getMockupVariantLabel } from '@/lib/mockup-templates';
 import { slugifyBusinessName } from '@/lib/prospect-intake';
 import { PROSPECT_STATUSES, type Audit, type EmailDraft, type Mockup, type Prospect, type ProspectStatus } from '@/lib/types';
 
@@ -101,6 +102,8 @@ export default function ProspectDetailPage({
   const mockup = prospect.mockups?.[0];
   const emailDraft = prospect.email_drafts?.[0];
   const followUps = prospect.follow_up_tasks || [];
+  const mockupPublicUrl = mockup?.slug ? buildPublicMockupUrl(mockup.slug) : mockup?.mockup_url || null;
+  const mockupVariant = getMockupTemplateVariant(prospect.niche);
 
   return (
     <div>
@@ -245,16 +248,32 @@ export default function ProspectDetailPage({
             </div>
           </Card>
 
-          <Card title="Mockup" action={mockup?.slug ? (
-            <Link href={`/mockups/${mockup.slug}`} target="_blank" className="text-xs font-medium hover:underline flex items-center gap-1" style={{ color: 'var(--color-accent)' }}>
-              View <ExternalLink size={10} />
-            </Link>
+          <Card title="Mockup" action={mockupPublicUrl ? (
+            <a href={mockupPublicUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-medium hover:underline flex items-center gap-1" style={{ color: 'var(--color-accent)' }}>
+              Open Mockup <ExternalLink size={10} />
+            </a>
           ) : undefined}>
             {mockup ? (
               <div className="space-y-3">
+                {!mockup.slug && (
+                  <div
+                    className="rounded-lg p-3 text-xs"
+                    style={{
+                      background: 'oklch(75% 0.16 85 / 0.08)',
+                      border: '1px solid oklch(75% 0.16 85 / 0.2)',
+                      color: 'var(--color-warning)',
+                    }}
+                  >
+                    Missing mockup slug. Add a slug before sending this concept link.
+                  </div>
+                )}
                 <div>
                   <span className="text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>Title</span>
                   <div className="text-sm mt-0.5" style={{ color: 'var(--color-ink)' }}>{mockup.title}</div>
+                </div>
+                <div>
+                  <span className="text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>Template Variant</span>
+                  <div className="text-sm mt-0.5" style={{ color: 'var(--color-ink)' }}>{getMockupVariantLabel(mockupVariant)}</div>
                 </div>
                 {mockup.hero_headline && (
                   <div>
@@ -266,6 +285,41 @@ export default function ProspectDetailPage({
                   <Palette size={12} style={{ color: 'var(--color-ink-3)' }} />
                   <span className="text-xs capitalize" style={{ color: 'var(--color-ink-2)' }}>{mockup.mockup_status}</span>
                 </div>
+                {mockupPublicUrl && (
+                  <div>
+                    <span className="text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>Final Public URL</span>
+                    <div
+                      className="mt-1.5 rounded-lg p-3 text-xs break-all"
+                      style={{
+                        background: 'var(--color-paper-3)',
+                        border: '1px solid var(--color-divider)',
+                        color: 'var(--color-ink-2)',
+                      }}
+                    >
+                      {mockupPublicUrl}
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Button size="sm" variant="secondary" onClick={() => copyToClipboard(mockupPublicUrl, 'mockup-link')}>
+                        {copiedField === 'mockup-link' ? <Check size={14} /> : <Copy size={14} />}
+                        {copiedField === 'mockup-link' ? 'Copied' : 'Copy Link'}
+                      </Button>
+                      <a
+                        href={mockupPublicUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
+                        style={{
+                          background: 'var(--color-paper-3)',
+                          border: '1px solid var(--color-border)',
+                          color: 'var(--color-ink)',
+                        }}
+                      >
+                        <ExternalLink size={14} />
+                        Open Mockup
+                      </a>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-sm" style={{ color: 'var(--color-ink-3)' }}>No mockup created yet.</p>

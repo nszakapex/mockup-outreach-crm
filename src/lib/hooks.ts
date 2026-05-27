@@ -444,6 +444,7 @@ export function useApprovalQueue() {
 export function useMockupBySlug(slug: string) {
   const [mockup, setMockup] = useState<Mockup | null>(null);
   const [prospect, setProspect] = useState<Pick<Prospect, 'business_name' | 'niche' | 'city' | 'state'> | null>(null);
+  const [audit, setAudit] = useState<Pick<Audit, 'main_problem' | 'conversion_opportunity' | 'recommended_offer' | 'mockup_angle'> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -455,13 +456,14 @@ export function useMockupBySlug(slug: string) {
       setError(null);
       setMockup(null);
       setProspect(null);
+      setAudit(null);
 
       try {
         if (getDataSource() === 'supabase') {
           const { data: foundMockup, error: mockupError } = await withSupabaseTimeout(
             db()
               .from('mockups')
-              .select('id, prospect_id, slug, title, mockup_url, mockup_status, hero_headline, hero_subheadline, primary_cta, features_included, created_at')
+              .select('id, prospect_id, slug, title, mockup_url, mockup_status, hero_headline, hero_subheadline, primary_cta, features_included, concept_notes, created_at')
               .eq('slug', slug)
               .maybeSingle(),
             'Public mockup query'
@@ -473,7 +475,7 @@ export function useMockupBySlug(slug: string) {
             return;
           }
 
-          if (!cancelled) setMockup({ ...foundMockup, concept_notes: null } as Mockup);
+          if (!cancelled) setMockup(foundMockup as Mockup);
 
           const { data: foundProspect, error: prospectError } = await withSupabaseTimeout(
             db()
@@ -486,6 +488,19 @@ export function useMockupBySlug(slug: string) {
 
           if (prospectError) throw new Error(prospectError.message);
           if (!cancelled) setProspect(foundProspect as typeof prospect);
+
+          const { data: foundAudit, error: auditError } = await withSupabaseTimeout(
+            db()
+              .from('audits')
+              .select('main_problem, conversion_opportunity, recommended_offer, mockup_angle')
+              .eq('prospect_id', foundMockup.prospect_id)
+              .limit(1)
+              .maybeSingle(),
+            'Public mockup audit query'
+          );
+
+          if (auditError) throw new Error(auditError.message);
+          if (!cancelled) setAudit(foundAudit as typeof audit);
         } else {
           const foundMockup = SEED_MOCKUPS.find((item) => item.slug === slug) || null;
           if (!cancelled) setMockup(foundMockup);
@@ -498,6 +513,16 @@ export function useMockupBySlug(slug: string) {
                 niche: foundProspect.niche,
                 city: foundProspect.city,
                 state: foundProspect.state,
+              });
+            }
+
+            const foundAudit = SEED_AUDITS.find((item) => item.prospect_id === foundMockup.prospect_id);
+            if (foundAudit && !cancelled) {
+              setAudit({
+                main_problem: foundAudit.main_problem,
+                conversion_opportunity: foundAudit.conversion_opportunity,
+                recommended_offer: foundAudit.recommended_offer,
+                mockup_angle: foundAudit.mockup_angle,
               });
             }
           }
@@ -515,7 +540,7 @@ export function useMockupBySlug(slug: string) {
     };
   }, [slug]);
 
-  return { mockup, prospect, loading, error };
+  return { mockup, prospect, audit, loading, error };
 }
 
 export interface DashboardStats {

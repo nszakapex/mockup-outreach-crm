@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { buildPublicMockupUrl } from '@/lib/mockup-templates';
 import { getErrorMessage, getServerSupabase } from './supabase';
 
 const SEND_SUCCESS_STATUSES = ['sent', 'test_sent'];
@@ -440,14 +441,16 @@ function buildQueueItem(
 
   if (!emailDraft || !prospect.public_email || !mockup) return null;
 
+  const mockupUrl = buildMockupUrl(mockup, origin);
+
   return {
     prospectId: prospect.id,
     emailDraftId: emailDraft.id,
     businessName: prospect.business_name,
     toEmail: prospect.public_email,
     subject: emailDraft.subject,
-    body: emailDraft.body,
-    mockupUrl: buildMockupUrl(mockup, origin),
+    body: replaceMockupReferences(emailDraft.body, mockupUrl),
+    mockupUrl,
     status: prospect.status,
     sendable: blockedReasons.length === 0,
     blockedReasons,
@@ -471,13 +474,11 @@ function pickMockup(mockups: MockupRow[] | null | undefined) {
 
 function buildMockupUrl(mockup: MockupRow, origin: string) {
   if (mockup.mockup_url) return mockup.mockup_url;
-  return `${origin.replace(/\/$/, '')}/mockups/${mockup.slug}`;
+  return buildPublicMockupUrl(mockup.slug, origin);
 }
 
 function buildEmailBody(item: SendQueueItem) {
-  const bodyWithMockup = item.body.includes('[Mockup Link]')
-    ? item.body.replaceAll('[Mockup Link]', item.mockupUrl)
-    : item.body;
+  const bodyWithMockup = replaceMockupReferences(item.body, item.mockupUrl);
 
   return [
     bodyWithMockup,
@@ -486,6 +487,12 @@ function buildEmailBody(item: SendQueueItem) {
     '',
     'If you would rather not hear from me again, reply with "opt out" and I will not contact you again.',
   ].join('\n');
+}
+
+function replaceMockupReferences(body: string, mockupUrl: string) {
+  return body
+    .replace(/\[mockup link\]/gi, mockupUrl)
+    .replace(/https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/mockups\/[^\s)]+/gi, mockupUrl);
 }
 
 function startOfTodayIso() {

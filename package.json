@@ -6,6 +6,8 @@
     "dev": "next dev",
     "dev:3001": "next dev -p 3001",
     "debug:env": "node scripts/debug-env.mjs",
+    "gmail:auth-url": "node scripts/gmail-oauth-url.mjs",
+    "gmail:exchange-code": "node scripts/gmail-oauth-token.mjs",
     "seed:supabase": "node scripts/seed-supabase.mjs",
     "build": "next build",
     "start": "next start",
