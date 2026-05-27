@@ -20,6 +20,7 @@ import StatusBadge from '@/components/StatusBadge';
 import LeadScoreBadge from '@/components/LeadScoreBadge';
 import ErrorBanner from '@/components/ErrorBanner';
 import DataSourceBadge from '@/components/DataSourceBadge';
+import LatestSendCard from '@/components/LatestSendCard';
 import { useDashboardStats } from '@/lib/hooks';
 import Link from 'next/link';
 
@@ -56,6 +57,8 @@ export default function DashboardPage() {
         lastSupabaseErrorMessage={error}
         prospectsLoaded={prospectsLoaded}
       />
+
+      <LatestSendCard className="mb-6" />
 
       {error && <div className="mb-6"><ErrorBanner message={error} /></div>}
 

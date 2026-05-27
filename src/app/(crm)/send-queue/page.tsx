@@ -8,6 +8,7 @@ import {
   Clock3,
   ExternalLink,
   Eye,
+  History,
   Inbox,
   Mail,
   RefreshCw,
@@ -41,10 +42,25 @@ type SendQueueStats = {
   testMode: boolean;
 };
 
+type RecentSendItem = {
+  id: string;
+  prospectId: string;
+  emailDraftId: string | null;
+  businessName: string;
+  toEmail: string;
+  subject: string;
+  status: string;
+  provider: string;
+  sentAt: string | null;
+  createdAt: string;
+  errorMessage: string | null;
+};
+
 type SendQueueResponse = {
   ok: boolean;
   items?: SendQueueItem[];
   stats?: SendQueueStats;
+  recentSends?: RecentSendItem[];
   errorMessage?: string;
 };
 
@@ -57,6 +73,7 @@ const EMPTY_STATS: SendQueueStats = {
 
 export default function SendQueuePage() {
   const [items, setItems] = useState<SendQueueItem[]>([]);
+  const [recentSends, setRecentSends] = useState<RecentSendItem[]>([]);
   const [stats, setStats] = useState<SendQueueStats>(EMPTY_STATS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -77,8 +94,10 @@ export default function SendQueuePage() {
 
       setItems(payload.items || []);
       setStats(payload.stats || EMPTY_STATS);
+      setRecentSends(payload.recentSends || []);
     } catch (queueError) {
       setItems([]);
+      setRecentSends([]);
       setError(queueError instanceof Error ? queueError.message : 'Unable to load send queue.');
     } finally {
       setLoading(false);
@@ -349,6 +368,8 @@ export default function SendQueuePage() {
           })}
         </div>
       )}
+
+      {!loading && !error && <RecentSendsSection recentSends={recentSends} />}
     </div>
   );
 }
@@ -372,4 +393,141 @@ function QueueMetric({ icon, label, value }: { icon: ReactNode; label: string; v
       </div>
     </div>
   );
+}
+
+function RecentSendsSection({ recentSends }: { recentSends: RecentSendItem[] }) {
+  return (
+    <div className="mt-8">
+      <Card
+        title="Recent Sends"
+        action={
+          <span className="inline-flex items-center gap-1.5 text-xs" style={{ color: 'var(--color-ink-3)' }}>
+            <History size={13} />
+            Last {Math.min(recentSends.length, 10)}
+          </span>
+        }
+        noPadding
+      >
+        {recentSends.length === 0 ? (
+          <div className="px-5 py-10 text-center">
+            <div
+              className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl"
+              style={{ background: 'var(--color-paper-3)', color: 'var(--color-ink-3)' }}
+            >
+              <History size={18} />
+            </div>
+            <div className="text-sm font-medium" style={{ color: 'var(--color-ink)' }}>
+              No sends recorded yet
+            </div>
+            <div className="mt-1 text-xs" style={{ color: 'var(--color-ink-3)' }}>
+              Test sends and live Gmail sends will appear here immediately after Send Now completes.
+            </div>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Business</th>
+                  <th className="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider md:table-cell" style={{ color: 'var(--color-ink-3)' }}>Subject</th>
+                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Status</th>
+                  <th className="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider lg:table-cell" style={{ color: 'var(--color-ink-3)' }}>Sent</th>
+                  <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentSends.map((send) => (
+                  <tr key={send.id} style={{ borderBottom: '1px solid var(--color-divider)' }}>
+                    <td className="px-5 py-3.5">
+                      <div className="font-medium" style={{ color: 'var(--color-ink)' }}>
+                        {send.businessName}
+                      </div>
+                      <div className="mt-0.5 text-xs" style={{ color: 'var(--color-ink-3)' }}>
+                        {send.toEmail}
+                      </div>
+                      {send.errorMessage && (
+                        <div className="mt-2 max-w-sm text-xs break-words" style={{ color: 'var(--color-error)' }}>
+                          {send.errorMessage}
+                        </div>
+                      )}
+                    </td>
+                    <td className="hidden max-w-md px-5 py-3.5 md:table-cell">
+                      <div className="truncate" style={{ color: 'var(--color-ink-2)' }}>
+                        {send.subject}
+                      </div>
+                      <div className="mt-1 text-xs uppercase" style={{ color: 'var(--color-ink-muted)' }}>
+                        {send.provider}
+                      </div>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <SendStatusBadge status={send.status} provider={send.provider} />
+                      <div className="mt-1 text-xs uppercase" style={{ color: 'var(--color-ink-muted)' }}>
+                        {send.provider}
+                      </div>
+                    </td>
+                    <td className="hidden px-5 py-3.5 text-xs lg:table-cell" style={{ color: 'var(--color-ink-3)' }}>
+                      {formatSendDate(send.sentAt || send.createdAt)}
+                    </td>
+                    <td className="px-5 py-3.5 text-right">
+                      <Link
+                        href={`/prospects/${send.prospectId}`}
+                        className="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium"
+                        style={{
+                          background: 'var(--color-paper-3)',
+                          border: '1px solid var(--color-border)',
+                          color: 'var(--color-ink)',
+                        }}
+                      >
+                        <Eye size={13} />
+                        View Prospect
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+function SendStatusBadge({ status, provider }: { status: string; provider?: string }) {
+  const config = getSendStatusStyle(status);
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap"
+      style={{ background: config.bg, color: config.color }}
+      title={provider ? `Provider: ${provider}` : undefined}
+    >
+      {config.label}
+    </span>
+  );
+}
+
+function getSendStatusStyle(status: string) {
+  switch (status) {
+    case 'sent':
+      return { label: 'Sent', color: 'var(--color-emerald)', bg: 'var(--color-emerald-muted)' };
+    case 'test_sent':
+      return { label: 'Test Sent', color: 'var(--color-warning)', bg: 'oklch(75% 0.16 85 / 0.12)' };
+    case 'failed':
+      return { label: 'Failed', color: 'var(--color-error)', bg: 'oklch(65% 0.22 25 / 0.12)' };
+    case 'skipped':
+      return { label: 'Skipped', color: 'var(--color-ink-3)', bg: 'var(--color-paper-3)' };
+    case 'queued':
+      return { label: 'Queued', color: 'var(--color-accent)', bg: 'var(--color-accent-muted)' };
+    default:
+      return { label: status.replace(/_/g, ' '), color: 'var(--color-ink-2)', bg: 'var(--color-paper-3)' };
+  }
+}
+
+function formatSendDate(value: string) {
+  return new Date(value).toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 }

@@ -39,6 +39,21 @@ type OutreachSendRow = {
   status: string;
 };
 
+type RecentSendRow = {
+  id: string;
+  prospect_id: string;
+  email_draft_id: string | null;
+  provider: string;
+  to_email: string;
+  subject: string;
+  status: string;
+  error_message: string | null;
+  sent_at: string | null;
+  created_at: string;
+  prospects?: { id: string; business_name: string } | { id: string; business_name: string }[] | null;
+  email_drafts?: { id: string; subject: string } | { id: string; subject: string }[] | null;
+};
+
 export type SendQueueItem = {
   prospectId: string;
   emailDraftId: string;
@@ -50,6 +65,20 @@ export type SendQueueItem = {
   status: string;
   sendable: boolean;
   blockedReasons: string[];
+};
+
+export type RecentSendItem = {
+  id: string;
+  prospectId: string;
+  emailDraftId: string | null;
+  businessName: string;
+  toEmail: string;
+  subject: string;
+  status: string;
+  provider: string;
+  sentAt: string | null;
+  createdAt: string;
+  errorMessage: string | null;
 };
 
 export function getOutreachConfig() {
@@ -88,11 +117,12 @@ export async function getOutreachStats() {
 }
 
 export async function getSendQueue(origin: string) {
-  const [stats, prospects, optOutEmails, successfulSends] = await Promise.all([
+  const [stats, prospects, optOutEmails, successfulSends, recentSends] = await Promise.all([
     getOutreachStats(),
     fetchQueueProspects(),
     fetchOptOutEmails(),
     fetchSuccessfulSends(),
+    getRecentSends(),
   ]);
 
   const successfulKeys = new Set(
@@ -106,7 +136,21 @@ export async function getSendQueue(origin: string) {
     .filter((item): item is SendQueueItem => Boolean(item))
     .filter((item) => item.sendable);
 
-  return { items, stats };
+  return { items, stats, recentSends };
+}
+
+export async function getRecentSends(limit = 10) {
+  const supabase = getServerSupabase();
+  const parsedLimit = Number.isFinite(limit) ? Math.floor(limit) : 10;
+  const safeLimit = Math.max(1, Math.min(parsedLimit, 50));
+  const { data, error } = await supabase
+    .from('outreach_sends')
+    .select('id, prospect_id, email_draft_id, provider, to_email, subject, status, error_message, sent_at, created_at, prospects(id, business_name), email_drafts(id, subject)')
+    .order('created_at', { ascending: false })
+    .limit(safeLimit);
+
+  if (error) throw new Error(`Fetch recent sends: ${error.message}`);
+  return (data || []).map(mapRecentSend);
 }
 
 export async function validateSendEligibility(
@@ -529,4 +573,23 @@ function encodeBase64Url(value: string) {
 
 function sendKey(prospectId: string, emailDraftId: string) {
   return `${prospectId}:${emailDraftId}`;
+}
+
+function mapRecentSend(row: RecentSendRow): RecentSendItem {
+  const prospect = Array.isArray(row.prospects) ? row.prospects[0] : row.prospects;
+  const emailDraft = Array.isArray(row.email_drafts) ? row.email_drafts[0] : row.email_drafts;
+
+  return {
+    id: row.id,
+    prospectId: row.prospect_id,
+    emailDraftId: row.email_draft_id,
+    businessName: prospect?.business_name || 'Unknown prospect',
+    toEmail: row.to_email,
+    subject: row.subject || emailDraft?.subject || 'No subject',
+    status: row.status,
+    provider: row.provider,
+    sentAt: row.sent_at,
+    createdAt: row.created_at,
+    errorMessage: row.error_message,
+  };
 }
