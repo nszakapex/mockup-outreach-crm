@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Search,
   Filter,
@@ -18,7 +19,8 @@ import Button from '@/components/Button';
 import EmptyState from '@/components/EmptyState';
 import ErrorBanner from '@/components/ErrorBanner';
 import DataSourceBadge from '@/components/DataSourceBadge';
-import { useProspects, createProspect } from '@/lib/hooks';
+import { useProspects } from '@/lib/hooks';
+import { createProspectBundle } from '@/lib/prospect-intake';
 import { PROSPECT_STATUSES, type ProspectStatus } from '@/lib/types';
 
 const EMPTY_FORM = {
@@ -32,13 +34,14 @@ const EMPTY_FORM = {
   instagram_url: '',
   facebook_url: '',
   google_maps_url: '',
-  lead_score: 50,
-  status: 'new' as ProspectStatus,
-  source: 'Manual',
+  lead_score: 70,
+  status: 'qualified' as ProspectStatus,
+  source: 'manual',
   notes: '',
 };
 
 export default function ProspectsPage() {
+  const router = useRouter();
   const { prospects, loading, error, dataSource, refetch } = useProspects();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProspectStatus | ''>('');
@@ -76,9 +79,25 @@ export default function ProspectsPage() {
       setCreateError('Business name is required.');
       return;
     }
+    if (!form.niche.trim()) {
+      setCreateError('Niche is required.');
+      return;
+    }
+    if (!form.website_url.trim()) {
+      setCreateError('Website URL is required.');
+      return;
+    }
+    if (!form.public_email.trim()) {
+      setCreateError('Public email is required.');
+      return;
+    }
+    if (!form.city.trim() || !form.state.trim()) {
+      setCreateError('City and state are required.');
+      return;
+    }
     setCreating(true);
     setCreateError(null);
-    const { error: err } = await createProspect({
+    const { data, error: err } = await createProspectBundle({
       ...form,
       website_url: form.website_url || null,
       public_email: form.public_email || null,
@@ -88,6 +107,10 @@ export default function ProspectsPage() {
       google_maps_url: form.google_maps_url || null,
       source: form.source || null,
       notes: form.notes || null,
+    }, {
+      source: 'manual',
+      requireDestinationIdentity: true,
+      statusMode: 'manual',
     });
     setCreating(false);
     if (err) {
@@ -96,6 +119,7 @@ export default function ProspectsPage() {
       setShowCreate(false);
       setForm(EMPTY_FORM);
       refetch();
+      if (data?.prospect.id) router.push(`/prospects/${data.prospect.id}`);
     }
   };
 
@@ -157,6 +181,21 @@ export default function ProspectsPage() {
                 <FormField label="Instagram URL" value={form.instagram_url} onChange={(v) => setForm({ ...form, instagram_url: v })} />
                 <FormField label="Facebook URL" value={form.facebook_url} onChange={(v) => setForm({ ...form, facebook_url: v })} />
                 <FormField label="Google Maps URL" value={form.google_maps_url} onChange={(v) => setForm({ ...form, google_maps_url: v })} />
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--color-ink-3)' }}>Status</label>
+                  <select
+                    value={form.status}
+                    onChange={(e) => setForm({ ...form, status: e.target.value as ProspectStatus })}
+                    className="w-full px-3 py-2.5 rounded-lg text-sm outline-none"
+                    style={{ background: 'var(--color-paper-3)', border: '1px solid var(--color-border)', color: 'var(--color-ink)' }}
+                  >
+                    {PROSPECT_STATUSES.map((status) => (
+                      <option key={status} value={status}>
+                        {status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--color-ink-3)' }}>Lead Score (0-100)</label>
                   <input

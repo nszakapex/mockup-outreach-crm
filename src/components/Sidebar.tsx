@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Users,
   CheckCircle,
+  FileJson,
   Settings,
   Menu,
   X,
@@ -16,6 +17,7 @@ import {
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/prospects', label: 'Prospects', icon: Users },
+  { href: '/import', label: 'Hermes Import', icon: FileJson },
   { href: '/approval', label: 'Approval Queue', icon: CheckCircle },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];

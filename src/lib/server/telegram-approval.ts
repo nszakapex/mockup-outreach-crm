@@ -284,8 +284,15 @@ async function validateApprovalCandidate(
     throw new Error('Do-not-contact prospects cannot be sent to Telegram.');
   }
 
+  if (!prospect.public_email) {
+    throw new Error('Prospect is missing a public email.');
+  }
+
   const emailDraft = pickEmailDraft(prospect.email_drafts);
   if (!emailDraft) throw new Error('Prospect is missing an email draft.');
+  if (!emailDraft.subject.trim() || !emailDraft.body.trim()) {
+    throw new Error('Prospect email draft must include a subject and body.');
+  }
 
   const mockup = pickMockup(prospect.mockups);
   if (requireMockup && !mockup) throw new Error('Prospect is missing a mockup.');

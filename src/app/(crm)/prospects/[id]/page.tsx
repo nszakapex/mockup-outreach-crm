@@ -16,6 +16,7 @@ import {
   Palette,
   ClipboardCheck,
   AlertTriangle,
+  Save,
 } from 'lucide-react';
 import Card from '@/components/Card';
 import Button from '@/components/Button';
@@ -23,8 +24,9 @@ import StatusBadge from '@/components/StatusBadge';
 import LeadScoreBadge from '@/components/LeadScoreBadge';
 import ScoreBar from '@/components/ScoreBar';
 import ErrorBanner from '@/components/ErrorBanner';
-import { useProspect } from '@/lib/hooks';
-import { type ProspectStatus } from '@/lib/types';
+import { upsertAudit, upsertEmailDraft, upsertMockup, useProspect } from '@/lib/hooks';
+import { slugifyBusinessName } from '@/lib/prospect-intake';
+import { PROSPECT_STATUSES, type Audit, type EmailDraft, type Mockup, type Prospect, type ProspectStatus } from '@/lib/types';
 
 const STATUS_ACTIONS: { status: ProspectStatus; label: string; variant: 'primary' | 'secondary' | 'danger' }[] = [
   { status: 'qualified', label: 'Mark Qualified', variant: 'secondary' },
@@ -44,7 +46,7 @@ export default function ProspectDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const { prospect, loading, error, updateStatus, refetch } = useProspect(id);
+  const { prospect, loading, error, updateStatus, updateProspect, refetch } = useProspect(id);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<ProspectStatus | null>(null);
@@ -122,6 +124,13 @@ export default function ProspectDetailPage({
       </div>
 
       {actionError && <div className="mb-6"><ErrorBanner message={actionError} /></div>}
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+        <ProspectEditCard prospect={prospect} onSave={updateProspect} onSaved={refetch} />
+        <AuditEditCard prospectId={prospect.id} audit={audit} onSaved={refetch} />
+        <MockupEditCard prospect={prospect} mockup={mockup} onSaved={refetch} />
+        <EmailDraftEditCard prospectId={prospect.id} draft={emailDraft} onSaved={refetch} />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column */}
@@ -325,4 +334,362 @@ function FieldBlock({ label, value }: { label: string; value: string }) {
       <p className="text-sm mt-1 leading-relaxed" style={{ color: 'var(--color-ink-2)' }}>{value}</p>
     </div>
   );
+}
+
+function ProspectEditCard({
+  prospect,
+  onSave,
+  onSaved,
+}: {
+  prospect: Prospect;
+  onSave: (updates: Partial<Prospect>) => Promise<string | null>;
+  onSaved: () => void;
+}) {
+  const [form, setForm] = useState({
+    business_name: prospect.business_name,
+    niche: prospect.niche,
+    website_url: prospect.website_url ?? '',
+    public_email: prospect.public_email ?? '',
+    phone: prospect.phone ?? '',
+    city: prospect.city,
+    state: prospect.state,
+    instagram_url: prospect.instagram_url ?? '',
+    facebook_url: prospect.facebook_url ?? '',
+    google_maps_url: prospect.google_maps_url ?? '',
+    lead_score: String(prospect.lead_score),
+    status: prospect.status,
+    source: prospect.source ?? '',
+    notes: prospect.notes ?? '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSave() {
+    setSaving(true);
+    setError(null);
+    const err = await onSave({
+      business_name: form.business_name,
+      niche: form.niche,
+      website_url: textOrNull(form.website_url),
+      public_email: textOrNull(form.public_email),
+      phone: textOrNull(form.phone),
+      city: form.city,
+      state: form.state,
+      instagram_url: textOrNull(form.instagram_url),
+      facebook_url: textOrNull(form.facebook_url),
+      google_maps_url: textOrNull(form.google_maps_url),
+      lead_score: numberOrZero(form.lead_score),
+      status: form.status,
+      source: textOrNull(form.source),
+      notes: textOrNull(form.notes),
+    });
+    setSaving(false);
+    if (err) {
+      setError(err);
+      return;
+    }
+    onSaved();
+  }
+
+  return (
+    <Card title="Edit Prospect">
+      <EditGrid>
+        <EditField label="Business" value={form.business_name} onChange={(value) => setForm({ ...form, business_name: value })} />
+        <EditField label="Niche" value={form.niche} onChange={(value) => setForm({ ...form, niche: value })} />
+        <EditField label="Website" value={form.website_url} onChange={(value) => setForm({ ...form, website_url: value })} />
+        <EditField label="Public email" value={form.public_email} onChange={(value) => setForm({ ...form, public_email: value })} />
+        <EditField label="Phone" value={form.phone} onChange={(value) => setForm({ ...form, phone: value })} />
+        <EditField label="City" value={form.city} onChange={(value) => setForm({ ...form, city: value })} />
+        <EditField label="State" value={form.state} onChange={(value) => setForm({ ...form, state: value })} />
+        <EditField label="Lead score" type="number" value={form.lead_score} onChange={(value) => setForm({ ...form, lead_score: value })} />
+        <EditSelect label="Status" value={form.status} options={PROSPECT_STATUSES} onChange={(value) => setForm({ ...form, status: value as ProspectStatus })} />
+        <EditField label="Source" value={form.source} onChange={(value) => setForm({ ...form, source: value })} />
+        <EditField label="Instagram" value={form.instagram_url} onChange={(value) => setForm({ ...form, instagram_url: value })} />
+        <EditField label="Facebook" value={form.facebook_url} onChange={(value) => setForm({ ...form, facebook_url: value })} />
+        <EditField label="Google Maps" value={form.google_maps_url} onChange={(value) => setForm({ ...form, google_maps_url: value })} />
+      </EditGrid>
+      <EditTextArea label="Notes" value={form.notes} onChange={(value) => setForm({ ...form, notes: value })} />
+      <SaveFooter error={error} saving={saving} label="Save prospect" onSave={handleSave} />
+    </Card>
+  );
+}
+
+function AuditEditCard({ prospectId, audit, onSaved }: { prospectId: string; audit?: Audit; onSaved: () => void }) {
+  const [form, setForm] = useState({
+    website_score: audit?.website_score?.toString() ?? '',
+    mobile_score: audit?.mobile_score?.toString() ?? '',
+    seo_score: audit?.seo_score?.toString() ?? '',
+    social_score: audit?.social_score?.toString() ?? '',
+    main_problem: audit?.main_problem ?? '',
+    conversion_opportunity: audit?.conversion_opportunity ?? '',
+    recommended_offer: audit?.recommended_offer ?? '',
+    mockup_angle: audit?.mockup_angle ?? '',
+    audit_notes: audit?.audit_notes ?? '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSave() {
+    setSaving(true);
+    setError(null);
+    const { error: err } = await upsertAudit({
+      id: audit?.id,
+      prospect_id: prospectId,
+      website_score: nullableNumber(form.website_score),
+      mobile_score: nullableNumber(form.mobile_score),
+      seo_score: nullableNumber(form.seo_score),
+      social_score: nullableNumber(form.social_score),
+      main_problem: textOrNull(form.main_problem),
+      conversion_opportunity: textOrNull(form.conversion_opportunity),
+      recommended_offer: textOrNull(form.recommended_offer),
+      mockup_angle: textOrNull(form.mockup_angle),
+      audit_notes: textOrNull(form.audit_notes),
+    });
+    setSaving(false);
+    if (err) {
+      setError(err);
+      return;
+    }
+    onSaved();
+  }
+
+  return (
+    <Card title="Edit Audit">
+      <EditGrid>
+        <EditField label="Website score" type="number" value={form.website_score} onChange={(value) => setForm({ ...form, website_score: value })} />
+        <EditField label="Mobile score" type="number" value={form.mobile_score} onChange={(value) => setForm({ ...form, mobile_score: value })} />
+        <EditField label="SEO score" type="number" value={form.seo_score} onChange={(value) => setForm({ ...form, seo_score: value })} />
+        <EditField label="Social score" type="number" value={form.social_score} onChange={(value) => setForm({ ...form, social_score: value })} />
+      </EditGrid>
+      <EditTextArea label="Main problem" value={form.main_problem} onChange={(value) => setForm({ ...form, main_problem: value })} />
+      <EditTextArea label="Conversion opportunity" value={form.conversion_opportunity} onChange={(value) => setForm({ ...form, conversion_opportunity: value })} />
+      <EditTextArea label="Recommended offer" value={form.recommended_offer} onChange={(value) => setForm({ ...form, recommended_offer: value })} />
+      <EditTextArea label="Mockup angle" value={form.mockup_angle} onChange={(value) => setForm({ ...form, mockup_angle: value })} />
+      <EditTextArea label="Audit notes" value={form.audit_notes} onChange={(value) => setForm({ ...form, audit_notes: value })} />
+      <SaveFooter error={error} saving={saving} label="Save audit" onSave={handleSave} />
+    </Card>
+  );
+}
+
+function MockupEditCard({ prospect, mockup, onSaved }: { prospect: Prospect; mockup?: Mockup; onSaved: () => void }) {
+  const [form, setForm] = useState({
+    slug: mockup?.slug ?? slugifyBusinessName(`${prospect.business_name} mockup`),
+    title: mockup?.title ?? `${prospect.business_name} Mockup`,
+    mockup_url: mockup?.mockup_url ?? '',
+    mockup_status: mockup?.mockup_status ?? 'draft',
+    hero_headline: mockup?.hero_headline ?? '',
+    hero_subheadline: mockup?.hero_subheadline ?? '',
+    primary_cta: mockup?.primary_cta ?? '',
+    features_included: mockup?.features_included ?? '',
+    concept_notes: mockup?.concept_notes ?? '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSave() {
+    setSaving(true);
+    setError(null);
+    const { error: err } = await upsertMockup({
+      id: mockup?.id,
+      prospect_id: prospect.id,
+      slug: form.slug,
+      title: form.title,
+      mockup_url: textOrNull(form.mockup_url),
+      mockup_status: form.mockup_status,
+      hero_headline: textOrNull(form.hero_headline),
+      hero_subheadline: textOrNull(form.hero_subheadline),
+      primary_cta: textOrNull(form.primary_cta),
+      features_included: textOrNull(form.features_included),
+      concept_notes: textOrNull(form.concept_notes),
+    });
+    setSaving(false);
+    if (err) {
+      setError(err);
+      return;
+    }
+    onSaved();
+  }
+
+  return (
+    <Card title="Edit Mockup">
+      <EditGrid>
+        <EditField label="Slug" value={form.slug} onChange={(value) => setForm({ ...form, slug: slugifyBusinessName(value) })} />
+        <EditField label="Title" value={form.title} onChange={(value) => setForm({ ...form, title: value })} />
+        <EditField label="Mockup URL" value={form.mockup_url} onChange={(value) => setForm({ ...form, mockup_url: value })} />
+        <EditSelect label="Mockup status" value={form.mockup_status} options={['draft', 'ready', 'published', 'archived']} onChange={(value) => setForm({ ...form, mockup_status: value })} />
+        <EditField label="Hero headline" value={form.hero_headline} onChange={(value) => setForm({ ...form, hero_headline: value })} />
+        <EditField label="Primary CTA" value={form.primary_cta} onChange={(value) => setForm({ ...form, primary_cta: value })} />
+      </EditGrid>
+      <EditTextArea label="Hero subheadline" value={form.hero_subheadline} onChange={(value) => setForm({ ...form, hero_subheadline: value })} />
+      <EditTextArea label="Features included" value={form.features_included} onChange={(value) => setForm({ ...form, features_included: value })} />
+      <EditTextArea label="Concept notes" value={form.concept_notes} onChange={(value) => setForm({ ...form, concept_notes: value })} />
+      <SaveFooter error={error} saving={saving} label="Save mockup" onSave={handleSave} />
+    </Card>
+  );
+}
+
+function EmailDraftEditCard({ prospectId, draft, onSaved }: { prospectId: string; draft?: EmailDraft; onSaved: () => void }) {
+  const [form, setForm] = useState({
+    subject: draft?.subject ?? '',
+    body: draft?.body ?? '',
+    status: draft?.status ?? 'draft',
+    reply_status: draft?.reply_status ?? 'none',
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSave() {
+    setSaving(true);
+    setError(null);
+    const { error: err } = await upsertEmailDraft({
+      id: draft?.id,
+      prospect_id: prospectId,
+      subject: form.subject,
+      body: form.body,
+      status: form.status,
+      approved_at: draft?.approved_at ?? null,
+      sent_at: draft?.sent_at ?? null,
+      reply_status: form.reply_status === 'none' ? 'none' : form.reply_status,
+    });
+    setSaving(false);
+    if (err) {
+      setError(err);
+      return;
+    }
+    onSaved();
+  }
+
+  return (
+    <Card title="Edit Email Draft">
+      <EditField label="Subject" value={form.subject} onChange={(value) => setForm({ ...form, subject: value })} />
+      <EditTextArea label="Body" value={form.body} rows={8} onChange={(value) => setForm({ ...form, body: value })} />
+      <EditGrid>
+        <EditSelect label="Draft status" value={form.status} options={['draft', 'ready', 'approved', 'sent', 'rejected']} onChange={(value) => setForm({ ...form, status: value })} />
+        <EditSelect label="Reply status" value={form.reply_status} options={['none', 'replied', 'positive', 'negative', 'booked']} onChange={(value) => setForm({ ...form, reply_status: value })} />
+      </EditGrid>
+      <SaveFooter error={error} saving={saving} label="Save email draft" onSave={handleSave} />
+    </Card>
+  );
+}
+
+function EditGrid({ children }: { children: React.ReactNode }) {
+  return <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{children}</div>;
+}
+
+function EditField({
+  label,
+  value,
+  onChange,
+  type = 'text',
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: 'text' | 'number';
+}) {
+  return (
+    <label className="block text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>
+      {label}
+      <input
+        type={type}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-1.5 w-full rounded-lg px-3 py-2.5 text-sm outline-none"
+        style={{ background: 'var(--color-paper-3)', border: '1px solid var(--color-border)', color: 'var(--color-ink)' }}
+      />
+    </label>
+  );
+}
+
+function EditSelect({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: readonly string[];
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="block text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>
+      {label}
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-1.5 w-full rounded-lg px-3 py-2.5 text-sm outline-none"
+        style={{ background: 'var(--color-paper-3)', border: '1px solid var(--color-border)', color: 'var(--color-ink)' }}
+      >
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option.replace(/_/g, ' ').replace(/\b\w/g, (character) => character.toUpperCase())}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function EditTextArea({
+  label,
+  value,
+  onChange,
+  rows = 3,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  rows?: number;
+}) {
+  return (
+    <label className="mt-3 block text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>
+      {label}
+      <textarea
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        rows={rows}
+        className="mt-1.5 w-full resize-y rounded-lg px-3 py-2.5 text-sm leading-6 outline-none"
+        style={{ background: 'var(--color-paper-3)', border: '1px solid var(--color-border)', color: 'var(--color-ink)' }}
+      />
+    </label>
+  );
+}
+
+function SaveFooter({
+  error,
+  saving,
+  label,
+  onSave,
+}: {
+  error: string | null;
+  saving: boolean;
+  label: string;
+  onSave: () => void;
+}) {
+  return (
+    <div className="mt-4 space-y-3">
+      {error && <ErrorBanner message={error} />}
+      <Button size="sm" onClick={onSave} disabled={saving}>
+        <Save size={14} />
+        {saving ? 'Saving...' : label}
+      </Button>
+    </div>
+  );
+}
+
+function textOrNull(value: string) {
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function numberOrZero(value: string) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 0;
+  return Math.max(0, Math.min(100, Math.round(parsed)));
+}
+
+function nullableNumber(value: string) {
+  if (!value.trim()) return null;
+  return numberOrZero(value);
 }

@@ -133,7 +133,10 @@ export default function ApprovalPage() {
             const isTelegramBusy = acting === `telegram:${prospect.id}`;
             const canSendToTelegram =
               (prospect.status === 'email_ready' || prospect.status === 'approved_to_send') &&
+              Boolean(prospect.public_email) &&
               Boolean(email) &&
+              Boolean(email?.subject) &&
+              Boolean(email?.body) &&
               Boolean(mockup?.slug);
 
             return (
@@ -176,6 +179,18 @@ export default function ApprovalPage() {
                 {!email && (
                   <div className="mb-4 rounded-lg p-3 text-xs" style={{ background: 'oklch(75% 0.16 85 / 0.08)', border: '1px solid oklch(75% 0.16 85 / 0.2)', color: 'var(--color-warning)' }}>
                     Missing email draft. Add a draft before sending this prospect to Telegram.
+                  </div>
+                )}
+
+                {!prospect.public_email && (
+                  <div className="mb-4 rounded-lg p-3 text-xs" style={{ background: 'oklch(75% 0.16 85 / 0.08)', border: '1px solid oklch(75% 0.16 85 / 0.2)', color: 'var(--color-warning)' }}>
+                    Missing public email. Add a destination before sending this prospect to Telegram.
+                  </div>
+                )}
+
+                {email && (!email.subject || !email.body) && (
+                  <div className="mb-4 rounded-lg p-3 text-xs" style={{ background: 'oklch(75% 0.16 85 / 0.08)', border: '1px solid oklch(75% 0.16 85 / 0.2)', color: 'var(--color-warning)' }}>
+                    Email subject and body are required before Telegram approval.
                   </div>
                 )}
 
