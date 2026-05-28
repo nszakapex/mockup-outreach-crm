@@ -444,7 +444,7 @@ export function useApprovalQueue() {
 export function useMockupBySlug(slug: string) {
   const [mockup, setMockup] = useState<Mockup | null>(null);
   const [prospect, setProspect] = useState<Pick<Prospect, 'business_name' | 'niche' | 'city' | 'state'> | null>(null);
-  const [audit, setAudit] = useState<Pick<Audit, 'main_problem' | 'conversion_opportunity' | 'recommended_offer' | 'mockup_angle'> | null>(null);
+  const [audit, setAudit] = useState<Pick<Audit, 'main_problem' | 'conversion_opportunity' | 'recommended_offer' | 'mockup_angle' | 'audit_notes'> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -463,7 +463,9 @@ export function useMockupBySlug(slug: string) {
           const { data: foundMockup, error: mockupError } = await withSupabaseTimeout(
             db()
               .from('mockups')
-              .select('id, prospect_id, slug, title, mockup_url, mockup_status, hero_headline, hero_subheadline, primary_cta, features_included, concept_notes, created_at')
+              .select(
+                'id, prospect_id, slug, title, mockup_url, mockup_status, hero_headline, hero_subheadline, primary_cta, features_included, concept_notes, created_at, prospects(business_name, niche, city, state, audits(main_problem, conversion_opportunity, recommended_offer, mockup_angle, audit_notes))'
+              )
               .eq('slug', slug)
               .maybeSingle(),
             'Public mockup query'
@@ -475,32 +477,26 @@ export function useMockupBySlug(slug: string) {
             return;
           }
 
-          if (!cancelled) setMockup(foundMockup as Mockup);
+          type PublicMockupProspect = Pick<Prospect, 'business_name' | 'niche' | 'city' | 'state'> & {
+            audits?: Pick<Audit, 'main_problem' | 'conversion_opportunity' | 'recommended_offer' | 'mockup_angle' | 'audit_notes'>[] | null;
+          };
+          const row = foundMockup as unknown as Mockup & {
+            prospects?: PublicMockupProspect | PublicMockupProspect[] | null;
+          };
+          const { prospects: prospectRelation, ...mockupRow } = row;
+          const relatedProspect = Array.isArray(prospectRelation) ? prospectRelation[0] || null : prospectRelation || null;
+          const relatedAudit = Array.isArray(relatedProspect?.audits) ? relatedProspect.audits[0] || null : null;
 
-          const { data: foundProspect, error: prospectError } = await withSupabaseTimeout(
-            db()
-              .from('prospects')
-              .select('business_name, niche, city, state')
-              .eq('id', foundMockup.prospect_id)
-              .single(),
-            'Public mockup prospect query'
-          );
-
-          if (prospectError) throw new Error(prospectError.message);
-          if (!cancelled) setProspect(foundProspect as typeof prospect);
-
-          const { data: foundAudit, error: auditError } = await withSupabaseTimeout(
-            db()
-              .from('audits')
-              .select('main_problem, conversion_opportunity, recommended_offer, mockup_angle')
-              .eq('prospect_id', foundMockup.prospect_id)
-              .limit(1)
-              .maybeSingle(),
-            'Public mockup audit query'
-          );
-
-          if (auditError) throw new Error(auditError.message);
-          if (!cancelled) setAudit(foundAudit as typeof audit);
+          if (!cancelled) {
+            setMockup(mockupRow as Mockup);
+            setProspect(relatedProspect ? {
+              business_name: relatedProspect.business_name,
+              niche: relatedProspect.niche,
+              city: relatedProspect.city,
+              state: relatedProspect.state,
+            } : null);
+            setAudit(relatedAudit);
+          }
         } else {
           const foundMockup = SEED_MOCKUPS.find((item) => item.slug === slug) || null;
           if (!cancelled) setMockup(foundMockup);
@@ -523,6 +519,7 @@ export function useMockupBySlug(slug: string) {
                 conversion_opportunity: foundAudit.conversion_opportunity,
                 recommended_offer: foundAudit.recommended_offer,
                 mockup_angle: foundAudit.mockup_angle,
+                audit_notes: foundAudit.audit_notes,
               });
             }
           }

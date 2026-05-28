@@ -29,6 +29,18 @@ const SAMPLE_JSON = `[
     "mockup_slug": "example-detail-studio-concept",
     "hero_headline": "Premium Detailing Without the Guesswork",
     "primary_cta": "Request a Detail Quote",
+    "current_site_snapshot": "Service packages exist, but mobile visitors have to compare too much before asking for a quote.",
+    "online_presence_status": ["Website UX: packages are hard to compare", "CTA clarity: quote request is buried"],
+    "visual_direction": "Premium studio feel with dark surfaces, crisp package cards, and a booking-first hero.",
+    "proposed_site_nav": ["Services", "Results", "Areas", "Reviews", "Quote"],
+    "homepage_sections": ["Quote-first hero", "Package comparison", "Before-and-after proof", "Service area CTA"],
+    "menu_or_offer_items": ["Interior refresh", "Full detail", "Ceramic coating", "Gift cards"],
+    "website_issue_examples": ["Booking packages are hard to compare on mobile", "Quote CTA is buried below service copy"],
+    "trust_signals": ["Five-star local detail studio", "Paint-safe products", "Weekend appointments"],
+    "cta_strategy": "Compare packages -> Choose service -> Request a quote",
+    "local_seo_angle": "auto detailing packages in Denver",
+    "content_strategy_angle": "weekly before-and-after detail reels",
+    "meta_ads_angle": "gift-card and ceramic-coating inquiry campaigns",
     "email_subject": "Quick mockup for Example Detail Studio",
     "email_body": "Hi there, I put together a quick website concept showing a cleaner booking path for your detailing services."
   }
@@ -215,6 +227,7 @@ export default function ImportPage() {
                 <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Record</th>
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Status</th>
+                  <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Mockup data</th>
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Mockup slug</th>
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Eligibility</th>
                 </tr>
@@ -231,6 +244,7 @@ export default function ImportPage() {
                       </div>
                     </td>
                     <td className="px-3 py-3"><StatusBadge status={item.status} /></td>
+                    <td className="px-3 py-3"><RichnessBadge level={item.mockupRichness.level} label={item.mockupRichness.label} /></td>
                     <td className="px-3 py-3 font-mono text-xs" style={{ color: 'var(--color-ink-2)' }}>{item.slug}</td>
                     <td className="px-3 py-3">
                       {item.valid ? (
@@ -290,5 +304,22 @@ function Rule({ label, value }: { label: string; value: string }) {
       </div>
       <div>{value}</div>
     </div>
+  );
+}
+
+function RichnessBadge({ level, label }: { level: 'rich' | 'basic' | 'missing'; label: string }) {
+  const config = {
+    rich: { color: 'var(--color-emerald)', bg: 'var(--color-emerald-muted)' },
+    basic: { color: 'var(--color-warning)', bg: 'oklch(75% 0.16 85 / 0.12)' },
+    missing: { color: 'var(--color-error)', bg: 'oklch(65% 0.22 25 / 0.12)' },
+  }[level];
+
+  return (
+    <span
+      className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap"
+      style={{ color: config.color, background: config.bg }}
+    >
+      {label}
+    </span>
   );
 }

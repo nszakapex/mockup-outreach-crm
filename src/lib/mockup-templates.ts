@@ -93,7 +93,7 @@ export function buildPublicMockupUrl(slug: string | null | undefined, fallbackOr
 
 export function parseMockupFeatures(featuresIncluded?: string | null) {
   return (featuresIncluded || '')
-    .split(/[\n,;]+/)
+    .split(/[\n,;|]+/)
     .map((feature) => feature.trim())
     .filter(Boolean)
     .slice(0, 8);

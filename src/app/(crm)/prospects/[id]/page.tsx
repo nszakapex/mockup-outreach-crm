@@ -25,6 +25,7 @@ import LeadScoreBadge from '@/components/LeadScoreBadge';
 import ScoreBar from '@/components/ScoreBar';
 import ErrorBanner from '@/components/ErrorBanner';
 import { upsertAudit, upsertEmailDraft, upsertMockup, useProspect } from '@/lib/hooks';
+import { parseMockupConceptNotes, type RichMockupData } from '@/lib/mockup-rich-data';
 import { buildPublicMockupUrl, getMockupTemplateVariant, getMockupVariantLabel } from '@/lib/mockup-templates';
 import { slugifyBusinessName } from '@/lib/prospect-intake';
 import { PROSPECT_STATUSES, type Audit, type EmailDraft, type Mockup, type Prospect, type ProspectStatus } from '@/lib/types';
@@ -104,6 +105,7 @@ export default function ProspectDetailPage({
   const followUps = prospect.follow_up_tasks || [];
   const mockupPublicUrl = mockup?.slug ? buildPublicMockupUrl(mockup.slug) : mockup?.mockup_url || null;
   const mockupVariant = getMockupTemplateVariant(prospect.niche);
+  const mockupStrategy = mockup ? parseMockupConceptNotes(mockup.concept_notes) : null;
 
   return (
     <div>
@@ -320,6 +322,7 @@ export default function ProspectDetailPage({
                     </div>
                   </div>
                 )}
+                <MockupStrategyPanel rich={mockupStrategy?.rich || {}} />
               </div>
             ) : (
               <p className="text-sm" style={{ color: 'var(--color-ink-3)' }}>No mockup created yet.</p>
@@ -356,6 +359,78 @@ export default function ProspectDetailPage({
             </p>
           </Card>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function MockupStrategyPanel({ rich }: { rich: RichMockupData }) {
+  const hasStrategy = Boolean(
+    rich.current_site_snapshot ||
+      rich.online_presence_status?.length ||
+      rich.visual_direction ||
+      rich.proposed_site_nav?.length ||
+      rich.homepage_sections?.length ||
+      rich.menu_or_offer_items?.length ||
+      rich.trust_signals?.length ||
+      rich.website_issue_examples?.length ||
+      rich.cta_strategy ||
+      rich.local_seo_angle ||
+      rich.content_strategy_angle ||
+      rich.meta_ads_angle
+  );
+
+  return (
+    <div className="pt-3" style={{ borderTop: '1px solid var(--color-divider)' }}>
+      <div className="text-xs font-medium mb-2" style={{ color: 'var(--color-ink-3)' }}>
+        Mockup Strategy
+      </div>
+      {hasStrategy ? (
+        <div className="space-y-3">
+          {rich.current_site_snapshot && <FieldBlock label="Current Site Snapshot" value={rich.current_site_snapshot} />}
+          {rich.visual_direction && <FieldBlock label="Visual Direction" value={rich.visual_direction} />}
+          {rich.cta_strategy && <FieldBlock label="CTA Strategy" value={rich.cta_strategy} />}
+          {rich.local_seo_angle && <FieldBlock label="Local SEO Angle" value={rich.local_seo_angle} />}
+          {rich.content_strategy_angle && <FieldBlock label="Content Strategy" value={rich.content_strategy_angle} />}
+          {rich.meta_ads_angle && <FieldBlock label="Meta Ads Angle" value={rich.meta_ads_angle} />}
+          <StrategyList label="Online Presence Status" items={rich.online_presence_status} />
+          <StrategyList label="Proposed Site Nav" items={rich.proposed_site_nav} />
+          <StrategyList label="Homepage Sections" items={rich.homepage_sections} />
+          <StrategyList label="Menu / Offers" items={rich.menu_or_offer_items} />
+          <StrategyList label="Trust Signals" items={rich.trust_signals} />
+          <StrategyList label="Website Issues" items={rich.website_issue_examples} />
+        </div>
+      ) : (
+        <p className="text-xs" style={{ color: 'var(--color-ink-3)' }}>
+          No rich mockup strategy fields yet.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function StrategyList({ label, items }: { label: string; items?: string[] }) {
+  if (!items || items.length === 0) return null;
+
+  return (
+    <div>
+      <span className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>
+        {label}
+      </span>
+      <div className="mt-1 flex flex-wrap gap-1.5">
+        {items.slice(0, 6).map((item) => (
+          <span
+            key={item}
+            className="rounded-full px-2 py-1 text-xs"
+            style={{
+              background: 'var(--color-paper-3)',
+              border: '1px solid var(--color-divider)',
+              color: 'var(--color-ink-2)',
+            }}
+          >
+            {item}
+          </span>
+        ))}
       </div>
     </div>
   );

@@ -1,4 +1,11 @@
 import { getDataSource, getSupabase, SUPABASE_QUERY_TIMEOUT_MS } from './supabase';
+import {
+  encodeMockupConceptNotes,
+  getMockupRichness,
+  hasRichMockupData,
+  normalizeRichMockupData,
+  type MockupRichness,
+} from './mockup-rich-data';
 import { PROSPECT_STATUSES, type Prospect, type ProspectStatus } from './types';
 
 type SupabaseErrorLike = {
@@ -35,6 +42,24 @@ export type ProspectIntakeInput = {
   primary_cta?: string | null;
   features_included?: string | string[] | null;
   concept_notes?: string | null;
+  brand_style_notes?: string | null;
+  visual_direction?: string | null;
+  primary_colors?: string | string[] | null;
+  secondary_colors?: string | string[] | null;
+  menu_or_offer_items?: string | string[] | null;
+  trust_signals?: string | string[] | null;
+  website_issue_examples?: string | string[] | null;
+  cta_strategy?: string | null;
+  local_seo_angle?: string | null;
+  content_strategy_angle?: string | null;
+  meta_ads_angle?: string | null;
+  original_site_notes?: string | null;
+  original_site_url?: string | null;
+  inspiration_notes?: string | null;
+  current_site_snapshot?: string | null;
+  online_presence_status?: string | string[] | null;
+  proposed_site_nav?: string | string[] | null;
+  homepage_sections?: string | string[] | null;
   email_subject?: string | null;
   email_body?: string | null;
 };
@@ -61,6 +86,7 @@ export type HermesImportPreview = {
   duplicate: boolean;
   errors: string[];
   warnings: string[];
+  mockupRichness: MockupRichness;
 };
 
 const STATUS_ALIASES: Record<string, ProspectStatus> = {
@@ -173,7 +199,8 @@ function hasMockupData(input: ProspectIntakeInput) {
       clean(input.hero_subheadline) ||
       clean(input.primary_cta) ||
       stringifyFeatureList(input.features_included) ||
-      clean(input.concept_notes)
+      clean(input.concept_notes) ||
+      hasRichMockupData(input as Record<string, unknown>)
   );
 }
 
@@ -319,7 +346,10 @@ export async function createProspectBundle(
       hero_subheadline: clean(input.hero_subheadline),
       primary_cta: clean(input.primary_cta),
       features_included: stringifyFeatureList(input.features_included),
-      concept_notes: clean(input.concept_notes),
+      concept_notes: encodeMockupConceptNotes(
+        clean(input.concept_notes),
+        normalizeRichMockupData(input as Record<string, unknown>)
+      ),
     };
 
     const { data: mockup, error: mockupError } = await withSupabaseTimeout(
@@ -400,6 +430,40 @@ export function normalizeHermesJsonRecord(value: unknown): ProspectIntakeInput |
       ? record.features_included.map((item) => String(item))
       : clean(record.features_included),
     concept_notes: clean(record.concept_notes),
+    brand_style_notes: clean(record.brand_style_notes),
+    visual_direction: clean(record.visual_direction),
+    primary_colors: Array.isArray(record.primary_colors)
+      ? record.primary_colors.map((item) => String(item))
+      : clean(record.primary_colors),
+    secondary_colors: Array.isArray(record.secondary_colors)
+      ? record.secondary_colors.map((item) => String(item))
+      : clean(record.secondary_colors),
+    menu_or_offer_items: Array.isArray(record.menu_or_offer_items)
+      ? record.menu_or_offer_items.map((item) => String(item))
+      : clean(record.menu_or_offer_items),
+    trust_signals: Array.isArray(record.trust_signals)
+      ? record.trust_signals.map((item) => String(item))
+      : clean(record.trust_signals),
+    website_issue_examples: Array.isArray(record.website_issue_examples)
+      ? record.website_issue_examples.map((item) => String(item))
+      : clean(record.website_issue_examples),
+    cta_strategy: clean(record.cta_strategy),
+    local_seo_angle: clean(record.local_seo_angle),
+    content_strategy_angle: clean(record.content_strategy_angle),
+    meta_ads_angle: clean(record.meta_ads_angle),
+    original_site_notes: clean(record.original_site_notes),
+    original_site_url: clean(record.original_site_url),
+    inspiration_notes: clean(record.inspiration_notes),
+    current_site_snapshot: clean(record.current_site_snapshot),
+    online_presence_status: Array.isArray(record.online_presence_status)
+      ? record.online_presence_status.map((item) => String(item))
+      : clean(record.online_presence_status),
+    proposed_site_nav: Array.isArray(record.proposed_site_nav)
+      ? record.proposed_site_nav.map((item) => String(item))
+      : clean(record.proposed_site_nav),
+    homepage_sections: Array.isArray(record.homepage_sections)
+      ? record.homepage_sections.map((item) => String(item))
+      : clean(record.homepage_sections),
     email_subject: clean(record.email_subject),
     email_body: clean(record.email_body),
     notes: clean(record.notes),
@@ -466,6 +530,7 @@ export async function previewHermesImport(records: ProspectIntakeInput[]) {
       duplicate,
       errors: duplicate ? [...validation.errors, 'Duplicate website_url or public_email detected.'] : validation.errors,
       warnings: validation.warnings,
+      mockupRichness: getMockupRichness(record as Record<string, unknown>, hasMockupData(record)),
     };
   });
 }
