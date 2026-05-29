@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { sendOutreachEmail } from '@/lib/server/outreach';
+import { sendOutreachEmail, serializeOutreachError } from '@/lib/server/outreach';
 import { getRequestOrigin } from '@/lib/server/request';
-import { getErrorMessage } from '@/lib/server/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,9 +19,6 @@ export async function POST(request: Request) {
     const result = await sendOutreachEmail(prospectId, getRequestOrigin(request));
     return NextResponse.json(result);
   } catch (error) {
-    return NextResponse.json(
-      { ok: false, errorMessage: getErrorMessage(error) },
-      { status: 400 }
-    );
+    return NextResponse.json(serializeOutreachError(error), { status: 400 });
   }
 }

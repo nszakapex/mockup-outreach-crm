@@ -1,5 +1,11 @@
 import 'server-only';
 
+import {
+  encodeMimeSubject,
+  normalizeMimeLineEndings,
+  sanitizeEmailAddress,
+  sanitizeHeaderValue,
+} from '@/lib/email-sanitization';
 import { buildPublicMockupUrl } from '@/lib/mockup-templates';
 import { getErrorMessage, getServerSupabase } from './supabase';
 
@@ -60,6 +66,7 @@ export type SendQueueItem = {
   emailDraftId: string;
   businessName: string;
   toEmail: string;
+  fromEmail: string;
   subject: string;
   body: string;
   mockupUrl: string;
@@ -82,6 +89,41 @@ export type RecentSendItem = {
   errorMessage: string | null;
 };
 
+type SanitizedSendFields = {
+  to: string;
+  from: string;
+  subject: string;
+};
+
+export class OutreachValidationError extends Error {
+  failedStep: string;
+  field: string;
+
+  constructor(failedStep: string, field: string, message: string) {
+    super(message);
+    this.name = 'OutreachValidationError';
+    this.failedStep = failedStep;
+    this.field = field;
+  }
+}
+
+export class GmailSendError extends Error {
+  failedStep = 'gmail_api_send';
+  gmailError: string;
+  sanitizedTo: string;
+  sanitizedFrom: string;
+  sanitizedSubject: string;
+
+  constructor(message: string, sanitized: SanitizedSendFields) {
+    super(message);
+    this.name = 'GmailSendError';
+    this.gmailError = message;
+    this.sanitizedTo = sanitized.to;
+    this.sanitizedFrom = sanitized.from;
+    this.sanitizedSubject = sanitized.subject;
+  }
+}
+
 export function getOutreachConfig() {
   const rawCap = Number(process.env.OUTREACH_DAILY_SEND_CAP || DEFAULT_DAILY_CAP);
   return {
@@ -93,6 +135,31 @@ export function getOutreachConfig() {
     testMode: (process.env.OUTREACH_EMAIL_TEST_MODE ?? 'true').toLowerCase() !== 'false',
     dailyCap: Number.isFinite(rawCap) && rawCap > 0 ? Math.floor(rawCap) : DEFAULT_DAILY_CAP,
   };
+}
+
+export function serializeOutreachError(error: unknown) {
+  if (error instanceof OutreachValidationError) {
+    return {
+      ok: false,
+      failedStep: error.failedStep,
+      field: error.field,
+      errorMessage: error.message,
+    };
+  }
+
+  if (error instanceof GmailSendError) {
+    return {
+      ok: false,
+      failedStep: error.failedStep,
+      gmailError: error.gmailError,
+      sanitizedTo: error.sanitizedTo,
+      sanitizedFrom: error.sanitizedFrom,
+      sanitizedSubject: error.sanitizedSubject,
+      errorMessage: error.message,
+    };
+  }
+
+  return { ok: false, errorMessage: getErrorMessage(error) };
 }
 
 export async function getOutreachStats() {
@@ -118,6 +185,7 @@ export async function getOutreachStats() {
 }
 
 export async function getSendQueue(origin: string) {
+  const config = getOutreachConfig();
   const [stats, prospects, optOutEmails, successfulSends, recentSends] = await Promise.all([
     getOutreachStats(),
     fetchQueueProspects(),
@@ -133,7 +201,7 @@ export async function getSendQueue(origin: string) {
   );
 
   const items = prospects
-    .map((prospect) => buildQueueItem(prospect, origin, optOutEmails, successfulKeys))
+    .map((prospect) => buildQueueItem(prospect, origin, optOutEmails, successfulKeys, config))
     .filter((item): item is SendQueueItem => Boolean(item))
     .filter((item) => item.sendable);
 
@@ -173,7 +241,7 @@ export async function validateSendEligibility(
       .filter((send) => send.email_draft_id)
       .map((send) => sendKey(send.prospect_id, send.email_draft_id as string))
   );
-  const item = buildQueueItem(prospect, origin, optOutEmails, successfulKeys);
+  const item = buildQueueItem(prospect, origin, optOutEmails, successfulKeys, getOutreachConfig());
 
   if (!item) throw new Error('Prospect is missing a sendable email draft.');
   if ((options.enforceDailyCap ?? true) && stats.remainingToday <= 0) {
@@ -181,7 +249,11 @@ export async function validateSendEligibility(
   }
 
   if (item.blockedReasons.length > 0) {
-    throw new Error(item.blockedReasons.join(' '));
+    throw new OutreachValidationError(
+      'validate_send_eligibility',
+      validationFieldFromReasons(item.blockedReasons),
+      item.blockedReasons.join(' ')
+    );
   }
 
   return { item, stats };
@@ -191,6 +263,7 @@ export async function sendOutreachEmail(prospectId: string, origin: string) {
   const { item } = await validateSendEligibility(prospectId, origin);
   const config = getOutreachConfig();
   const supabase = getServerSupabase();
+  const sanitized = sanitizeSendFields(item.toEmail, item.fromEmail, item.subject);
   const body = buildEmailBody(item);
   const now = new Date().toISOString();
   let providerMessageId: string | null = null;
@@ -205,9 +278,9 @@ export async function sendOutreachEmail(prospectId: string, origin: string) {
         prospect_id: item.prospectId,
         email_draft_id: item.emailDraftId,
         provider: config.testMode ? 'test' : 'gmail',
-        to_email: item.toEmail,
-        from_email: config.gmailSenderEmail || 'test-mode@mockup-outreach-crm.local',
-        subject: item.subject,
+        to_email: sanitized.to,
+        from_email: sanitized.from,
+        subject: sanitized.subject,
         body,
         status: 'queued',
         provider_message_id: null,
@@ -223,11 +296,10 @@ export async function sendOutreachEmail(prospectId: string, origin: string) {
     if (config.testMode) {
       providerMessageId = `test_${Date.now()}`;
     } else {
-      if (!config.gmailSenderEmail) throw new Error('GMAIL_SENDER_EMAIL is not configured.');
       const gmailResult = await sendGmailOutreachEmail({
-        to: item.toEmail,
-        from: config.gmailSenderEmail,
-        subject: item.subject,
+        to: sanitized.to,
+        from: sanitized.from,
+        subject: sanitized.subject,
         body,
       });
       providerMessageId = gmailResult.id;
@@ -297,16 +369,16 @@ export async function sendOutreachEmail(prospectId: string, origin: string) {
 
 export async function skipOutreachEmail(prospectId: string, origin: string) {
   const { item } = await validateSendEligibility(prospectId, origin, { enforceDailyCap: false });
-  const config = getOutreachConfig();
   const supabase = getServerSupabase();
+  const sanitized = sanitizeSendFields(item.toEmail, item.fromEmail, item.subject);
 
   const { error: insertError } = await supabase.from('outreach_sends').insert({
     prospect_id: item.prospectId,
     email_draft_id: item.emailDraftId,
     provider: 'test',
-    to_email: item.toEmail,
-    from_email: config.gmailSenderEmail || 'not-sent',
-    subject: item.subject,
+    to_email: sanitized.to,
+    from_email: sanitized.from,
+    subject: sanitized.subject,
     body: buildEmailBody(item),
     status: 'skipped',
     provider_message_id: null,
@@ -334,8 +406,9 @@ export async function sendGmailOutreachEmail({
   subject: string;
   body: string;
 }) {
+  const sanitized = sanitizeSendFields(to, from, subject);
   const accessToken = await getGmailAccessToken();
-  const raw = encodeBase64Url(buildMimeMessage({ to, from, subject, body }));
+  const raw = encodeBase64Url(buildMimeMessage({ ...sanitized, body }));
 
   const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
     method: 'POST',
@@ -345,11 +418,13 @@ export async function sendGmailOutreachEmail({
     },
     body: JSON.stringify({ raw }),
     cache: 'no-store',
+  }).catch((error) => {
+    throw new GmailSendError(`Gmail request failed: ${getErrorMessage(error)}`, sanitized);
   });
 
   const data = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new Error(data?.error?.message || `Gmail send failed with HTTP ${response.status}`);
+    throw new GmailSendError(data?.error?.message || `Gmail send failed with HTTP ${response.status}`, sanitized);
   }
 
   return { id: data?.id as string | null };
@@ -384,7 +459,12 @@ async function fetchOptOutEmails() {
   const { data, error } = await supabase.from('opt_outs').select('email');
 
   if (error) throw new Error(`Fetch opt-outs: ${error.message}`);
-  return new Set((data || []).map((row) => String(row.email).toLowerCase()));
+  return new Set(
+    (data || [])
+      .map((row) => sanitizeEmailAddress(String(row.email)))
+      .filter((result): result is { ok: true; value: string } => result.ok)
+      .map((result) => result.value)
+  );
 }
 
 async function fetchSuccessfulSends(prospectId?: string) {
@@ -401,13 +481,50 @@ async function fetchSuccessfulSends(prospectId?: string) {
   return (data || []) as OutreachSendRow[];
 }
 
+function sanitizeSendFields(to: string, from: string, subject: string): SanitizedSendFields {
+  const toResult = sanitizeEmailAddress(to);
+  if (!toResult.ok) throw new OutreachValidationError('sanitize_gmail_headers', 'to', toResult.errorMessage);
+
+  const fromResult = sanitizeEmailAddress(from);
+  if (!fromResult.ok) throw new OutreachValidationError('sanitize_gmail_headers', 'from', fromResult.errorMessage);
+
+  const subjectResult = sanitizeHeaderValue(subject);
+  if (!subjectResult.ok) {
+    throw new OutreachValidationError('sanitize_gmail_headers', 'subject', subjectResult.errorMessage);
+  }
+
+  return {
+    to: toResult.value,
+    from: fromResult.value,
+    subject: subjectResult.value,
+  };
+}
+
+function getSenderEmailForMode(config = getOutreachConfig()) {
+  if (config.gmailSenderEmail) return config.gmailSenderEmail;
+  return config.testMode ? 'test-mode@mockup-outreach-crm.local' : '';
+}
+
+function validationFieldFromReasons(reasons: string[]) {
+  const joined = reasons.join(' ').toLowerCase();
+  if (joined.includes('public_email') || joined.includes('recipient') || joined.includes('opted out')) return 'to';
+  if (joined.includes('sender') || joined.includes('gmail_sender_email')) return 'from';
+  if (joined.includes('subject')) return 'subject';
+  if (joined.includes('mockup')) return 'mockup_url';
+  return 'eligibility';
+}
+
 function buildQueueItem(
   prospect: ProspectRow,
   origin: string,
   optOutEmails: Set<string>,
-  successfulSendKeys: Set<string>
+  successfulSendKeys: Set<string>,
+  config = getOutreachConfig()
 ) {
   const blockedReasons: string[] = [];
+  const fromCandidate = getSenderEmailForMode(config);
+  const fromValidation = sanitizeEmailAddress(fromCandidate);
+  const toValidation = prospect.public_email ? sanitizeEmailAddress(prospect.public_email) : null;
 
   if (prospect.status !== 'approved_to_send') {
     blockedReasons.push('Prospect must be approved through Telegram before sending.');
@@ -419,15 +536,24 @@ function buildQueueItem(
 
   if (!prospect.public_email) {
     blockedReasons.push('Prospect is missing public_email.');
-  } else if (optOutEmails.has(prospect.public_email.toLowerCase())) {
+  } else if (!toValidation?.ok) {
+    blockedReasons.push(`Invalid public_email: ${toValidation?.errorMessage || 'Email address is invalid.'}`);
+  } else if (optOutEmails.has(toValidation.value)) {
     blockedReasons.push('Prospect email is opted out.');
+  }
+
+  if (!fromCandidate) {
+    blockedReasons.push('GMAIL_SENDER_EMAIL is not configured.');
+  } else if (!fromValidation.ok) {
+    blockedReasons.push(`Invalid sender email: ${fromValidation.errorMessage}`);
   }
 
   const emailDraft = pickEmailDraft(prospect.email_drafts);
   if (!emailDraft) {
     blockedReasons.push('Prospect is missing an approved email draft.');
   } else {
-    if (!emailDraft.subject?.trim()) blockedReasons.push('Email draft is missing a subject.');
+    const subjectValidation = sanitizeHeaderValue(emailDraft.subject);
+    if (!subjectValidation.ok) blockedReasons.push(`Invalid email subject: ${subjectValidation.errorMessage}`);
     if (!emailDraft.body?.trim()) blockedReasons.push('Email draft is missing a body.');
     if (successfulSendKeys.has(sendKey(prospect.id, emailDraft.id))) {
       blockedReasons.push('This prospect/email draft is already queued, sent, or skipped.');
@@ -442,13 +568,17 @@ function buildQueueItem(
   if (!emailDraft || !prospect.public_email || !mockup) return null;
 
   const mockupUrl = buildMockupUrl(mockup, origin);
+  const sanitizedTo = toValidation?.ok ? toValidation.value : prospect.public_email;
+  const sanitizedFrom = fromValidation.ok ? fromValidation.value : fromCandidate;
+  const sanitizedSubject = sanitizeHeaderValue(emailDraft.subject);
 
   return {
     prospectId: prospect.id,
     emailDraftId: emailDraft.id,
     businessName: prospect.business_name,
-    toEmail: prospect.public_email,
-    subject: emailDraft.subject,
+    toEmail: sanitizedTo,
+    fromEmail: sanitizedFrom,
+    subject: sanitizedSubject.ok ? sanitizedSubject.value : emailDraft.subject,
     body: replaceMockupReferences(emailDraft.body, mockupUrl),
     mockupUrl,
     status: prospect.status,
@@ -553,21 +683,18 @@ function buildMimeMessage({
   subject: string;
   body: string;
 }) {
+  const normalizedBody = normalizeMimeLineEndings(body);
+
   return [
     `From: ${from}`,
     `To: ${to}`,
-    `Subject: ${encodeMimeHeader(subject)}`,
+    `Subject: ${encodeMimeSubject(subject)}`,
     'MIME-Version: 1.0',
     'Content-Type: text/plain; charset=UTF-8',
-    'Content-Transfer-Encoding: 7bit',
+    'Content-Transfer-Encoding: 8bit',
     '',
-    body,
+    normalizedBody,
   ].join('\r\n');
-}
-
-function encodeMimeHeader(value: string) {
-  if (/^[\x00-\x7F]*$/.test(value)) return value;
-  return `=?UTF-8?B?${Buffer.from(value, 'utf8').toString('base64')}?=`;
 }
 
 function encodeBase64Url(value: string) {

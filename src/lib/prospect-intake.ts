@@ -6,6 +6,7 @@ import {
   normalizeRichMockupData,
   type MockupRichness,
 } from './mockup-rich-data';
+import { sanitizeEmailAddress } from './email-sanitization';
 import { PROSPECT_STATUSES, type Prospect, type ProspectStatus } from './types';
 
 type SupabaseErrorLike = {
@@ -146,7 +147,13 @@ function normalizeWebsite(value: string | null | undefined) {
 }
 
 function normalizeEmail(value: string | null | undefined) {
-  return clean(value)?.toLowerCase() ?? null;
+  const sanitized = sanitizeEmailAddress(value);
+  return sanitized.ok ? sanitized.value : null;
+}
+
+function normalizeEmailForInput(value: unknown) {
+  const sanitized = sanitizeEmailAddress(value);
+  return sanitized.ok ? sanitized.value : clean(value);
 }
 
 export function formatSupabaseError(action: string, error: SupabaseErrorLike) {
@@ -209,7 +216,7 @@ function hasEmailData(input: ProspectIntakeInput) {
 }
 
 export function deriveHermesStatus(input: ProspectIntakeInput): ProspectStatus {
-  if (clean(input.public_email) && hasEmailData(input)) return 'email_ready';
+  if (normalizeEmail(input.public_email) && hasEmailData(input)) return 'email_ready';
   if (hasMockupData(input)) return 'mockup_ready';
   if (hasAuditData(input)) return 'audited';
   return 'qualified';
@@ -230,8 +237,12 @@ function validateBaseInput(input: ProspectIntakeInput, requireDestinationIdentit
   if (requireDestinationIdentity && !clean(input.website_url) && !clean(input.public_email)) {
     errors.push('website_url or public_email is required for duplicate detection.');
   }
-  if (!clean(input.public_email)) {
+  const publicEmail = clean(input.public_email);
+  if (!publicEmail) {
     warnings.push('No public_email; this prospect will not be eligible for Telegram approval yet.');
+  } else {
+    const emailValidation = sanitizeEmailAddress(publicEmail);
+    if (!emailValidation.ok) errors.push(`public_email is invalid: ${emailValidation.errorMessage}`);
   }
 
   return { errors, warnings };
@@ -278,6 +289,7 @@ export async function createProspectBundle(
     return { data: null, error: baseValidation.errors.join(' ') };
   }
 
+  const normalizedPublicEmail = normalizeEmail(input.public_email);
   const status =
     options.statusMode === 'derive'
       ? deriveHermesStatus(input)
@@ -290,7 +302,7 @@ export async function createProspectBundle(
       business_name: cleanRequired(input.business_name),
       niche: cleanRequired(input.niche),
       website_url: clean(input.website_url),
-      public_email: clean(input.public_email),
+      public_email: normalizedPublicEmail,
       phone: clean(input.phone),
       city: clean(input.city) ?? '',
       state: clean(input.state) ?? 'CO',
@@ -408,7 +420,7 @@ export function normalizeHermesJsonRecord(value: unknown): ProspectIntakeInput |
     business_name: cleanRequired(record.business_name),
     niche: cleanRequired(record.niche),
     website_url: clean(record.website_url),
-    public_email: clean(record.public_email),
+    public_email: normalizeEmailForInput(record.public_email),
     phone: clean(record.phone),
     city: clean(record.city),
     state: clean(record.state),

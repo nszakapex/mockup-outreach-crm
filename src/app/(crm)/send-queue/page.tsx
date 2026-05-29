@@ -27,6 +27,7 @@ type SendQueueItem = {
   emailDraftId: string;
   businessName: string;
   toEmail: string;
+  fromEmail: string;
   subject: string;
   body: string;
   mockupUrl: string;
@@ -273,7 +274,7 @@ export default function SendQueuePage() {
                       <StatusBadge status={item.status} />
                     </div>
                     <div className="mt-1 text-sm" style={{ color: 'var(--color-ink-3)' }}>
-                      {item.toEmail}
+                      To: {item.toEmail}
                     </div>
                   </div>
 
@@ -317,11 +318,18 @@ export default function SendQueuePage() {
                   style={{ borderTop: '1px solid var(--color-divider)' }}
                 >
                   <div className="min-w-0">
-                    <div className="text-xs font-medium mb-1.5" style={{ color: 'var(--color-ink-3)' }}>
-                      Subject
-                    </div>
-                    <div className="text-sm font-medium" style={{ color: 'var(--color-ink)' }}>
-                      {item.subject}
+                    <div
+                      className="grid grid-cols-1 gap-2 rounded-lg p-3 text-xs sm:grid-cols-2"
+                      style={{
+                        background: 'var(--color-paper-3)',
+                        border: '1px solid var(--color-divider)',
+                        color: 'var(--color-ink-2)',
+                      }}
+                    >
+                      <PreviewField label="Sanitized To" value={item.toEmail} />
+                      <PreviewField label="Sanitized From" value={item.fromEmail} />
+                      <PreviewField label="Sanitized Subject" value={item.subject} className="sm:col-span-2" />
+                      <PreviewField label="Mockup URL" value={item.mockupUrl} className="sm:col-span-2" />
                     </div>
                     <div
                       className="mt-3 max-h-32 overflow-y-auto whitespace-pre-wrap rounded-lg p-3 text-xs leading-relaxed"
@@ -370,6 +378,19 @@ export default function SendQueuePage() {
       )}
 
       {!loading && !error && <RecentSendsSection recentSends={recentSends} />}
+    </div>
+  );
+}
+
+function PreviewField({ label, value, className = '' }: { label: string; value: string; className?: string }) {
+  return (
+    <div className={`min-w-0 ${className}`}>
+      <div className="font-medium uppercase" style={{ color: 'var(--color-ink-3)' }}>
+        {label}
+      </div>
+      <div className="mt-1 truncate font-medium" style={{ color: 'var(--color-ink)' }} title={value}>
+        {value}
+      </div>
     </div>
   );
 }
