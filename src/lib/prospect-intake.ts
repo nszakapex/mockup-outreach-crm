@@ -6,6 +6,14 @@ import {
   normalizeRichMockupData,
   type MockupRichness,
 } from './mockup-rich-data';
+import {
+  getSocialAuditRichness,
+  normalizeSocialAuditData,
+  type CallFollowUpAngle,
+  type SocialAuditRichness,
+  type SocialAuditScorecard,
+  type SocialContentPlan,
+} from './social-audit-data';
 import { sanitizeEmailAddress } from './email-sanitization';
 import { PROSPECT_STATUSES, type Prospect, type ProspectStatus } from './types';
 
@@ -61,6 +69,12 @@ export type ProspectIntakeInput = {
   online_presence_status?: string | string[] | null;
   proposed_site_nav?: string | string[] | null;
   homepage_sections?: string | string[] | null;
+  social_audit?: SocialAuditScorecard | null;
+  content_opportunity?: string | null;
+  content_plan?: SocialContentPlan | null;
+  website_social_gap?: string | null;
+  first_email_angle?: string | null;
+  call_follow_up_angle?: CallFollowUpAngle | null;
   email_subject?: string | null;
   email_body?: string | null;
 };
@@ -88,6 +102,7 @@ export type HermesImportPreview = {
   errors: string[];
   warnings: string[];
   mockupRichness: MockupRichness;
+  socialAuditRichness: SocialAuditRichness;
 };
 
 const STATUS_ALIASES: Record<string, ProspectStatus> = {
@@ -138,6 +153,10 @@ function clampLeadScore(value: unknown, fallback: number) {
 function stringifyFeatureList(value: string | string[] | null | undefined) {
   if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean).join(', ');
   return clean(value);
+}
+
+function cleanRecord(value: unknown) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
 }
 
 function normalizeWebsite(value: string | null | undefined) {
@@ -360,7 +379,8 @@ export async function createProspectBundle(
       features_included: stringifyFeatureList(input.features_included),
       concept_notes: encodeMockupConceptNotes(
         clean(input.concept_notes),
-        normalizeRichMockupData(input as Record<string, unknown>)
+        normalizeRichMockupData(input as Record<string, unknown>),
+        normalizeSocialAuditData(input as Record<string, unknown>)
       ),
     };
 
@@ -476,6 +496,12 @@ export function normalizeHermesJsonRecord(value: unknown): ProspectIntakeInput |
     homepage_sections: Array.isArray(record.homepage_sections)
       ? record.homepage_sections.map((item) => String(item))
       : clean(record.homepage_sections),
+    social_audit: cleanRecord(record.social_audit) as SocialAuditScorecard | null,
+    content_opportunity: clean(record.content_opportunity),
+    content_plan: cleanRecord(record.content_plan) as SocialContentPlan | null,
+    website_social_gap: clean(record.website_social_gap),
+    first_email_angle: clean(record.first_email_angle),
+    call_follow_up_angle: cleanRecord(record.call_follow_up_angle) as CallFollowUpAngle | null,
     email_subject: clean(record.email_subject),
     email_body: clean(record.email_body),
     notes: clean(record.notes),
@@ -543,6 +569,7 @@ export async function previewHermesImport(records: ProspectIntakeInput[]) {
       errors: duplicate ? [...validation.errors, 'Duplicate website_url or public_email detected.'] : validation.errors,
       warnings: validation.warnings,
       mockupRichness: getMockupRichness(record as Record<string, unknown>, hasMockupData(record)),
+      socialAuditRichness: getSocialAuditRichness(record as Record<string, unknown>),
     };
   });
 }

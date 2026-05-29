@@ -185,6 +185,59 @@ Recommended fields:
 
 Keep the data practical and business-specific: current site snapshot, online presence issues, proposed nav, homepage section ideas, actual menu/offers, trust signals, CTA path, local search angle, and content/ad strategy. Existing basic fields still work when these are missing.
 
+## Social Audit JSON Fields
+
+Hermes can also create public social audit pages at:
+
+```text
+https://mockupcrm67.netlify.app/social-audits/[mockup_slug]
+```
+
+These fields are stored in `mockups.concept_notes` as JSON with the mockup data, so no schema migration is required.
+
+Recommended fields:
+
+```json
+{
+  "social_audit": {
+    "instagram_status": "Posts are inconsistent and rarely use reels.",
+    "facebook_status": "Facebook has useful updates but weak calls to action.",
+    "posting_consistency": "Long gaps between posts.",
+    "content_quality": "Strong visual product, but posts do not show the customer experience.",
+    "reels_video_usage": "Rare or absent.",
+    "engagement_quality": "Some local interest, but few posts invite replies or clicks.",
+    "cta_usage": "Few clear prompts to order, book, visit, donate, or request a quote.",
+    "visual_branding": "No repeatable weekly content format.",
+    "overall_social_score": 58,
+    "why_underperforming": ["No weekly content system", "Short video is underused", "Offers are not promoted clearly"]
+  },
+  "content_opportunity": "Turn signature menu items and community moments into weekly reels.",
+  "content_plan": {
+    "week_1": "Film two signature items and one owner/staff story.",
+    "week_2": "Post a reel series around the strongest offer.",
+    "week_3": "Capture customer-use moments and a clear CTA.",
+    "week_4": "Review saves, replies, and clicks, then repeat the strongest theme.",
+    "recommended_posting_cadence": "2 reels plus 2 to 4 posts/stories per week",
+    "recommended_reels_per_week": "2",
+    "shoot_frequency": "One short content shoot per week",
+    "priority_content_themes": ["featured items", "behind the scenes", "local proof", "clear CTA"]
+  },
+  "meta_ads_angle": "Local awareness and retargeting ads around the strongest weekly offer.",
+  "website_social_gap": "Social posts do not lead to a simple website action.",
+  "first_email_angle": "Mention one specific social/content observation and link the audit.",
+  "call_follow_up_angle": {
+    "opening_line": "I sent over a short social audit with a few content gaps I noticed.",
+    "strongest_observation": "The business has a visual product, but no repeatable reels system.",
+    "first_question": "Are you currently planning content week to week or just posting when you can?",
+    "likely_objection": "We do not have time to film much.",
+    "objection_response": "That is why I would start with one short shoot and two reusable weekly reels.",
+    "goal_of_call": "Book a quick content walkthrough."
+  }
+}
+```
+
+Use `[Social Audit Link]` in an email draft to insert the public social audit URL. `[Mockup Link]` still inserts the public mockup URL. If the social audit placeholder is not present, the sender does not append that link automatically.
+
 ## Supabase Migration
 
 The Gmail queue needs the `outreach_sends` table from `supabase/schema.sql`. Run the outreach-sends SQL in Supabase before using `/send-queue` or `/api/outreach/send`.

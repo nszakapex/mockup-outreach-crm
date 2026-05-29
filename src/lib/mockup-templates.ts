@@ -80,15 +80,30 @@ export function getMockupVariantLabel(variant: MockupTemplateVariant) {
 }
 
 export function buildPublicMockupUrl(slug: string | null | undefined, fallbackOrigin?: string | null) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
-  const base = (appUrl || fallbackOrigin || 'https://mockupcrm67.netlify.app').replace(/\/+$/, '');
-  const cleanSlug = (slug || '')
-    .trim()
-    .replace(/^https?:\/\/[^/]+\/mockups\//i, '')
-    .replace(/^\/?mockups\//i, '')
-    .replace(/^\/+/, '');
+  const base = getPublicBaseUrl(fallbackOrigin);
+  const cleanSlug = cleanPublicSlug(slug, 'mockups');
 
   return cleanSlug ? `${base}/mockups/${encodeURIComponent(cleanSlug)}` : base;
+}
+
+export function buildPublicSocialAuditUrl(slug: string | null | undefined, fallbackOrigin?: string | null) {
+  const base = getPublicBaseUrl(fallbackOrigin);
+  const cleanSlug = cleanPublicSlug(slug, 'social-audits');
+
+  return cleanSlug ? `${base}/social-audits/${encodeURIComponent(cleanSlug)}` : base;
+}
+
+function getPublicBaseUrl(fallbackOrigin?: string | null) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  return (appUrl || fallbackOrigin || 'https://mockupcrm67.netlify.app').replace(/\/+$/, '');
+}
+
+function cleanPublicSlug(slug: string | null | undefined, route: 'mockups' | 'social-audits') {
+  return (slug || '')
+    .trim()
+    .replace(new RegExp(`^https?:\\/\\/[^/]+\\/${route}\\/`, 'i'), '')
+    .replace(new RegExp(`^\\/?${route}\\/`, 'i'), '')
+    .replace(/^\/+/, '');
 }
 
 export function parseMockupFeatures(featuresIncluded?: string | null) {

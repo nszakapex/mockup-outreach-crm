@@ -26,8 +26,9 @@ import ScoreBar from '@/components/ScoreBar';
 import ErrorBanner from '@/components/ErrorBanner';
 import { upsertAudit, upsertEmailDraft, upsertMockup, useProspect } from '@/lib/hooks';
 import { parseMockupConceptNotes, type RichMockupData } from '@/lib/mockup-rich-data';
-import { buildPublicMockupUrl, getMockupTemplateVariant, getMockupVariantLabel } from '@/lib/mockup-templates';
+import { buildPublicMockupUrl, buildPublicSocialAuditUrl, getMockupTemplateVariant, getMockupVariantLabel } from '@/lib/mockup-templates';
 import { slugifyBusinessName } from '@/lib/prospect-intake';
+import { parseSocialAuditConceptNotes, type SocialAuditData } from '@/lib/social-audit-data';
 import { PROSPECT_STATUSES, type Audit, type EmailDraft, type Mockup, type Prospect, type ProspectStatus } from '@/lib/types';
 
 const STATUS_ACTIONS: { status: ProspectStatus; label: string; variant: 'primary' | 'secondary' | 'danger' }[] = [
@@ -104,8 +105,10 @@ export default function ProspectDetailPage({
   const emailDraft = prospect.email_drafts?.[0];
   const followUps = prospect.follow_up_tasks || [];
   const mockupPublicUrl = mockup?.slug ? buildPublicMockupUrl(mockup.slug) : mockup?.mockup_url || null;
+  const socialAuditPublicUrl = mockup?.slug ? buildPublicSocialAuditUrl(mockup.slug) : null;
   const mockupVariant = getMockupTemplateVariant(prospect.niche);
   const mockupStrategy = mockup ? parseMockupConceptNotes(mockup.concept_notes) : null;
+  const socialAuditStrategy = mockup ? parseSocialAuditConceptNotes(mockup.concept_notes) : {};
 
   return (
     <div>
@@ -329,6 +332,69 @@ export default function ProspectDetailPage({
             )}
           </Card>
 
+          <Card title="Social Audit" action={socialAuditPublicUrl ? (
+            <a href={socialAuditPublicUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-medium hover:underline flex items-center gap-1" style={{ color: 'var(--color-accent)' }}>
+              Open Social Audit <ExternalLink size={10} />
+            </a>
+          ) : undefined}>
+            {mockup ? (
+              <div className="space-y-3">
+                {!mockup.slug && (
+                  <div
+                    className="rounded-lg p-3 text-xs"
+                    style={{
+                      background: 'oklch(75% 0.16 85 / 0.08)',
+                      border: '1px solid oklch(75% 0.16 85 / 0.2)',
+                      color: 'var(--color-warning)',
+                    }}
+                  >
+                    Missing mockup slug. Add a slug before sharing a social audit link.
+                  </div>
+                )}
+                {socialAuditPublicUrl && (
+                  <div>
+                    <span className="text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>Public Social Audit URL</span>
+                    <div
+                      className="mt-1.5 rounded-lg p-3 text-xs break-all"
+                      style={{
+                        background: 'var(--color-paper-3)',
+                        border: '1px solid var(--color-divider)',
+                        color: 'var(--color-ink-2)',
+                      }}
+                    >
+                      {socialAuditPublicUrl}
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Button size="sm" variant="secondary" onClick={() => copyToClipboard(socialAuditPublicUrl, 'social-audit-link')}>
+                        {copiedField === 'social-audit-link' ? <Check size={14} /> : <Copy size={14} />}
+                        {copiedField === 'social-audit-link' ? 'Copied' : 'Copy Link'}
+                      </Button>
+                      <a
+                        href={socialAuditPublicUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
+                        style={{
+                          background: 'var(--color-paper-3)',
+                          border: '1px solid var(--color-border)',
+                          color: 'var(--color-ink)',
+                        }}
+                      >
+                        <ExternalLink size={14} />
+                        Open Social Audit
+                      </a>
+                    </div>
+                  </div>
+                )}
+                <SocialAuditStrategyPanel social={socialAuditStrategy} audit={audit} />
+              </div>
+            ) : (
+              <p className="text-sm" style={{ color: 'var(--color-ink-3)' }}>
+                Create a mockup slug before sharing a public social audit page.
+              </p>
+            )}
+          </Card>
+
           <Card title="Follow-up Tasks">
             {followUps.length > 0 ? (
               <div className="space-y-3">
@@ -405,6 +471,97 @@ function MockupStrategyPanel({ rich }: { rich: RichMockupData }) {
           No rich mockup strategy fields yet.
         </p>
       )}
+    </div>
+  );
+}
+
+function SocialAuditStrategyPanel({ social, audit }: { social: SocialAuditData; audit?: Audit }) {
+  const scorecard = social.social_audit;
+  const hasSocialData = Boolean(
+    scorecard ||
+      social.content_opportunity ||
+      social.content_plan ||
+      social.meta_ads_angle ||
+      social.website_social_gap ||
+      social.first_email_angle ||
+      social.call_follow_up_angle ||
+      audit?.social_score ||
+      audit?.main_problem ||
+      audit?.conversion_opportunity
+  );
+
+  return (
+    <div className="pt-3" style={{ borderTop: '1px solid var(--color-divider)' }}>
+      <div className="text-xs font-medium mb-2" style={{ color: 'var(--color-ink-3)' }}>
+        Social Audit Preview
+      </div>
+      {hasSocialData ? (
+        <div className="space-y-3">
+          {typeof scorecard?.overall_social_score === 'number' ? (
+            <FieldBlock label="Overall Social Score" value={String(scorecard.overall_social_score)} />
+          ) : audit?.social_score ? (
+            <FieldBlock label="Overall Social Score" value={String(audit.social_score)} />
+          ) : null}
+          {scorecard?.instagram_status && <FieldBlock label="Instagram Status" value={scorecard.instagram_status} />}
+          {scorecard?.facebook_status && <FieldBlock label="Facebook Status" value={scorecard.facebook_status} />}
+          {scorecard?.posting_consistency && <FieldBlock label="Posting Consistency" value={scorecard.posting_consistency} />}
+          {scorecard?.content_quality && <FieldBlock label="Content Quality" value={scorecard.content_quality} />}
+          {scorecard?.reels_video_usage && <FieldBlock label="Reels / Video Usage" value={scorecard.reels_video_usage} />}
+          {scorecard?.cta_usage && <FieldBlock label="CTA Usage" value={scorecard.cta_usage} />}
+          {scorecard?.visual_branding && <FieldBlock label="Visual Branding" value={scorecard.visual_branding} />}
+          {social.content_opportunity && <FieldBlock label="Content Opportunity" value={social.content_opportunity} />}
+          {social.website_social_gap && <FieldBlock label="Website + Social Gap" value={social.website_social_gap} />}
+          {social.meta_ads_angle && <FieldBlock label="Meta Ads Angle" value={social.meta_ads_angle} />}
+          {social.first_email_angle && <FieldBlock label="First Email Angle" value={social.first_email_angle} />}
+          {audit?.main_problem && <FieldBlock label="Fallback Main Problem" value={audit.main_problem} />}
+          {audit?.conversion_opportunity && <FieldBlock label="Fallback Conversion Opportunity" value={audit.conversion_opportunity} />}
+          <StrategyList label="Why Underperforming" items={scorecard?.why_underperforming} />
+          <StrategyList label="Priority Content Themes" items={social.content_plan?.priority_content_themes} />
+          <SocialPlanPreview plan={social.content_plan} />
+        </div>
+      ) : (
+        <p className="text-xs" style={{ color: 'var(--color-ink-3)' }}>
+          No rich social audit fields yet. The public page will fall back to audit notes and generated content guidance.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function SocialPlanPreview({ plan }: { plan?: SocialAuditData['content_plan'] }) {
+  if (!plan) return null;
+
+  const weeks = [
+    ['Week 1', plan.week_1],
+    ['Week 2', plan.week_2],
+    ['Week 3', plan.week_3],
+    ['Week 4', plan.week_4],
+  ].filter((item): item is [string, string] => Boolean(item[1]));
+
+  if (
+    weeks.length === 0 &&
+    !plan.recommended_posting_cadence &&
+    !plan.recommended_reels_per_week &&
+    !plan.shoot_frequency
+  ) {
+    return null;
+  }
+
+  return (
+    <div>
+      <span className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>
+        4-Week Content Plan
+      </span>
+      <div className="mt-2 space-y-2">
+        {weeks.map(([label, value]) => (
+          <div key={label} className="rounded-lg p-2 text-xs" style={{ background: 'var(--color-paper-3)', color: 'var(--color-ink-2)' }}>
+            <strong style={{ color: 'var(--color-ink)' }}>{label}:</strong> {value}
+          </div>
+        ))}
+        {plan.recommended_posting_cadence && <FieldBlock label="Cadence" value={plan.recommended_posting_cadence} />}
+        {plan.recommended_reels_per_week && <FieldBlock label="Reels Per Week" value={plan.recommended_reels_per_week} />}
+        {plan.shoot_frequency && <FieldBlock label="Shoot Frequency" value={plan.shoot_frequency} />}
+      </div>
     </div>
   );
 }

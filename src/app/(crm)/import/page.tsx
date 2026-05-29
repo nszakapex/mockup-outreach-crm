@@ -41,8 +41,31 @@ const SAMPLE_JSON = `[
     "local_seo_angle": "auto detailing packages in Denver",
     "content_strategy_angle": "weekly before-and-after detail reels",
     "meta_ads_angle": "gift-card and ceramic-coating inquiry campaigns",
+    "social_audit": {
+      "instagram_status": "Visual work is present but posts are inconsistent.",
+      "facebook_status": "Mostly service updates without a clear quote path.",
+      "posting_consistency": "Uneven, with long gaps between posts.",
+      "content_quality": "Before-and-after potential is strong but not packaged into a repeatable series.",
+      "reels_video_usage": "Rare; most proof is static.",
+      "cta_usage": "Few posts direct viewers to request a quote.",
+      "visual_branding": "Useful proof, but no consistent branded format.",
+      "overall_social_score": 58,
+      "why_underperforming": ["No weekly before-and-after series", "Quote CTA is not repeated", "Reels are underused"]
+    },
+    "content_opportunity": "Turn detail transformations into a weekly proof series that feeds quote requests.",
+    "content_plan": {
+      "week_1": "Film one interior refresh and one ceramic coating before-and-after.",
+      "week_2": "Post package explainers and a quick quote CTA.",
+      "week_3": "Feature customer handoff clips and weekend appointment reminders.",
+      "week_4": "Run a ceramic coating FAQ reel and gift-card post.",
+      "recommended_posting_cadence": "2 reels plus 2 posts/stories per week",
+      "recommended_reels_per_week": "2",
+      "shoot_frequency": "One short content shoot per week",
+      "priority_content_themes": ["before and after", "package explainers", "ceramic coating", "gift cards"]
+    },
+    "website_social_gap": "Social proof does not lead into a simple package comparison and quote request.",
     "email_subject": "Quick mockup for Example Detail Studio",
-    "email_body": "Hi there, I put together a quick website concept showing a cleaner booking path for your detailing services."
+    "email_body": "Hi there, I noticed your detailing work has strong before-and-after potential, but the posts are not tied to a simple quote path. I put together a quick audit here: [Social Audit Link]\\n\\nBest,\\nNate\\nApex Marketing Group"
   }
 ]`;
 
@@ -228,6 +251,7 @@ export default function ImportPage() {
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Record</th>
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Status</th>
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Mockup data</th>
+                  <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Social audit</th>
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Mockup slug</th>
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Eligibility</th>
                 </tr>
@@ -245,6 +269,7 @@ export default function ImportPage() {
                     </td>
                     <td className="px-3 py-3"><StatusBadge status={item.status} /></td>
                     <td className="px-3 py-3"><RichnessBadge level={item.mockupRichness.level} label={item.mockupRichness.label} /></td>
+                    <td className="px-3 py-3"><RichnessBadge level={item.socialAuditRichness.level} label={item.socialAuditRichness.label} /></td>
                     <td className="px-3 py-3 font-mono text-xs" style={{ color: 'var(--color-ink-2)' }}>{item.slug}</td>
                     <td className="px-3 py-3">
                       {item.valid ? (

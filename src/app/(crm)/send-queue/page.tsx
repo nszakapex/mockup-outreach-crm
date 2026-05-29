@@ -30,7 +30,12 @@ type SendQueueItem = {
   fromEmail: string;
   subject: string;
   body: string;
+  finalBody: string;
   mockupUrl: string;
+  socialAuditUrl: string;
+  usesMockupLink: boolean;
+  usesSocialAuditLink: boolean;
+  emailQualityWarnings: string[];
   status: ProspectStatus;
   sendable: boolean;
   blockedReasons: string[];
@@ -329,7 +334,35 @@ export default function SendQueuePage() {
                       <PreviewField label="Sanitized To" value={item.toEmail} />
                       <PreviewField label="Sanitized From" value={item.fromEmail} />
                       <PreviewField label="Sanitized Subject" value={item.subject} className="sm:col-span-2" />
-                      <PreviewField label="Mockup URL" value={item.mockupUrl} className="sm:col-span-2" />
+                      {item.usesMockupLink && (
+                        <PreviewField label="Final Mockup URL" value={item.mockupUrl} className="sm:col-span-2" />
+                      )}
+                      {item.usesSocialAuditLink && (
+                        <PreviewField label="Final Social Audit URL" value={item.socialAuditUrl} className="sm:col-span-2" />
+                      )}
+                    </div>
+                    {item.emailQualityWarnings.length > 0 && (
+                      <div
+                        className="mt-3 rounded-lg p-3 text-xs"
+                        style={{
+                          background: 'oklch(75% 0.16 85 / 0.08)',
+                          border: '1px solid oklch(75% 0.16 85 / 0.22)',
+                          color: 'var(--color-warning)',
+                        }}
+                      >
+                        <div className="font-medium mb-1">Email quality warnings</div>
+                        <ul className="space-y-1">
+                          {item.emailQualityWarnings.map((warning) => (
+                            <li key={warning} className="flex items-start gap-1.5">
+                              <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+                              <span>{warning}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    <div className="mt-3 text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>
+                      Final Sanitized Email Body Preview
                     </div>
                     <div
                       className="mt-3 max-h-32 overflow-y-auto whitespace-pre-wrap rounded-lg p-3 text-xs leading-relaxed"
@@ -339,7 +372,7 @@ export default function SendQueuePage() {
                         color: 'var(--color-ink-2)',
                       }}
                     >
-                      {item.body}
+                      {item.finalBody}
                     </div>
                   </div>
 
@@ -357,6 +390,23 @@ export default function SendQueuePage() {
                       <span className="truncate">{item.mockupUrl}</span>
                       <ExternalLink size={13} className="shrink-0" />
                     </a>
+                    {item.usesSocialAuditLink && (
+                      <>
+                        <div className="text-xs font-medium mb-1.5 mt-4" style={{ color: 'var(--color-ink-3)' }}>
+                          Final Social Audit URL
+                        </div>
+                        <a
+                          href={item.socialAuditUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex max-w-full items-center gap-1.5 truncate text-sm font-medium hover:underline"
+                          style={{ color: 'var(--color-accent)' }}
+                        >
+                          <span className="truncate">{item.socialAuditUrl}</span>
+                          <ExternalLink size={13} className="shrink-0" />
+                        </a>
+                      </>
+                    )}
                     {item.blockedReasons.length > 0 && (
                       <div
                         className="mt-3 rounded-lg p-3 text-xs"

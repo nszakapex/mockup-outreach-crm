@@ -54,6 +54,7 @@ export type MockupRichness = {
 type StoredConceptNotes = {
   notes?: string | null;
   rich_mockup_data?: RichMockupData;
+  social_audit_data?: unknown;
 };
 
 export function normalizeRichMockupData(input: Record<string, unknown> | null | undefined): RichMockupData {
@@ -98,13 +99,21 @@ export function getMockupRichness(input: Record<string, unknown>, hasBasicMockup
   return { level: 'missing', label: 'Missing Mockup Data', signalCount };
 }
 
-export function encodeMockupConceptNotes(notes: string | null, rich: RichMockupData) {
-  if (getRichMockupSignalCount(rich) === 0) return notes;
+export function encodeMockupConceptNotes(notes: string | null, rich: RichMockupData, socialAuditData?: unknown) {
+  const hasSocialAuditData =
+    Boolean(socialAuditData) &&
+    typeof socialAuditData === 'object' &&
+    !Array.isArray(socialAuditData) &&
+    Object.keys(socialAuditData as Record<string, unknown>).length > 0;
+
+  if (getRichMockupSignalCount(rich) === 0 && !hasSocialAuditData) return notes;
 
   const payload: StoredConceptNotes = {
     notes,
     rich_mockup_data: rich,
   };
+
+  if (hasSocialAuditData) payload.social_audit_data = socialAuditData;
 
   return JSON.stringify(payload);
 }

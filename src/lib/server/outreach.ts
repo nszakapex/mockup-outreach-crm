@@ -6,7 +6,7 @@ import {
   sanitizeEmailAddress,
   sanitizeHeaderValue,
 } from '@/lib/email-sanitization';
-import { buildPublicMockupUrl } from '@/lib/mockup-templates';
+import { buildPublicMockupUrl, buildPublicSocialAuditUrl } from '@/lib/mockup-templates';
 import { getErrorMessage, getServerSupabase } from './supabase';
 
 const SEND_SUCCESS_STATUSES = ['sent', 'test_sent'];
@@ -69,7 +69,12 @@ export type SendQueueItem = {
   fromEmail: string;
   subject: string;
   body: string;
+  finalBody: string;
   mockupUrl: string;
+  socialAuditUrl: string;
+  usesMockupLink: boolean;
+  usesSocialAuditLink: boolean;
+  emailQualityWarnings: string[];
   status: string;
   sendable: boolean;
   blockedReasons: string[];
@@ -568,9 +573,14 @@ function buildQueueItem(
   if (!emailDraft || !prospect.public_email || !mockup) return null;
 
   const mockupUrl = buildMockupUrl(mockup, origin);
+  const socialAuditUrl = buildPublicSocialAuditUrl(mockup.slug, origin);
+  const usesMockupLink = containsMockupReference(emailDraft.body);
+  const usesSocialAuditLink = containsSocialAuditReference(emailDraft.body);
   const sanitizedTo = toValidation?.ok ? toValidation.value : prospect.public_email;
   const sanitizedFrom = fromValidation.ok ? fromValidation.value : fromCandidate;
   const sanitizedSubject = sanitizeHeaderValue(emailDraft.subject);
+  const replacedBody = replaceOutreachReferences(emailDraft.body, mockupUrl, socialAuditUrl);
+  const finalBody = buildEmailBodyFromParts(replacedBody, mockupUrl);
 
   return {
     prospectId: prospect.id,
@@ -579,8 +589,19 @@ function buildQueueItem(
     toEmail: sanitizedTo,
     fromEmail: sanitizedFrom,
     subject: sanitizedSubject.ok ? sanitizedSubject.value : emailDraft.subject,
-    body: replaceMockupReferences(emailDraft.body, mockupUrl),
+    body: replacedBody,
+    finalBody,
     mockupUrl,
+    socialAuditUrl,
+    usesMockupLink,
+    usesSocialAuditLink,
+    emailQualityWarnings: getEmailQualityWarnings({
+      businessName: prospect.business_name,
+      rawBody: emailDraft.body,
+      finalBody,
+      usesMockupLink,
+      usesSocialAuditLink,
+    }),
     status: prospect.status,
     sendable: blockedReasons.length === 0,
     blockedReasons,
@@ -608,21 +629,123 @@ function buildMockupUrl(mockup: MockupRow, origin: string) {
 }
 
 function buildEmailBody(item: SendQueueItem) {
-  const bodyWithMockup = replaceMockupReferences(item.body, item.mockupUrl);
+  return buildEmailBodyFromParts(
+    replaceOutreachReferences(item.body, item.mockupUrl, item.socialAuditUrl),
+    item.mockupUrl
+  );
+}
 
+function buildEmailBodyFromParts(body: string, mockupUrl: string) {
   return [
-    bodyWithMockup,
+    body,
     '',
-    `Mockup link: ${item.mockupUrl}`,
+    `Mockup link: ${mockupUrl}`,
     '',
     'If you would rather not hear from me again, reply with "opt out" and I will not contact you again.',
   ].join('\n');
 }
 
-function replaceMockupReferences(body: string, mockupUrl: string) {
+function replaceOutreachReferences(body: string, mockupUrl: string, socialAuditUrl: string) {
   return body
     .replace(/\[mockup link\]/gi, mockupUrl)
-    .replace(/https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/mockups\/[^\s)]+/gi, mockupUrl);
+    .replace(/\[social audit link\]/gi, socialAuditUrl)
+    .replace(/https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/mockups\/[^\s)]+/gi, mockupUrl)
+    .replace(/https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/social-audits\/[^\s)]+/gi, socialAuditUrl);
+}
+
+function containsMockupReference(body: string) {
+  return /\[mockup link\]/i.test(body) || /\/mockups\//i.test(body);
+}
+
+function containsSocialAuditReference(body: string) {
+  return /\[social audit link\]/i.test(body) || /\/social-audits\//i.test(body);
+}
+
+function getEmailQualityWarnings({
+  businessName,
+  rawBody,
+  finalBody,
+  usesMockupLink,
+  usesSocialAuditLink,
+}: {
+  businessName: string;
+  rawBody: string;
+  finalBody: string;
+  usesMockupLink: boolean;
+  usesSocialAuditLink: boolean;
+}) {
+  const warnings: string[] = [];
+  const lower = rawBody.toLowerCase();
+
+  if (/^\s*i hope this email finds you well\b/i.test(rawBody)) {
+    warnings.push('Opening sounds generic: remove "I hope this email finds you well."');
+  }
+
+  if (!usesMockupLink && !usesSocialAuditLink) {
+    warnings.push('Draft does not include [Social Audit Link] or [Mockup Link].');
+  }
+
+  if (!mentionsSpecificObservation(lower)) {
+    warnings.push('Draft may need a more specific social, website, offer, or content observation.');
+  }
+
+  if (soundsGeneric(lower, businessName)) {
+    warnings.push('Draft may sound generic because it does not mention the business or a concrete content issue.');
+  }
+
+  if (countWords(finalBody) > 160) {
+    warnings.push('Final email body is over 160 words.');
+  }
+
+  if (!hasHumanSignoff(rawBody)) {
+    warnings.push('Draft is missing a human signoff.');
+  }
+
+  return warnings;
+}
+
+function mentionsSpecificObservation(value: string) {
+  return [
+    'instagram',
+    'facebook',
+    'reel',
+    'video',
+    'post',
+    'content',
+    'social',
+    'website',
+    'menu',
+    'booking',
+    'reservation',
+    'quote',
+    'cta',
+    'before-and-after',
+    'happy hour',
+    'event',
+    'offer',
+  ].some((term) => value.includes(term));
+}
+
+function soundsGeneric(value: string, businessName: string) {
+  const mentionsBusiness = businessName
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((part) => part.length > 3)
+    .some((part) => value.includes(part));
+
+  return (
+    !mentionsBusiness &&
+    /\byour (business|company|website|social media|online presence)\b/i.test(value) &&
+    !mentionsSpecificObservation(value)
+  );
+}
+
+function countWords(value: string) {
+  return value.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function hasHumanSignoff(value: string) {
+  return /best,\s*nate/i.test(value) || /apex marketing group/i.test(value);
 }
 
 function startOfTodayIso() {
