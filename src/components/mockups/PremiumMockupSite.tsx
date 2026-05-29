@@ -1,21 +1,18 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import type { LucideIcon } from 'lucide-react';
 import {
   ArrowRight,
   CalendarDays,
-  CheckCircle2,
-  Clock3,
   Coffee,
-  Compass,
-  Gift,
   HeartHandshake,
+  MapPin,
   Megaphone,
   Music2,
   Navigation,
+  Phone,
   Search,
-  ShieldCheck,
+  ShoppingBag,
   Sparkles,
   Star,
   Utensils,
@@ -31,7 +28,6 @@ import type { Audit, Mockup, Prospect } from '@/lib/types';
 import {
   buildPublicMockupUrl,
   getMockupTemplateVariant,
-  parseMockupFeatures,
   type MockupTemplateVariant,
 } from '@/lib/mockup-templates';
 import styles from './PremiumMockupSite.module.css';
@@ -48,49 +44,24 @@ type PremiumMockupSiteProps = {
   audit?: PublicAudit | null;
 };
 
-type ConceptContext = {
-  businessName: string;
-  niche: string;
-  location: string;
-  city: string;
-  variant: MockupTemplateVariant;
-  config: VariantConfig;
-  headline: string;
-  subheadline: string;
-  primaryCta: string;
-  navItems: string[];
-  offers: string[];
-  trustSignals: string[];
-  issueFixes: IssueFix[];
-  conversionSteps: string[];
-  localSearches: string[];
-  contentIdeas: string[];
-  metaAdsIdeas: string[];
-  visualDirection: string;
-  palette: string[];
-  rich: RichMockupData;
-  audit?: PublicAudit | null;
-  conceptNotes: string | null;
-  mockupUrl: string;
-};
+type PhotoRole =
+  | 'coffee'
+  | 'pastry'
+  | 'dish'
+  | 'interior'
+  | 'event'
+  | 'privateDining'
+  | 'catering'
+  | 'mission'
+  | 'truck'
+  | 'service'
+  | 'social';
 
-type VariantConfig = {
-  icon: LucideIcon;
-  navItems: string[];
-  primaryCta: string;
-  eyebrow: string;
-  heroKicker: string;
-  fallbackHeadline: (businessName: string) => string;
-  fallbackSubheadline: (location: string) => string;
-  utility: string[];
-  offers: string[];
-  trustSignals: string[];
-  conversionSteps: string[];
-  localSearches: string[];
-  contentIdeas: string[];
-  metaAdsIdeas: string[];
-  issueFallbacks: IssueFix[];
-  layout: 'luxury' | 'tavern' | 'cafe' | 'mission' | 'mobile' | 'dining' | 'service';
+type HomepageItem = {
+  title: string;
+  body: string;
+  label?: string;
+  photoRole: PhotoRole;
 };
 
 type IssueFix = {
@@ -100,70 +71,241 @@ type IssueFix = {
   severity: 'low' | 'medium' | 'high';
 };
 
+type VariantConfig = {
+  navItems: string[];
+  primaryCta: string;
+  secondaryCta: string;
+  eyebrow: string;
+  fallbackHeadline: (businessName: string, city: string) => string;
+  fallbackSubheadline: (businessName: string, location: string) => string;
+  heroPhoto: PhotoRole;
+  heroPhotoLabel: string;
+  badges: string[];
+  offers: HomepageItem[];
+  storyTitle: (businessName: string) => string;
+  storyBody: (context: SiteContext) => string;
+  trustSignals: string[];
+  conversionTitle: string;
+  conversionBody: string;
+  conversionSteps: string[];
+  visitTitle: string;
+  visitBody: string;
+  contentTitle: string;
+  contentIdeas: string[];
+  localSearches: string[];
+  issueFallbacks: IssueFix[];
+  tone: 'coffee' | 'restaurant' | 'tavern' | 'luxury' | 'mission' | 'mobile' | 'service';
+};
+
+type SiteContext = {
+  mockup: Mockup;
+  businessName: string;
+  niche: string;
+  location: string;
+  city: string;
+  variant: MockupTemplateVariant;
+  config: VariantConfig;
+  rich: RichMockupData;
+  audit?: PublicAudit | null;
+  conceptNotes: string | null;
+  headline: string;
+  subheadline: string;
+  primaryCta: string;
+  navItems: string[];
+  badges: string[];
+  offers: HomepageItem[];
+  trustSignals: string[];
+  conversionSteps: string[];
+  contentIdeas: string[];
+  metaIdeas: string[];
+  localSearches: string[];
+  issueFixes: IssueFix[];
+  visualDirection: string;
+  mockupUrl: string;
+};
+
 export const MOCKUP_VISUAL_RULES = [
-  'Every mockup has a website-style nav.',
-  'Every mockup has a clear primary CTA.',
-  'Every mockup includes business-specific content.',
-  'Every mockup includes a conversion path.',
-  'Every mockup includes an online presence snapshot.',
-  'Every variant uses a different layout rhythm.',
-];
+  'Website concept starts with a real business-site header and hero.',
+  'Audit content is secondary and never replaces homepage content.',
+  'Every page has photo-style placeholders that read as intentional image slots.',
+  'Variant differences include section composition, not just color.',
+  'Mobile must have no horizontal overflow at 320, 375, 414, and 768 pixels.',
+] as const;
 
 const VARIANT_CONFIG: Record<MockupTemplateVariant, VariantConfig> = {
-  premium_dining: {
-    icon: Sparkles,
-    navItems: ['Menu', 'Reservations', 'Private Dining', 'Gift Cards', 'Awards'],
-    primaryCta: 'Reserve a table',
-    eyebrow: 'Premium dining homepage concept',
-    heroKicker: 'Reservation-first dining experience',
-    fallbackHeadline: (businessName) => `${businessName} deserves a more composed path to the table`,
-    fallbackSubheadline: (location) =>
-      `A refined homepage direction for ${location} guests comparing special-night restaurants, private dining, and giftable experiences.`,
-    utility: ['Reservation-first hero', 'Private dining path', 'Gift cards surfaced'],
-    offers: ['Signature steaks', 'Reservations', 'Gift cards', 'Private dining'],
-    trustSignals: ['Special-occasion dining', 'Private dining available', 'Gift cards ready'],
-    conversionSteps: ['Explore menu', 'Choose occasion', 'Review private dining', 'Reserve table'],
-    localSearches: ['best steakhouse in {city}', 'fine dining in {city}', 'private dining {city}'],
-    contentIdeas: ['date-night menu stories', 'chef feature posts', 'gift-card seasonal campaigns'],
-    metaAdsIdeas: ['date-night ads', 'private dining inquiry campaigns'],
+  coffee_shop: {
+    navItems: ['Menu', 'Order', 'Visit', 'Community', 'Loyalty'],
+    primaryCta: 'See the menu',
+    secondaryCta: 'Plan your visit',
+    eyebrow: 'Neighborhood coffee homepage concept',
+    fallbackHeadline: (businessName, city) => `${city}'s everyday coffee stop, made warmer for ${businessName}`,
+    fallbackSubheadline: (_businessName, location) =>
+      `A menu-first cafe homepage for ${location} guests looking for espresso, seasonal drinks, pastries, hours, and the fastest way to visit.`,
+    heroPhoto: 'coffee',
+    heroPhotoLabel: 'Coffee and pastry photo direction',
+    badges: ['Espresso', 'Seasonal drinks', 'Pastries', 'Loyalty', 'Local cafe'],
+    offers: [
+      {
+        title: 'Signature espresso drinks',
+        body: 'A first-screen path to the drinks regulars already ask for.',
+        label: 'Menu favorite',
+        photoRole: 'coffee',
+      },
+      {
+        title: 'Seasonal specialty lattes',
+        body: 'A rotating feature block built for social launches and repeat visits.',
+        label: 'Seasonal',
+        photoRole: 'coffee',
+      },
+      {
+        title: 'Baked goods and pastries',
+        body: 'A visual pairing section that makes the coffee stop feel complete.',
+        label: 'Pairing',
+        photoRole: 'pastry',
+      },
+      {
+        title: 'Loyalty rewards program',
+        body: 'A simple signup prompt for people who already visit often.',
+        label: 'Repeat visits',
+        photoRole: 'social',
+      },
+    ],
+    storyTitle: (businessName) => `${businessName} feels like a place before it feels like a menu.`,
+    storyBody: () =>
+      `Warm cafe details, featured drinks, hours, and a clear visit path give regulars and first-time guests a reason to settle in.`,
+    trustSignals: ['Locally owned coffee stop', 'Seasonal drink rhythm', 'Community gathering place'],
+    conversionTitle: 'Find the right cup before the counter.',
+    conversionBody: 'The homepage becomes a small order planner: browse the menu, spot the seasonal drink, choose pickup or visit, then join loyalty.',
+    conversionSteps: ['View menu', 'Choose a drink', 'Pick up or visit', 'Join loyalty'],
+    visitTitle: 'Hours and location stay close to the craving.',
+    visitBody: 'Coffee decisions happen fast. Address, hours, and the next action stay visible before visitors wander away.',
+    contentTitle: 'Weekly drink launches get somewhere to land.',
+    contentIdeas: ['seasonal drink reveal', 'barista pick', 'loyalty reminder', 'coffee and pastry pairing'],
+    localSearches: ['coffee shop in {city}', 'best coffee {city}', 'espresso {city}', 'cafe near {city}'],
     issueFallbacks: [
       {
-        label: 'Reservation path',
-        current: 'Reservation intent competes with too many equal-weight actions.',
-        fix: 'Make Reserve a Table the dominant above-the-fold action.',
+        label: 'Menu clarity',
+        current: 'Menu, hours, and ordering are not bundled into one easy first screen.',
+        fix: 'Lead with featured drinks, clear hours, and one menu CTA.',
         severity: 'high',
       },
       {
-        label: 'Private dining',
-        current: 'Private dining and group occasions are not visible early enough.',
-        fix: 'Add a dedicated private dining and bar room module.',
-        severity: 'medium',
-      },
-      {
-        label: 'Gift cards',
-        current: 'Gift cards are easy to miss during seasonal buying windows.',
-        fix: 'Give gift cards a premium CTA near the reservation flow.',
+        label: 'Social path',
+        current: 'Social content does not have a strong homepage destination.',
+        fix: 'Turn seasonal drinks and community posts into homepage modules.',
         severity: 'medium',
       },
     ],
-    layout: 'luxury',
+    tone: 'coffee',
+  },
+  restaurant: {
+    navItems: ['Menu', 'Order', 'Reserve', 'Visit', 'Catering'],
+    primaryCta: 'Plan your visit',
+    secondaryCta: 'View menu',
+    eyebrow: 'Restaurant homepage concept',
+    fallbackHeadline: (businessName, city) => `${businessName} can help ${city} choose dinner faster`,
+    fallbackSubheadline: (_businessName, location) =>
+      `A food-forward homepage for ${location} guests comparing menu favorites, visit details, reservations, and easy ordering.`,
+    heroPhoto: 'dish',
+    heroPhotoLabel: 'Signature dish photo direction',
+    badges: ['Menu highlights', 'Order', 'Reserve', 'Visit', 'Catering'],
+    offers: [
+      {
+        title: 'Featured dishes',
+        body: 'A visual preview of the food guests notice first.',
+        label: 'Menu highlight',
+        photoRole: 'dish',
+      },
+      {
+        title: 'Find your order',
+        body: 'Occasion-based cards for lunch, dinner, family meals, and takeout.',
+        label: 'Order planner',
+        photoRole: 'dish',
+      },
+      {
+        title: 'Best time to visit',
+        body: 'A practical module that helps guests choose when to come in.',
+        label: 'Visit planner',
+        photoRole: 'interior',
+      },
+      {
+        title: 'Catering',
+        body: 'A visible inquiry path for higher-value local events.',
+        label: 'Events',
+        photoRole: 'catering',
+      },
+    ],
+    storyTitle: (businessName) => `${businessName} brings food, timing, and next steps into one flow.`,
+    storyBody: () =>
+      `Guests can scan the food, understand the occasion, and find the order or visit action while the appetite is still fresh.`,
+    trustSignals: ['Local dining destination', 'Menu built for repeat visits', 'Visit details easy to find'],
+    conversionTitle: 'Choose the meal by occasion.',
+    conversionBody: 'Instead of making guests hunt through pages, the homepage routes them by appetite, timing, and next step.',
+    conversionSteps: ['See menu', 'Choose occasion', 'Plan visit', 'Order or reserve'],
+    visitTitle: 'Make the practical details impossible to miss.',
+    visitBody: 'Address, hours, parking hints, and action buttons are treated like conversion content, not footer leftovers.',
+    contentTitle: 'Food content leads back to a useful page.',
+    contentIdeas: ['weekly dish feature', 'chef note', 'catering reminder', 'date-night post'],
+    localSearches: ['restaurant in {city}', 'best lunch {city}', 'dinner near {city}', 'catering {city}'],
+    issueFallbacks: [
+      {
+        label: 'Menu path',
+        current: 'Menu highlights and primary actions are not clear enough on mobile.',
+        fix: 'Use food-forward cards with order, reserve, and visit CTAs.',
+        severity: 'high',
+      },
+    ],
+    tone: 'restaurant',
   },
   bar_grill: {
-    icon: Music2,
     navItems: ['Menu', 'Happy Hour', 'Events', 'Order', 'Visit'],
     primaryCta: 'See tonight',
+    secondaryCta: 'View menu',
     eyebrow: 'Bar and grill homepage concept',
-    heroKicker: "Tonight's reason to come in",
-    fallbackHeadline: (businessName) => `${businessName} should feel alive before the first scroll`,
-    fallbackSubheadline: (location) =>
-      `A social, event-forward homepage for ${location} guests choosing where to watch, eat, meet, and stay later.`,
-    utility: ['Happy hour visible', 'Events in the first scroll', 'Order or waitlist path'],
-    offers: ['Happy hour', 'Live music', 'Online ordering', 'Waitlist'],
-    trustSignals: ['Live music and events', 'Patio or game-night energy', 'Regulars and group nights'],
+    fallbackHeadline: (businessName, city) => `${businessName} gives ${city} a reason to come in tonight`,
+    fallbackSubheadline: (_businessName, location) =>
+      `An event-forward homepage for ${location} guests choosing food, drinks, happy hour, music, and a table now.`,
+    heroPhoto: 'event',
+    heroPhotoLabel: 'Happy hour and event photo direction',
+    badges: ['Happy hour', 'Live music', 'Patio', 'Order', 'Events'],
+    offers: [
+      {
+        title: 'Happy hour this week',
+        body: 'A timely reason to visit now instead of later.',
+        label: 'Tonight',
+        photoRole: 'event',
+      },
+      {
+        title: 'Live music and events',
+        body: 'A calendar-style block that makes the room feel active.',
+        label: 'Events',
+        photoRole: 'event',
+      },
+      {
+        title: 'Featured food and drinks',
+        body: 'Menu previews built for quick decisions and group plans.',
+        label: 'Menu',
+        photoRole: 'dish',
+      },
+      {
+        title: 'Order or waitlist',
+        body: 'A practical path for guests who already know they are coming.',
+        label: 'Action',
+        photoRole: 'interior',
+      },
+    ],
+    storyTitle: (businessName) => `${businessName} feels alive before the first scroll.`,
+    storyBody: () =>
+      `The homepage opens with what is happening, what to order, and why tonight is worth the trip.`,
+    trustSignals: ['Live events and atmosphere', 'Regulars and group nights', 'Menu built for sharing'],
+    conversionTitle: 'Tonight-first guest path.',
+    conversionBody: 'Happy hour, events, food, and visit details work together so the homepage answers "why now?"',
     conversionSteps: ['See happy hour', 'View events', 'Choose food or drinks', 'Visit tonight'],
-    localSearches: ['happy hour in {city}', 'bar and grill near {city}', 'live music tonight {city}'],
-    contentIdeas: ['happy hour/event promotions', 'tap list posts', 'live music reminders'],
-    metaAdsIdeas: ['game-day ads', 'patio weather campaigns'],
+    visitTitle: 'Make the night easy to plan.',
+    visitBody: 'The visit module combines timing, location, and event cues so guests can decide without checking multiple channels.',
+    contentTitle: 'Events and specials become weekly campaigns.',
+    contentIdeas: ['happy hour reminder', 'tap list post', 'live music reel', 'game-day promo'],
+    localSearches: ['happy hour {city}', 'bar and grill {city}', 'live music {city}', 'patio drinks {city}'],
     issueFallbacks: [
       {
         label: 'Tonight signal',
@@ -171,95 +313,176 @@ const VARIANT_CONFIG: Record<MockupTemplateVariant, VariantConfig> = {
         fix: 'Lead with happy hour, events, and a visit-now path.',
         severity: 'high',
       },
+    ],
+    tone: 'tavern',
+  },
+  premium_dining: {
+    navItems: ['Menu', 'Reservations', 'Private Dining', 'Gift Cards', 'Awards'],
+    primaryCta: 'Reserve your table',
+    secondaryCta: 'View menu',
+    eyebrow: 'Premium dining homepage concept',
+    fallbackHeadline: (businessName, city) => `${businessName} can make ${city} dinner feel special sooner`,
+    fallbackSubheadline: (_businessName, location) =>
+      `A reservation-first homepage for ${location} guests planning date night, private dining, gift cards, and special occasions.`,
+    heroPhoto: 'privateDining',
+    heroPhotoLabel: 'Dining room atmosphere photo direction',
+    badges: ['Reservations', 'Signature dishes', 'Gift cards', 'Private dining', 'Awards'],
+    offers: [
       {
-        label: 'Ordering path',
-        current: 'Online ordering or waitlist actions can get buried behind menu copy.',
-        fix: 'Repeat order and waitlist CTAs in the hero and menu modules.',
-        severity: 'medium',
+        title: 'Signature dishes',
+        body: 'A refined food preview for high-intent guests.',
+        label: 'Dining',
+        photoRole: 'dish',
+      },
+      {
+        title: 'Reservations',
+        body: 'A dominant booking path repeated at natural decision points.',
+        label: 'Book',
+        photoRole: 'interior',
+      },
+      {
+        title: 'Gift cards',
+        body: 'A seasonal revenue path surfaced before the footer.',
+        label: 'Gift',
+        photoRole: 'privateDining',
+      },
+      {
+        title: 'Private dining',
+        body: 'A group inquiry module for events and higher-value bookings.',
+        label: 'Groups',
+        photoRole: 'privateDining',
       },
     ],
-    layout: 'tavern',
-  },
-  coffee_shop: {
-    icon: Coffee,
-    navItems: ['Menu', 'Order', 'Visit', 'Community', 'Loyalty'],
-    primaryCta: 'Start an order',
-    eyebrow: 'Cafe homepage concept',
-    heroKicker: 'Menu-first neighborhood cafe',
-    fallbackHeadline: (businessName) => `${businessName} can make the first order feel effortless`,
-    fallbackSubheadline: (location) =>
-      `A warm, menu-forward concept for ${location} guests who want the drink, the vibe, and the fastest way to visit or order.`,
-    utility: ['Featured drinks', 'Daily specials', 'Loyalty path'],
-    offers: ['Featured drinks', 'Breakfast bites', 'Loyalty signup', 'Community events'],
-    trustSignals: ['Local regulars path', 'Seasonal menu rhythm', 'Community gathering place'],
-    conversionSteps: ['View menu', 'Find best order', 'Choose pickup or visit', 'Join loyalty'],
-    localSearches: ['coffee shop in {city}', 'breakfast coffee near {city}', 'cafe downtown {city}'],
-    contentIdeas: ['weekly featured drink reels', 'behind-the-bar posts', 'community event reminders'],
-    metaAdsIdeas: ['gift card seasonal campaigns', 'new drink launch ads'],
+    storyTitle: (businessName) => `${businessName} leads with occasion, not navigation clutter.`,
+    storyBody: () =>
+      `Atmosphere, trust, giftable moments, and a clear reservation path make the first impression feel ready for a special night out.`,
+    trustSignals: ['Special-occasion dining', 'Private dining available', 'Gift cards ready'],
+    conversionTitle: 'Reservation-first path.',
+    conversionBody: 'Guests see the atmosphere, understand the occasion, and get one obvious booking action before the page branches.',
+    conversionSteps: ['Explore menu', 'Choose occasion', 'Review private dining', 'Reserve table'],
+    visitTitle: 'Private dining and gift cards get real space.',
+    visitBody: 'High-value secondary actions are treated like homepage moments, not buried utility links.',
+    contentTitle: 'Date-night content can point to a stronger landing page.',
+    contentIdeas: ['date-night menu story', 'chef feature', 'gift-card campaign', 'private dining post'],
+    localSearches: ['fine dining {city}', 'best steakhouse {city}', 'private dining {city}', 'date night {city}'],
     issueFallbacks: [
       {
-        label: 'Menu clarity',
-        current: 'Menu, hours, and ordering are not bundled into one easy path.',
-        fix: 'Put featured drinks, daily specials, and order CTA in the first screen.',
+        label: 'Reservation path',
+        current: 'Reservation intent competes with too many equal-weight actions.',
+        fix: 'Make Reserve Your Table the dominant above-the-fold action.',
         severity: 'high',
       },
-      {
-        label: 'Community story',
-        current: 'The site does not show why guests come back.',
-        fix: 'Add a community and loyalty section that feels local.',
-        severity: 'medium',
-      },
     ],
-    layout: 'cafe',
+    tone: 'luxury',
   },
   nonprofit_cafe: {
-    icon: HeartHandshake,
     navItems: ['Mission', 'Menu', 'Donate', 'Volunteer', 'Visit'],
     primaryCta: 'Visit or support',
-    eyebrow: 'Mission-first homepage concept',
-    heroKicker: 'Community impact with a clear next step',
-    fallbackHeadline: (businessName) => `${businessName} can make the mission visible immediately`,
-    fallbackSubheadline: (location) =>
-      `A community-first concept for ${location} guests who need to understand the food, the purpose, and how to participate.`,
-    utility: ['Mission above the fold', 'Donate and volunteer paths', 'Visit details visible'],
-    offers: ['Dine', 'Donate', 'Volunteer', 'Community impact'],
+    secondaryCta: 'See the mission',
+    eyebrow: 'Community cafe homepage concept',
+    fallbackHeadline: (businessName, city) => `${businessName} can make ${city} part of the mission`,
+    fallbackSubheadline: (_businessName, location) =>
+      `A mission-first homepage for ${location} guests who need to understand the food, the community model, and how to help.`,
+    heroPhoto: 'mission',
+    heroPhotoLabel: 'Community impact photo direction',
+    badges: ['Dine', 'Donate', 'Volunteer', 'Community', 'Visit'],
+    offers: [
+      {
+        title: 'Dine',
+        body: 'A warm path for guests who want to support by showing up.',
+        label: 'Visit',
+        photoRole: 'dish',
+      },
+      {
+        title: 'Donate',
+        body: 'A visible support path for people who believe in the mission.',
+        label: 'Support',
+        photoRole: 'mission',
+      },
+      {
+        title: 'Volunteer',
+        body: 'A simple participation module for community members.',
+        label: 'Help',
+        photoRole: 'mission',
+      },
+      {
+        title: 'Community impact',
+        body: 'A story section that explains why the model matters.',
+        label: 'Impact',
+        photoRole: 'social',
+      },
+    ],
+    storyTitle: (businessName) => `${businessName} brings the mission into the first impression.`,
+    storyBody: () =>
+      `Food, purpose, donation, and volunteer paths sit together so people can understand the model and act on it quickly.`,
     trustSignals: ['Community-driven model', 'Volunteer participation', 'Local impact story'],
-    conversionSteps: ['Understand mission', 'See menu', 'Choose donate or volunteer', 'Visit or support'],
-    localSearches: ['community cafe in {city}', 'nonprofit cafe {city}', 'volunteer cafe {city}'],
-    contentIdeas: ['volunteer/donation storytelling', 'program spotlight posts', 'community meal updates'],
-    metaAdsIdeas: ['donation campaigns', 'volunteer recruitment ads'],
+    conversionTitle: 'Dine, donate, or volunteer.',
+    conversionBody: 'The homepage gives three equally clear forms of support while keeping visit details practical.',
+    conversionSteps: ['Understand mission', 'See menu', 'Choose support path', 'Visit or donate'],
+    visitTitle: 'Participation details belong near the top.',
+    visitBody: 'Hours, location, donation, and volunteer paths are grouped so people can act on the moment they feel ready.',
+    contentTitle: 'Impact stories become a repeatable content engine.',
+    contentIdeas: ['volunteer story', 'community meal update', 'donation reminder', 'program spotlight'],
+    localSearches: ['community cafe {city}', 'nonprofit cafe {city}', 'volunteer cafe {city}', 'donate food {city}'],
     issueFallbacks: [
       {
-        label: 'Mission path',
+        label: 'Support path',
         current: 'Donation and volunteer paths are not obvious enough for new visitors.',
         fix: 'Place donate and volunteer CTAs beside the menu and mission story.',
         severity: 'high',
       },
-      {
-        label: 'Impact clarity',
-        current: 'The current experience may not explain the model fast enough.',
-        fix: 'Use a mission explainer and impact story before the footer.',
-        severity: 'medium',
-      },
     ],
-    layout: 'mission',
+    tone: 'mission',
   },
   food_truck: {
-    icon: Navigation,
     navItems: ['Menu', 'Location', 'Catering', 'Events', 'Contact'],
     primaryCta: 'Find the truck',
+    secondaryCta: 'Book catering',
     eyebrow: 'Mobile food homepage concept',
-    heroKicker: 'Location and catering first',
-    fallbackHeadline: (businessName) => `${businessName} needs the route right up front`,
-    fallbackSubheadline: (location) =>
-      `A bold mobile-first concept for ${location} customers who need location, hours, menu, and catering in seconds.`,
-    utility: ['Route-first layout', 'Catering inquiry path', 'Event booking CTA'],
-    offers: ['Weekly location', 'Catering', 'Menu highlights', 'Event booking'],
-    trustSignals: ['Event booking available', 'Weekly route updates', 'Mobile ordering energy'],
+    fallbackHeadline: (businessName, city) => `${businessName} makes the next ${city} stop easy to find`,
+    fallbackSubheadline: (_businessName, location) =>
+      `A location-first homepage for ${location} customers who need the schedule, menu, catering, and event booking in seconds.`,
+    heroPhoto: 'truck',
+    heroPhotoLabel: 'Food truck location photo direction',
+    badges: ['Weekly location', 'Menu', 'Catering', 'Events', 'Social updates'],
+    offers: [
+      {
+        title: 'Weekly location',
+        body: 'A schedule module that answers where to find the truck next.',
+        label: 'Route',
+        photoRole: 'truck',
+      },
+      {
+        title: 'Catering',
+        body: 'A direct inquiry path for offices, markets, and private events.',
+        label: 'Book',
+        photoRole: 'catering',
+      },
+      {
+        title: 'Menu highlights',
+        body: 'Quick food cards built for mobile decisions.',
+        label: 'Menu',
+        photoRole: 'dish',
+      },
+      {
+        title: 'Event booking',
+        body: 'A higher-value path with less friction than social DMs.',
+        label: 'Events',
+        photoRole: 'event',
+      },
+    ],
+    storyTitle: (businessName) => `${businessName} puts location before decoration.`,
+    storyBody: () =>
+      `Location, menu, catering, and event booking stay close together for customers making a fast mobile decision.`,
+    trustSignals: ['Weekly route updates', 'Event booking available', 'Mobile ordering energy'],
+    conversionTitle: 'Location and catering first.',
+    conversionBody: 'Mobile food customers need a fast answer, then a reason to book the truck for something bigger.',
     conversionSteps: ['Find location', 'Choose menu item', 'Check event schedule', 'Book catering'],
-    localSearches: ['food truck catering {city}', 'food truck near {city}', 'mobile catering {city}'],
-    contentIdeas: ['weekly location posts', 'menu highlight shorts', 'event-day reminders'],
-    metaAdsIdeas: ['catering inquiry campaigns', 'near-stop lunch ads'],
+    visitTitle: 'Schedule, stops, and event booking stay together.',
+    visitBody: 'The visit module acts more like a route board than a static footer.',
+    contentTitle: 'Social posts can drive real location traffic.',
+    contentIdeas: ['weekly route post', 'menu highlight reel', 'event-day reminder', 'catering push'],
+    localSearches: ['food truck {city}', 'food truck catering {city}', 'mobile catering {city}', 'lunch truck {city}'],
     issueFallbacks: [
       {
         label: 'Location clarity',
@@ -267,353 +490,243 @@ const VARIANT_CONFIG: Record<MockupTemplateVariant, VariantConfig> = {
         fix: 'Make location, schedule, and catering CTAs the first visible actions.',
         severity: 'high',
       },
-      {
-        label: 'Catering path',
-        current: 'Event booking demand needs a dedicated inquiry path.',
-        fix: 'Add a catering module with one simple booking CTA.',
-        severity: 'medium',
-      },
     ],
-    layout: 'mobile',
-  },
-  restaurant: {
-    icon: Utensils,
-    navItems: ['Menu', 'Order', 'Reserve', 'Visit', 'Catering'],
-    primaryCta: 'Plan your visit',
-    eyebrow: 'Restaurant homepage concept',
-    heroKicker: 'Food-forward visit planning',
-    fallbackHeadline: (businessName) => `${businessName} can make tonight's choice easier`,
-    fallbackSubheadline: (location) =>
-      `A flexible restaurant concept for ${location} diners who need menu highlights, visit details, and the next action without hunting.`,
-    utility: ['Featured dishes', 'Order or reserve path', 'Best-time visit cues'],
-    offers: ['Featured dishes', 'Find your order', 'Best time to visit', 'Catering'],
-    trustSignals: ['Local dining destination', 'Menu built for repeat visits', 'Catering and group occasions'],
-    conversionSteps: ['See menu', 'Choose occasion', 'Plan visit', 'Order or reserve'],
-    localSearches: ['restaurant in {city}', 'best lunch near {city}', 'catering in {city}'],
-    contentIdeas: ['weekly featured dish reels', 'chef or owner notes', 'catering reminders'],
-    metaAdsIdeas: ['date-night ads', 'family dinner promotions'],
-    issueFallbacks: [
-      {
-        label: 'Menu path',
-        current: 'Menu highlights and the primary action are not clear enough on mobile.',
-        fix: 'Use food-forward cards with order, reserve, and visit CTAs.',
-        severity: 'high',
-      },
-      {
-        label: 'Visit planning',
-        current: 'Guests need hours, location, and best-time cues before choosing.',
-        fix: 'Add a visit planner section with practical next steps.',
-        severity: 'medium',
-      },
-    ],
-    layout: 'dining',
+    tone: 'mobile',
   },
   local_service: {
-    icon: Wrench,
     navItems: ['Services', 'Results', 'Areas', 'Reviews', 'Quote'],
-    primaryCta: 'Request quote',
+    primaryCta: 'Request a quote',
+    secondaryCta: 'View services',
     eyebrow: 'Local service homepage concept',
-    heroKicker: 'Proof and quote path first',
-    fallbackHeadline: (businessName) => `${businessName} can turn service searches into quote requests`,
-    fallbackSubheadline: (location) =>
-      `A service-focused concept for ${location} customers comparing options and ready to request help.`,
-    utility: ['Quote-first CTA', 'Service area clarity', 'Trust proof early'],
-    offers: ['Emergency request', 'Estimate path', 'Service areas', 'Maintenance plan'],
+    fallbackHeadline: (businessName, city) => `${businessName} can turn ${city} searches into booked work`,
+    fallbackSubheadline: (_businessName, location) =>
+      `A proof-first service homepage for ${location} customers who need services, trust, areas served, and a fast quote path.`,
+    heroPhoto: 'service',
+    heroPhotoLabel: 'Before and after project photo direction',
+    badges: ['Services', 'Proof', 'Reviews', 'Service area', 'Quote'],
+    offers: [
+      {
+        title: 'Core services',
+        body: 'Clear service cards mapped to customer intent.',
+        label: 'Services',
+        photoRole: 'service',
+      },
+      {
+        title: 'Proof and results',
+        body: 'Before and after evidence placed before the quote ask.',
+        label: 'Proof',
+        photoRole: 'service',
+      },
+      {
+        title: 'Service areas',
+        body: 'Local SEO sections that match how customers search.',
+        label: 'Areas',
+        photoRole: 'interior',
+      },
+      {
+        title: 'Request quote',
+        body: 'A short, visible path for high-intent visitors.',
+        label: 'Action',
+        photoRole: 'service',
+      },
+    ],
+    storyTitle: (businessName) => `${businessName} proves trust before asking for the quote.`,
+    storyBody: () =>
+      `Services, proof, service area, and a quote action create a clear path for customers who are ready to book.`,
     trustSignals: ['Service area coverage', 'Estimate request path', 'Review and proof section'],
-    conversionSteps: ['See services', 'Confirm service area', 'Review proof', 'Request quote'],
-    localSearches: ['service provider in {city}', 'emergency service {city}', 'request quote {city}'],
-    contentIdeas: ['seasonal checklist posts', 'before-and-after proof', 'service area reminders'],
-    metaAdsIdeas: ['quote request campaigns', 'maintenance reminder retargeting'],
+    conversionTitle: 'Proof first, quote second.',
+    conversionBody: 'Visitors see what is offered, confirm the area, review proof, then request a quote without hunting.',
+    conversionSteps: ['See services', 'Confirm area', 'Review proof', 'Request quote'],
+    visitTitle: 'Service area SEO gets its own useful module.',
+    visitBody: 'Location coverage becomes helpful content, not a tiny footer phrase.',
+    contentTitle: 'Proof content becomes the growth engine.',
+    contentIdeas: ['before and after post', 'seasonal checklist', 'review highlight', 'service area reminder'],
+    localSearches: ['service provider {city}', 'request quote {city}', 'emergency service {city}', 'best service {city}'],
     issueFallbacks: [
       {
         label: 'Quote path',
         current: 'Visitors do not get a simple quote or booking path early enough.',
-        fix: 'Make Request Quote the dominant hero and sticky mobile action.',
+        fix: 'Make Request Quote the dominant hero and repeated mobile action.',
         severity: 'high',
       },
-      {
-        label: 'Proof',
-        current: 'Trust and service-area proof need to support the decision sooner.',
-        fix: 'Show service cards, proof, and areas before the final CTA.',
-        severity: 'medium',
-      },
     ],
-    layout: 'service',
+    tone: 'service',
   },
 };
 
 export function PremiumMockupSite({ mockup, prospect, audit }: PremiumMockupSiteProps) {
-  const context = buildConceptContext(mockup, prospect, audit);
+  const context = buildSiteContext(mockup, prospect, audit);
 
   return (
-    <WebsiteConceptShell variant={context.variant}>
-      <ConceptTopBar context={context} />
-      <div className={styles.homepagePreview}>
-        <WebsiteNav context={context} />
-        <WebsiteHero context={context} />
-        {renderVariantHomepage(context)}
-        <WebsiteFooter context={context} />
-      </div>
+    <main className={`${styles.site} ${styles[`variant_${context.variant}`]} ${styles[`tone_${context.config.tone}`]}`}>
+      <ConceptNotice context={context} />
+      <WebsiteHeader context={context} />
+      <WebsiteHero context={context} />
+      <PrimaryConversion context={context} />
+      <BrandStory context={context} />
+      <ExperienceSection context={context} />
+      <MenuOfferSection context={context} />
+      <VisitSection context={context} />
+      <GrowthSection context={context} />
       <OnlinePresenceSnapshot context={context} />
-      <WalkthroughCTA businessName={context.businessName} />
-    </WebsiteConceptShell>
+      <FinalWalkthrough context={context} />
+      <WebsiteFooter context={context} />
+    </main>
   );
 }
 
-function buildConceptContext(mockup: Mockup, prospect: PublicProspect | null, audit?: PublicAudit | null): ConceptContext {
-  const parsedConcept = parseMockupConceptNotes(mockup.concept_notes);
-  const rich = parsedConcept.rich;
+function buildSiteContext(mockup: Mockup, prospect: PublicProspect | null, audit?: PublicAudit | null): SiteContext {
+  const parsed = parseMockupConceptNotes(mockup.concept_notes);
+  const rich = parsed.rich;
   const businessName = prospect?.business_name || mockup.title.replace(/\s+mockup.*$/i, '') || mockup.title;
   const niche = prospect?.niche || 'local business';
-  const location = [prospect?.city, prospect?.state].filter(Boolean).join(', ') || 'your area';
   const city = prospect?.city || 'your area';
+  const location = [prospect?.city, prospect?.state].filter(Boolean).join(', ') || 'your area';
   const variant = getMockupTemplateVariant(niche);
   const config = VARIANT_CONFIG[variant];
-  const features = parseMockupFeatures(mockup.features_included);
-  const offers = mergeItems(rich.menu_or_offer_items, config.offers, features, 6);
-  const trustSignals = deriveTrustSignals(rich, audit, config);
-  const issueFixes = deriveIssueFixes(rich, audit, config);
+  const headline = cleanText(mockup.hero_headline) || config.fallbackHeadline(businessName, city);
+  const subheadline =
+    cleanText(mockup.hero_subheadline) ||
+    cleanText(audit?.conversion_opportunity) ||
+    config.fallbackSubheadline(businessName, location);
+  const primaryCta = cleanText(mockup.primary_cta) || config.primaryCta;
+  const navItems = mergeText(rich.proposed_site_nav, config.navItems, [], 6);
+  const richOffers = cleanRichList(rich.menu_or_offer_items);
+  const offers = mergeOfferItems(richOffers, config.offers);
+  const trustSignals = mergeText(rich.trust_signals, deriveTrustSignals(audit), config.trustSignals, 5);
   const conversionSteps = deriveConversionSteps(rich.cta_strategy, config.conversionSteps);
+  const contentIdeas = mergeText(cleanRichList(rich.content_strategy_angle), rich.homepage_sections, config.contentIdeas, 5);
+  const metaIdeas = mergeText(cleanRichList(rich.meta_ads_angle), [], [], 3);
   const localSearches = deriveLocalSearches(rich, config, city);
-  const contentIdeas = mergeItems(cleanRichList(rich.content_strategy_angle), rich.homepage_sections, config.contentIdeas, 4);
-  const metaAdsIdeas = mergeItems(cleanRichList(rich.meta_ads_angle), [], config.metaAdsIdeas, 3);
-  const navItems = deriveNavItems(rich, config, offers);
+  const issueFixes = deriveIssueFixes(rich, audit, config);
   const visualDirection =
-    rich.visual_direction ||
-    rich.brand_style_notes ||
-    rich.inspiration_notes ||
-    parsedConcept.notes ||
-    config.heroKicker;
+    cleanText(rich.visual_direction) ||
+    cleanText(rich.brand_style_notes) ||
+    cleanText(rich.inspiration_notes) ||
+    cleanText(parsed.notes) ||
+    config.heroPhotoLabel;
 
   return {
+    mockup,
     businessName,
     niche,
     location,
     city,
     variant,
     config,
-    headline: mockup.hero_headline || config.fallbackHeadline(businessName),
-    subheadline: mockup.hero_subheadline || audit?.conversion_opportunity || config.fallbackSubheadline(location),
-    primaryCta: mockup.primary_cta || config.primaryCta,
-    navItems,
-    offers,
-    trustSignals,
-    issueFixes,
-    conversionSteps,
-    localSearches,
-    contentIdeas,
-    metaAdsIdeas,
-    visualDirection,
-    palette: mergeItems(rich.primary_colors, rich.secondary_colors, [], 5),
     rich,
     audit,
-    conceptNotes: parsedConcept.notes,
+    conceptNotes: parsed.notes,
+    headline,
+    subheadline,
+    primaryCta,
+    navItems,
+    badges: mergeText(config.badges, offers.map((offer) => offer.title), [], 5),
+    offers,
+    trustSignals,
+    conversionSteps,
+    contentIdeas,
+    metaIdeas,
+    localSearches,
+    issueFixes,
+    visualDirection,
     mockupUrl: buildPublicMockupUrl(mockup.slug),
   };
 }
 
-export function WebsiteConceptShell({
-  variant,
-  children,
-}: {
-  variant: MockupTemplateVariant;
-  children: ReactNode;
-}) {
+function ConceptNotice({ context }: { context: SiteContext }) {
   return (
-    <main className={`${styles.shell} ${styles[variant]} ${styles[`layout_${VARIANT_CONFIG[variant].layout}`]}`}>
-      {children}
-    </main>
+    <div className={styles.conceptNotice}>
+      <span>Website concept preview</span>
+      <span>{context.businessName}</span>
+      <span>{context.location}</span>
+      <span>Prepared by Apex Marketing Group</span>
+      <span>Visual concept, not final production website</span>
+    </div>
   );
 }
 
-export function ConceptTopBar({ context }: { context: ConceptContext }) {
+function WebsiteHeader({ context }: { context: SiteContext }) {
   return (
-    <section className={styles.conceptTopBar}>
-      <div>
-        <p>Website Concept Preview</p>
-        <h1>{context.businessName}</h1>
-      </div>
-      <div className={styles.conceptMeta}>
-        <span>{context.location}</span>
-        <span>{context.niche}</span>
-        <span>Prepared by Apex Marketing Group</span>
-      </div>
-      <div className={styles.conceptDisclaimer}>Visual concept, not final production website</div>
-    </section>
-  );
-}
-
-export function WebsiteNav({ context }: { context: ConceptContext }) {
-  return (
-    <header className={styles.websiteNav}>
-      <a href="#top" className={styles.siteBrand}>
-        <span>{businessInitials(context.businessName)}</span>
-        {context.businessName}
+    <header className={styles.header}>
+      <a className={styles.brand} href="#home" aria-label={`${context.businessName} concept homepage`}>
+        <span className={styles.logoMark}>{businessInitials(context.businessName)}</span>
+        <span>
+          <strong>{context.businessName}</strong>
+          <small>{context.location}</small>
+        </span>
       </a>
-      <nav aria-label="Concept website navigation">
+      <nav className={styles.nav} aria-label="Concept website navigation">
         {context.navItems.map((item) => (
           <a key={item} href={navHref(item)}>
             {item}
           </a>
         ))}
       </nav>
-      <a href="#walkthrough" className={styles.navCta}>
+      <a className={styles.headerCta} href="#primary-action">
         {context.primaryCta}
       </a>
     </header>
   );
 }
 
-export function WebsiteHero({ context }: { context: ConceptContext }) {
-  const Icon = context.config.icon;
-
+function WebsiteHero({ context }: { context: SiteContext }) {
   return (
-    <section id="top" className={styles.websiteHero}>
-      <div className={styles.heroCopy}>
-        <p className={styles.kicker}>{context.config.eyebrow}</p>
-        <h2>{context.headline}</h2>
-        <p className={styles.heroText}>{context.subheadline}</p>
-        <div className={styles.heroActions}>
-          <a href="#primary-path" className={styles.primaryButton}>
-            {context.primaryCta}
-            <ArrowRight size={18} />
-          </a>
-          <a href="#snapshot" className={styles.secondaryButton}>
-            See what this fixes
-          </a>
-        </div>
+    <section id="home" className={styles.hero}>
+      <div className={`${styles.heroImage} ${styles[`photo_${context.config.heroPhoto}`]}`}>
+        <span>{context.config.heroPhotoLabel}</span>
       </div>
-      <div className={styles.heroEditorial}>
-        <div className={styles.editorialCard}>
-          <Icon size={42} />
-          <span>{context.config.heroKicker}</span>
-          <p>{context.visualDirection}</p>
-        </div>
-        <div className={styles.editorialStack}>
-          {context.offers.slice(0, 3).map((offer) => (
-            <span key={offer}>{offer}</span>
-          ))}
-        </div>
-        {context.palette.length > 0 && (
-          <div className={styles.paletteRail}>
-            {context.palette.slice(0, 4).map((color) => (
-              <span key={color}>{color}</span>
+      <div className={styles.heroVeil} />
+      <div className={styles.heroContent}>
+        <div className={styles.heroCopy}>
+          <p className={styles.eyebrow}>{context.config.eyebrow}</p>
+          <h1>{context.headline}</h1>
+          <p className={styles.heroLead}>{context.subheadline}</p>
+          <div className={styles.heroBadges}>
+            {context.badges.map((badge) => (
+              <span key={badge}>{badge}</span>
             ))}
           </div>
-        )}
+          <div className={styles.heroActions}>
+            <a className={styles.primaryButton} href="#primary-action">
+              {context.primaryCta}
+              <ArrowRight size={17} />
+            </a>
+            <a className={styles.secondaryButton} href="#visit">
+              {context.config.secondaryCta}
+            </a>
+          </div>
+          <p className={styles.addressLine}>
+            <MapPin size={17} />
+            {context.location}
+          </p>
+        </div>
+        <aside className={styles.statusCard}>
+          <IconByVariant variant={context.variant} />
+          <div>
+            <strong>{statusTitle(context)}</strong>
+            <span>{statusBody(context)}</span>
+            <small>{statusDetail(context)}</small>
+          </div>
+        </aside>
       </div>
     </section>
   );
 }
 
-function renderVariantHomepage(context: ConceptContext) {
-  switch (context.variant) {
-    case 'premium_dining':
-      return (
-        <>
-          <ConversionStrip context={context} />
-          <SignatureOfferSection context={context} title="Signature dishes and occasion paths" />
-          <TrustStorySection context={context} mode="awards" />
-          <GiftCardPrivateDiningSection context={context} />
-          <LocalSearchSection context={context} />
-        </>
-      );
-    case 'bar_grill':
-      return (
-        <>
-          <EventOrHappyHourSection context={context} />
-          <ConversionStrip context={context} />
-          <FeaturedMenuSection context={context} title="Food, taps, and tonight's draw" />
-          <SocialContentSection context={context} />
-          <VisitPlannerSection context={context} />
-        </>
-      );
-    case 'coffee_shop':
-      return (
-        <>
-          <FeaturedMenuSection context={context} title="Featured drinks and daily comforts" />
-          <ConversionStrip context={context} />
-          <TrustStorySection context={context} mode="community" />
-          <VisitPlannerSection context={context} />
-          <SocialContentSection context={context} />
-        </>
-      );
-    case 'nonprofit_cafe':
-      return (
-        <>
-          <MissionImpactSection context={context} />
-          <ConversionStrip context={context} />
-          <FeaturedMenuSection context={context} title="Food, support, and community access" />
-          <VisitPlannerSection context={context} />
-          <SocialContentSection context={context} />
-        </>
-      );
-    case 'food_truck':
-      return (
-        <>
-          <VisitPlannerSection context={context} />
-          <FeaturedMenuSection context={context} title="Menu highlights for the next stop" />
-          <CateringBookingSection context={context} />
-          <SocialContentSection context={context} />
-          <LocalSearchSection context={context} />
-        </>
-      );
-    case 'local_service':
-      return (
-        <>
-          <SignatureOfferSection context={context} title="Services that route straight to a quote" />
-          <TrustStorySection context={context} mode="proof" />
-          <ConversionStrip context={context} />
-          <LocalSearchSection context={context} />
-          <CateringBookingSection context={context} serviceMode />
-        </>
-      );
-    case 'restaurant':
-    default:
-      return (
-        <>
-          <FeaturedMenuSection context={context} title="Featured dishes and visit paths" />
-          <SignatureOfferSection context={context} title="Find your order" />
-          <VisitPlannerSection context={context} />
-          <LocalSearchSection context={context} />
-          <SocialContentSection context={context} />
-        </>
-      );
-  }
-}
-
-export function ConversionStrip({ context }: { context: ConceptContext }) {
+function PrimaryConversion({ context }: { context: SiteContext }) {
   return (
-    <section id="primary-path" className={styles.conversionStrip}>
-      <div>
-        <p>Primary path</p>
-        <h3>{context.primaryCta}</h3>
+    <section id="primary-action" className={styles.conversion}>
+      <div className={styles.sectionIntro}>
+        <p>{primaryPathLabel(context)}</p>
+        <h2>{context.config.conversionTitle}</h2>
+        <span>{context.config.conversionBody}</span>
       </div>
-      <div className={styles.pathSteps}>
+      <div className={styles.conversionSteps}>
         {context.conversionSteps.slice(0, 4).map((step, index) => (
-          <span key={step}>
-            <strong>{String(index + 1).padStart(2, '0')}</strong>
-            {step}
-          </span>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-export function FeaturedMenuSection({ context, title }: { context: ConceptContext; title: string }) {
-  return (
-    <section id="menu" className={`${styles.siteSection} ${styles.featuredMenu}`}>
-      <div className={styles.sectionLead}>
-        <p>{context.variant === 'local_service' ? 'Service menu' : 'Homepage module'}</p>
-        <h3>{title}</h3>
-      </div>
-      <div className={styles.menuBoard}>
-        {context.offers.slice(0, 4).map((offer, index) => (
-          <article key={offer}>
-            <span>{String(index + 1).padStart(2, '0')}</span>
-            <h4>{offer}</h4>
-            <p>{menuCardCopy(context, offer, index)}</p>
+          <article key={step}>
+            <small>{String(index + 1).padStart(2, '0')}</small>
+            <strong>{step}</strong>
           </article>
         ))}
       </div>
@@ -621,113 +734,20 @@ export function FeaturedMenuSection({ context, title }: { context: ConceptContex
   );
 }
 
-export function SignatureOfferSection({ context, title }: { context: ConceptContext; title: string }) {
+function BrandStory({ context }: { context: SiteContext }) {
   return (
-    <section id={context.variant === 'restaurant' ? undefined : 'menu'} className={`${styles.siteSection} ${styles.signatureSection}`}>
-      <div className={styles.signatureCopy}>
-        <p>Signature offer</p>
-        <h3>{title}</h3>
-        <p>{context.audit?.recommended_offer || context.rich.current_site_snapshot || context.config.heroKicker}</p>
+    <section className={styles.story}>
+      <div className={styles.storyCopy}>
+        <p>{storyLabel(context)}</p>
+        <h2>{context.config.storyTitle(context.businessName)}</h2>
+        <span>{siteStoryBody(context)}</span>
       </div>
-      <div className={styles.signatureList}>
-        {context.offers.slice(0, 4).map((offer) => (
-          <div key={offer}>
-            <CheckCircle2 size={17} />
-            <span>{offer}</span>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-export function VisitPlannerSection({ context }: { context: ConceptContext }) {
-  return (
-    <section id="visit" className={`${styles.siteSection} ${styles.visitPlanner}`}>
-      <div className={styles.visitCard}>
-        <Clock3 size={22} />
-        <p>{context.variant === 'food_truck' ? 'Location planner' : 'Visit planner'}</p>
-        <h3>{context.variant === 'food_truck' ? 'Where to find us next' : 'Best path to a visit'}</h3>
-        <span>{context.location}</span>
-      </div>
-      <div className={styles.visitTimeline}>
-        {context.config.utility.map((item, index) => (
-          <div key={item}>
-            <span>{String(index + 1).padStart(2, '0')}</span>
-            <p>{item}</p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-export function EventOrHappyHourSection({ context }: { context: ConceptContext }) {
-  return (
-    <section className={`${styles.siteSection} ${styles.eventSection}`}>
-      <div>
-        <p>This week</p>
-        <h3>Happy hour, events, and a reason to visit now</h3>
-        <a href="#walkthrough" className={styles.inlineCta}>
-          Map the weekly rhythm
-          <ArrowRight size={15} />
-        </a>
-      </div>
-      <div className={styles.eventCards}>
-        {['Happy hour', 'Live music', 'Game night'].map((item, index) => (
-          <article key={item}>
-            <CalendarDays size={18} />
-            <span>{item}</span>
-            <p>{context.contentIdeas[index] || context.config.contentIdeas[index]}</p>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-export function TrustStorySection({
-  context,
-  mode,
-}: {
-  context: ConceptContext;
-  mode: 'awards' | 'community' | 'proof';
-}) {
-  const title = mode === 'awards' ? 'Trust, awards, and legacy' : mode === 'proof' ? 'Proof before the quote' : 'A story regulars recognize';
-
-  return (
-    <section id="story" className={`${styles.siteSection} ${styles.trustSection}`}>
-      <div className={styles.storyPanel}>
-        <ShieldCheck size={24} />
-        <p>Trust story</p>
-        <h3>{title}</h3>
-        <span>{context.conceptNotes || context.rich.original_site_notes || context.audit?.audit_notes || context.visualDirection}</span>
-      </div>
-      <div className={styles.trustStrip}>
-        {context.trustSignals.slice(0, 4).map((signal) => (
-          <div key={signal}>
+      <div className={styles.trustCards}>
+        {context.trustSignals.slice(0, 3).map((signal, index) => (
+          <article key={signal}>
             <Star size={16} />
-            {signal}
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-export function MissionImpactSection({ context }: { context: ConceptContext }) {
-  return (
-    <section id="mission" className={`${styles.siteSection} ${styles.missionImpact}`}>
-      <div>
-        <p>Mission made visible</p>
-        <h3>Eat here, support the work, or show up to help.</h3>
-      </div>
-      <div className={styles.impactChoices}>
-        {['Dine', 'Donate', 'Volunteer'].map((item, index) => (
-          <article key={item}>
-            <HeartHandshake size={20} />
-            <h4>{context.offers[index] || item}</h4>
-            <p>{context.trustSignals[index] || context.config.trustSignals[index]}</p>
+            <small>{['Proof', 'Local signal', 'Conversion cue'][index] || 'Trust'}</small>
+            <strong>{signal}</strong>
           </article>
         ))}
       </div>
@@ -735,52 +755,107 @@ export function MissionImpactSection({ context }: { context: ConceptContext }) {
   );
 }
 
-export function CateringBookingSection({
-  context,
-  serviceMode = false,
-}: {
-  context: ConceptContext;
-  serviceMode?: boolean;
-}) {
+function ExperienceSection({ context }: { context: SiteContext }) {
+  const cards = context.offers.slice(0, 3);
+
   return (
-    <section className={`${styles.siteSection} ${styles.bookingBand}`}>
-      <div>
-        <p>{serviceMode ? 'Quote path' : `${context.businessName} booking path`}</p>
-        <h3>{serviceMode ? 'Turn service-area searches into quote requests.' : 'Give catering and events a direct inquiry path.'}</h3>
+    <section className={styles.experiences}>
+      <div className={styles.sectionIntro}>
+        <p>{experienceEyebrow(context)}</p>
+        <h2>{experienceTitle(context)}</h2>
       </div>
-      <a href="#walkthrough" className={styles.primaryButton}>
-        {serviceMode ? 'Request a quote' : 'Start an inquiry'}
-        <ArrowRight size={18} />
-      </a>
+      <div className={styles.experienceGrid}>
+        {cards.map((item) => (
+          <PhotoCard key={item.title} item={item} />
+        ))}
+      </div>
     </section>
   );
 }
 
-export function GiftCardPrivateDiningSection({ context }: { context: ConceptContext }) {
+function MenuOfferSection({ context }: { context: SiteContext }) {
   return (
-    <section className={`${styles.siteSection} ${styles.giftPrivate}`}>
-      <article>
-        <Gift size={22} />
-        <h3>Gift cards</h3>
-        <p>{context.metaAdsIdeas[0] || 'Seasonal gift-card campaigns get a premium landing point.'}</p>
-      </article>
-      <article>
-        <Utensils size={22} />
-        <h3>Private dining</h3>
-        <p>{context.offers.find((item) => /private|event|room/i.test(item)) || 'A dedicated private dining path supports groups and events.'}</p>
-      </article>
+    <section id="menu" className={styles.menuSection}>
+      <div className={styles.menuLead}>
+        <p>{context.variant === 'local_service' ? 'Service highlights' : 'Menu highlights'}</p>
+        <h2>{menuTitle(context)}</h2>
+        <span>{menuLeadBody(context)}</span>
+      </div>
+      <div className={styles.menuGrid}>
+        {context.offers.slice(0, 4).map((item) => (
+          <article key={item.title} className={styles.menuCard}>
+            <div className={`${styles.cardPhoto} ${styles[`photo_${item.photoRole}`]}`}>
+              <span>{item.label || 'Featured'}</span>
+            </div>
+            <div>
+              <small>{item.label || 'Featured'}</small>
+              <h3>{item.title}</h3>
+              <p>{item.body}</p>
+            </div>
+          </article>
+        ))}
+      </div>
     </section>
   );
 }
 
-export function LocalSearchSection({ context }: { context: ConceptContext }) {
+function VisitSection({ context }: { context: SiteContext }) {
   return (
-    <section className={`${styles.siteSection} ${styles.localSearch}`}>
-      <div className={styles.sectionLead}>
-        <p>Local search</p>
-        <h3>{context.rich.local_seo_angle || `Searches this concept should capture near ${context.city}`}</h3>
+    <section id="visit" className={styles.visitSection}>
+      <div className={styles.visitCopy}>
+        <p>{context.variant === 'food_truck' ? 'Location schedule' : 'Plan your visit'}</p>
+        <h2>{context.config.visitTitle}</h2>
+        <span>{context.config.visitBody}</span>
+        <div className={styles.visitActions}>
+          <a className={styles.primaryButton} href="#walkthrough">
+            {context.primaryCta}
+            <ArrowRight size={17} />
+          </a>
+          <a className={styles.secondaryButton} href="#local-search">
+            Why locals find it
+          </a>
+        </div>
       </div>
-      <div className={styles.searchTerms}>
+      <div className={styles.visitPanel}>
+        <div>
+          <MapPin size={20} />
+          <strong>{context.location}</strong>
+          <span>{visitHint(context)}</span>
+        </div>
+        <div>
+          <CalendarDays size={20} />
+          <strong>{bestTimeLabel(context)}</strong>
+          <span>{bestTimeBody(context)}</span>
+        </div>
+        <div>
+          <Phone size={20} />
+          <strong>{contactLabel(context)}</strong>
+          <span>Keep the next step visible on every screen size.</span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function GrowthSection({ context }: { context: SiteContext }) {
+  const ideas = mergeText(context.contentIdeas, context.metaIdeas, context.localSearches, 6);
+
+  return (
+    <section id="content" className={styles.growth}>
+      <div className={styles.growthHeader}>
+        <p>Content and local growth</p>
+        <h2>{context.rich.content_strategy_angle || context.config.contentTitle}</h2>
+      </div>
+      <div className={styles.growthGrid}>
+        {ideas.slice(0, 3).map((idea, index) => (
+          <article key={idea}>
+            {index === 0 ? <Megaphone size={18} /> : index === 1 ? <Search size={18} /> : <ShoppingBag size={18} />}
+            <strong>{idea}</strong>
+            <span>{growthBody(context, idea, index)}</span>
+          </article>
+        ))}
+      </div>
+      <div id="local-search" className={styles.searchStrip}>
         {context.localSearches.slice(0, 4).map((term) => (
           <span key={term}>
             <Search size={14} />
@@ -792,51 +867,14 @@ export function LocalSearchSection({ context }: { context: ConceptContext }) {
   );
 }
 
-export function SocialContentSection({ context }: { context: ConceptContext }) {
-  return (
-    <section id="content" className={`${styles.siteSection} ${styles.socialContent}`}>
-      <div>
-        <p>Content and Meta ads</p>
-        <h3>{context.rich.content_strategy_angle || 'A homepage that gives weekly content somewhere useful to point.'}</h3>
-      </div>
-      <div className={styles.contentTiles}>
-        {[...context.contentIdeas, ...context.metaAdsIdeas].slice(0, 4).map((idea) => (
-          <article key={idea}>
-            <Megaphone size={17} />
-            <span>{idea}</span>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-export function WebsiteFooter({ context }: { context: ConceptContext }) {
-  return (
-    <footer className={styles.websiteFooter}>
-      <div>
-        <strong>{context.businessName}</strong>
-        <span>{context.location}</span>
-      </div>
-      <nav>
-        {context.navItems.slice(0, 4).map((item) => (
-          <a href={navHref(item)} key={item}>
-            {item}
-          </a>
-        ))}
-      </nav>
-    </footer>
-  );
-}
-
-export function OnlinePresenceSnapshot({ context }: { context: ConceptContext }) {
+function OnlinePresenceSnapshot({ context }: { context: SiteContext }) {
   const statuses = buildPresenceStatuses(context);
 
   return (
-    <section id="snapshot" className={styles.snapshot}>
-      <div className={styles.snapshotIntro}>
-        <p>Online Presence Snapshot</p>
-        <h2>What the current presence is asking this concept to solve.</h2>
+    <section className={styles.snapshot}>
+      <div className={styles.snapshotHeader}>
+        <p>Online presence snapshot</p>
+        <h2>What this homepage direction fixes.</h2>
         {context.rich.original_site_url && (
           <a href={context.rich.original_site_url} target="_blank" rel="noopener noreferrer">
             Original site reviewed
@@ -845,221 +883,422 @@ export function OnlinePresenceSnapshot({ context }: { context: ConceptContext })
       </div>
       <div className={styles.snapshotGrid}>
         {statuses.map((status) => (
-          <WebsiteIssueCard key={status.label} status={status} />
+          <article key={status.label} data-severity={status.severity}>
+            <small>{status.severity}</small>
+            <h3>{status.label}</h3>
+            <p>Current: {status.current}</p>
+            <p>Fix: {status.fix}</p>
+          </article>
         ))}
       </div>
-      <RecommendedFixCard context={context} />
     </section>
   );
 }
 
-export function WebsiteIssueCard({ status }: { status: IssueFix }) {
-  return (
-    <article className={styles.issueCard} data-severity={status.severity}>
-      <div>
-        <span>{status.label}</span>
-        <strong>{status.severity}</strong>
-      </div>
-      <p>Current: {status.current}</p>
-      <p>Fix: {status.fix}</p>
-    </article>
-  );
-}
-
-export function RecommendedFixCard({ context }: { context: ConceptContext }) {
-  return (
-    <article className={styles.recommendedFix}>
-      <Compass size={22} />
-      <div>
-        <p>Recommended next action</p>
-        <h3>{context.audit?.recommended_offer || context.primaryCta}</h3>
-        <span>{context.audit?.mockup_angle || context.visualDirection}</span>
-      </div>
-    </article>
-  );
-}
-
-export function WalkthroughCTA({ businessName }: { businessName: string }) {
+function FinalWalkthrough({ context }: { context: SiteContext }) {
   return (
     <section id="walkthrough" className={styles.walkthrough}>
       <div>
         <p>Walkthrough ready</p>
         <h2>Want a quick walkthrough of this concept?</h2>
         <span>
-          This is a visual concept created to show direction, not a final production website. We can
-          review how it would work for {businessName} in a short call.
+          This is a visual concept created to show direction, not a final production website. The next
+          step would be reviewing how this homepage path could work for {context.businessName}.
         </span>
       </div>
-      <a href="mailto:nate@apexmarketing.ai?subject=Mockup Walkthrough Request" className={styles.primaryButton}>
+      <a className={styles.primaryButton} href="mailto:nate@apexmarketing.ai?subject=Mockup Walkthrough Request">
         Schedule a walkthrough
-        <ArrowRight size={18} />
+        <ArrowRight size={17} />
       </a>
     </section>
   );
 }
 
-function buildPresenceStatuses(context: ConceptContext): IssueFix[] {
-  const [firstFix, secondFix] = context.issueFixes;
-  const onlineNotes = context.rich.online_presence_status || [];
-  const currentSite = context.rich.current_site_snapshot || context.rich.original_site_notes || context.audit?.main_problem;
+function WebsiteFooter({ context }: { context: SiteContext }) {
+  return (
+    <footer className={styles.footer}>
+      <div>
+        <strong>{context.businessName}</strong>
+        <span>{context.location}</span>
+      </div>
+      <nav aria-label="Concept footer navigation">
+        {context.navItems.slice(0, 5).map((item) => (
+          <a key={item} href={navHref(item)}>
+            {item}
+          </a>
+        ))}
+      </nav>
+      <small>Visual concept by Apex Marketing Group</small>
+    </footer>
+  );
+}
 
-  const statuses: IssueFix[] = [
-    firstFix || context.config.issueFallbacks[0],
+function PhotoCard({ item }: { item: HomepageItem }) {
+  return (
+    <article className={styles.photoCard}>
+      <div className={`${styles.cardPhoto} ${styles[`photo_${item.photoRole}`]}`}>
+        <span>{photoLabel(item.photoRole)}</span>
+      </div>
+      <div>
+        <small>{item.label || 'Featured'}</small>
+        <h3>{item.title}</h3>
+        <p>{item.body}</p>
+      </div>
+    </article>
+  );
+}
+
+function mergeOfferItems(titles: string[], fallback: HomepageItem[]) {
+  if (titles.length === 0) return fallback;
+  const roles = fallback.map((item) => item.photoRole);
+  const labels = fallback.map((item) => item.label);
+
+  return titles.slice(0, 6).map((title, index) => ({
+    title,
+    body: offerBody(title, fallback[index]?.body),
+    label: labels[index] || 'Featured',
+    photoRole: roles[index] || fallback[index % fallback.length]?.photoRole || 'dish',
+  }));
+}
+
+function offerBody(title: string, fallback?: string) {
+  const lower = title.toLowerCase();
+  if (/espresso|latte|coffee|cold brew|drink/.test(lower)) {
+    return 'A visual menu card that makes the first order feel obvious.';
+  }
+  if (/pastr|baked|breakfast|sandwich|salad|wrap/.test(lower)) {
+    return 'A food-forward card for quick breakfast and lunch decisions.';
+  }
+  if (/cater|event|board room|private|rental/.test(lower)) {
+    return 'A dedicated inquiry path for higher-value bookings and local events.';
+  }
+  if (/happy|music|special|weekly/.test(lower)) {
+    return 'A timely homepage module that gives visitors a reason to come in this week.';
+  }
+  if (/gift|loyal|reward/.test(lower)) {
+    return 'A repeat-visit and seasonal purchase path that belongs before the footer.';
+  }
+  if (/service|quote|repair|estimate/.test(lower)) {
+    return 'A service card that routes high-intent visitors toward a quote request.';
+  }
+  return fallback || 'A homepage-ready feature that helps visitors choose faster.';
+}
+
+function deriveTrustSignals(audit?: PublicAudit | null) {
+  const notes = `${audit?.audit_notes || ''} ${audit?.recommended_offer || ''} ${audit?.mockup_angle || ''}`;
+  const signals: string[] = [];
+  if (/4\.\d|rating|review|opentable|google/i.test(notes)) signals.push('Strong public review signal');
+  if (/since|years|established|long-running|local/i.test(notes)) signals.push('Established local presence');
+  if (/instagram|facebook|followers|social/i.test(notes)) signals.push('Active social proof to surface');
+  if (/cater|private|event|board room|rental/i.test(notes)) signals.push('Event and group revenue path');
+  if (/photo|photography|gallery|visual/i.test(notes)) signals.push('Photography leads the experience');
+  return signals;
+}
+
+function deriveConversionSteps(ctaStrategy: string | null | undefined, fallback: string[]) {
+  const steps = splitStrategyText(ctaStrategy).filter(isUsefulText);
+  return steps.length >= 3 ? mergeText(steps, fallback, [], 4) : fallback;
+}
+
+function deriveLocalSearches(rich: RichMockupData, config: VariantConfig, city: string) {
+  const fromRich = cleanRichList(rich.local_seo_angle).filter(isUsefulText);
+  const fallback = config.localSearches.map((term) => term.replace(/\{city\}/g, city));
+  return mergeText(fromRich, fallback, [], 4);
+}
+
+function deriveIssueFixes(rich: RichMockupData, audit: PublicAudit | null | undefined, config: VariantConfig) {
+  const issues = mergeText(rich.website_issue_examples, cleanText(audit?.main_problem) ? [audit?.main_problem || ''] : [], [], 4);
+  const derived = issues.map((issue, index) => issueToFix(issue, index));
+  return mergeIssues(derived, config.issueFallbacks).slice(0, 5);
+}
+
+function buildPresenceStatuses(context: SiteContext) {
+  const [first, second] = context.issueFixes;
+  const currentSite = cleanText(context.rich.current_site_snapshot) || cleanText(context.audit?.main_problem);
+
+  return [
+    first,
     {
       label: 'Mobile conversion',
-      current: onlineNotes[0] || currentSite || 'Mobile visitors need a shorter route to the main action.',
-      fix: `Make "${context.primaryCta}" the clearest mobile path.`,
+      current: currentSite || 'Mobile visitors need a shorter route to the main action.',
+      fix: `Make "${context.primaryCta}" visible in the hero, nav, and visit section.`,
       severity: severityFromText(currentSite, 'high'),
     },
     {
       label: 'Local SEO',
-      current: context.rich.local_seo_angle || `The site can better match how customers search around ${context.city}.`,
-      fix: `Build page sections around terms like "${context.localSearches[0]}".`,
+      current: context.rich.local_seo_angle || `The site can match more ${context.city} search intent.`,
+      fix: `Build real homepage sections around terms like "${context.localSearches[0]}".`,
       severity: 'medium',
     },
     {
-      label: 'Social and content',
-      current: context.rich.content_strategy_angle || 'Social posts need a stronger website destination.',
-      fix: context.contentIdeas[0] || 'Create weekly content modules that connect back to the homepage.',
+      label: 'Content path',
+      current: context.rich.content_strategy_angle || 'Social content is missing a stronger website destination.',
+      fix: context.contentIdeas[0] || 'Create weekly homepage modules that social posts can point to.',
       severity: 'medium',
     },
     {
       label: 'CTA clarity',
-      current: secondFix?.current || 'The next step is not repeated with enough clarity.',
+      current: second?.current || 'The next step is not repeated with enough clarity.',
       fix: context.rich.cta_strategy || context.conversionSteps.join(' -> '),
-      severity: secondFix?.severity || 'high',
+      severity: second?.severity || 'high',
     },
-  ];
-
-  return statuses.slice(0, 5);
-}
-
-function deriveIssueFixes(rich: RichMockupData, audit: PublicAudit | null | undefined, config: VariantConfig) {
-  const issueTexts = mergeItems(rich.website_issue_examples, cleanSingleItem(audit?.main_problem), [], 4);
-  const derived = issueTexts.map((issue, index) => issueToFix(issue, index));
-  return [...derived, ...config.issueFallbacks].slice(0, 4);
-}
-
-function deriveTrustSignals(rich: RichMockupData, audit: PublicAudit | null | undefined, config: VariantConfig) {
-  const notes = `${audit?.audit_notes || ''} ${audit?.recommended_offer || ''} ${audit?.mockup_angle || ''}`;
-  const derived: string[] = [];
-
-  if (/award|best|legacy|since|established|years/i.test(notes)) derived.push('Established local reputation');
-  if (/owner|family|community|local/i.test(notes)) derived.push('Recognizable local story');
-  if (/gift/i.test(notes)) derived.push('Gift card demand ready to surface');
-  if (/private|cater|event|group|room/i.test(notes)) derived.push('Group occasions and events available');
-  if (/loyal|reward|regular/i.test(notes)) derived.push('Repeat-customer loyalty path');
-  if (/review|rating|proof|before|after/i.test(notes)) derived.push('Proof that belongs near the first CTA');
-
-  return mergeItems(rich.trust_signals, derived, config.trustSignals, 5);
+  ].filter(Boolean) as IssueFix[];
 }
 
 function issueToFix(issue: string, index: number): IssueFix {
   const current = issue.trim().replace(/\.$/, '');
   const lower = current.toLowerCase();
-  if (lower.includes('reservation')) {
+  if (/404|broken|blank|empty|missing/.test(lower)) {
     return {
-      label: 'Reservation path',
+      label: 'Broken path',
       current,
-      fix: 'Make Reserve Your Table the dominant above-the-fold path.',
+      fix: 'Replace the dead end with a working homepage section and clear action.',
       severity: 'high',
     };
   }
-  if (lower.includes('menu') || lower.includes('hours')) {
+  if (/menu|static image|jpg|not indexable/.test(lower)) {
     return {
-      label: 'Menu and hours',
+      label: 'Menu visibility',
       current,
-      fix: 'Move menu and hours into the first decision section.',
+      fix: 'Turn menu content into readable cards that search engines and mobile visitors can use.',
       severity: 'high',
     };
   }
-  if (lower.includes('donat') || lower.includes('volunteer')) {
+  if (/hour|location|map|contact/.test(lower)) {
     return {
-      label: 'Support path',
+      label: 'Visit details',
       current,
-      fix: 'Make donate and volunteer choices visible immediately.',
+      fix: 'Keep hours, address, and contact paths in the homepage visit module.',
       severity: 'high',
     };
   }
-  if (lower.includes('quote') || lower.includes('contact') || lower.includes('book')) {
+  if (/social|instagram|facebook|photo/.test(lower)) {
     return {
-      label: 'Inquiry path',
+      label: 'Social proof',
       current,
-      fix: 'Replace the broken contact flow with one simple inquiry path.',
-      severity: 'high',
+      fix: 'Make social and photo content part of the homepage story instead of a disconnected channel.',
+      severity: 'medium',
     };
   }
-
   return {
     label: ['Website UX', 'CTA clarity', 'Content path', 'Trust proof'][index] || 'Website UX',
     current,
-    fix: 'Turn this issue into a clear homepage module with one obvious next action.',
+    fix: 'Turn the issue into a real homepage module with one obvious next action.',
     severity: severityFromText(current, 'medium'),
   };
 }
 
-function deriveConversionSteps(ctaStrategy: string | null | undefined, fallback: string[]) {
-  const steps = splitStrategyText(ctaStrategy);
-  return steps.length >= 3 ? mergeItems(steps, fallback, [], 4) : fallback;
-}
-
-function deriveLocalSearches(rich: RichMockupData, config: VariantConfig, city: string) {
-  const fromRich = cleanRichList(rich.local_seo_angle);
-  const fallback = config.localSearches.map((item) => item.replace(/\{city\}/g, city));
-  return mergeItems(fromRich, fallback, [], 4);
-}
-
-function deriveNavItems(rich: RichMockupData, config: VariantConfig, offers: string[]) {
-  const nav = rich.proposed_site_nav?.length ? rich.proposed_site_nav : config.navItems;
-  const fromOffers = offers.filter((item) => /gift|cater|event|reserve|donate|volunteer|book|order|service|location/i.test(item));
-  return mergeItems(nav, fromOffers, [], 5);
-}
-
-function menuCardCopy(context: ConceptContext, offer: string, index: number) {
-  if (context.rich.homepage_sections?.[index]) return context.rich.homepage_sections[index];
-  if (/gift/i.test(offer)) return 'A visible seasonal path that supports easy gifting.';
-  if (/private|cater|event/i.test(offer)) return 'A direct inquiry module for group occasions and higher-value bookings.';
-  if (/happy|music|waitlist/i.test(offer)) return 'A timely reason for guests to choose this week instead of later.';
-  if (/quote|service|emergency|estimate/i.test(offer)) return 'A service card that moves visitors toward a quote request.';
-  return 'A homepage-ready block that helps customers choose faster.';
-}
-
-function navHref(item: string) {
-  if (/mission|story|award|review|result/i.test(item)) return '#story';
-  if (/event|visit|location|area|happy/i.test(item)) return '#visit';
-  if (/reserv|order|quote|contact|donate|volunteer|book/i.test(item)) return '#primary-path';
-  if (/content|social|ads/i.test(item)) return '#content';
-  return '#menu';
-}
-
-function severityFromText(value: string | null | undefined, fallback: IssueFix['severity']): IssueFix['severity'] {
-  const lower = (value || '').toLowerCase();
-  if (/broken|missing|buried|hard|unclear|slow|mobile|compete/.test(lower)) return 'high';
-  if (/weak|could|better|opportunity/.test(lower)) return 'medium';
-  return fallback;
-}
-
-function mergeItems(
-  primary: string[] | undefined,
-  secondary: string[] | undefined,
-  tertiary: string[] | undefined,
-  limit: number
-) {
+function mergeText(primary?: string[], secondary?: string[], tertiary?: string[], limit = 5) {
   const seen = new Set<string>();
   return [...(primary || []), ...(secondary || []), ...(tertiary || [])]
-    .map((item) => item.trim())
+    .map((item) => cleanText(item))
+    .filter((item): item is string => Boolean(item && isUsefulText(item)))
     .filter((item) => {
       const key = item.toLowerCase();
-      if (!item || seen.has(key)) return false;
+      if (seen.has(key)) return false;
       seen.add(key);
       return true;
     })
     .slice(0, limit);
 }
 
-function cleanSingleItem(value: string | null | undefined) {
+function mergeIssues(primary: IssueFix[], secondary: IssueFix[]) {
+  const seen = new Set<string>();
+  return [...primary, ...secondary].filter((item) => {
+    const key = item.label.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function isUsefulText(value: string) {
+  return value.trim().length > 0 && !/\[object Object\]/i.test(value);
+}
+
+function cleanText(value: string | null | undefined) {
   const trimmed = value?.trim();
-  return trimmed ? [trimmed] : [];
+  if (!trimmed || /\[object Object\]/i.test(trimmed)) return null;
+  return trimmed;
+}
+
+function statusTitle(context: SiteContext) {
+  if (context.variant === 'food_truck') return 'Route-first homepage';
+  if (context.variant === 'local_service') return 'Quote path visible';
+  if (context.variant === 'premium_dining') return 'Reservation path ready';
+  if (context.variant === 'bar_grill') return "Tonight's reason visible";
+  if (context.variant === 'nonprofit_cafe') return 'Mission and visit path';
+  return 'Menu and hours up front';
+}
+
+function statusBody(context: SiteContext) {
+  if (context.variant === 'food_truck') return 'Location, schedule, catering, and events stay together.';
+  if (context.variant === 'local_service') return 'Services, proof, areas, and quote CTA stay connected.';
+  if (context.variant === 'premium_dining') return 'Menu, occasion, and booking path stay above the fold.';
+  if (context.variant === 'bar_grill') return 'Happy hour, events, and ordering are visible immediately.';
+  if (context.variant === 'nonprofit_cafe') return 'Dine, donate, volunteer, and visit paths are clear.';
+  return 'Featured items, visit details, and ordering are easy to find.';
+}
+
+function statusDetail(context: SiteContext) {
+  if (context.variant === 'food_truck') return `Next stop and catering for ${context.city}`;
+  if (context.variant === 'local_service') return `Service area: ${context.city} and nearby`;
+  if (context.variant === 'premium_dining') return `Private dining, gifts, and reservations`;
+  if (context.variant === 'bar_grill') return `Happy hour, events, and group nights`;
+  if (context.variant === 'nonprofit_cafe') return `Visit, volunteer, or support the mission`;
+  return `${context.city} menu, hours, and local favorites`;
+}
+
+function primaryPathLabel(context: SiteContext) {
+  if (context.variant === 'food_truck') return 'Plan the stop';
+  if (context.variant === 'local_service') return 'Book the work';
+  if (context.variant === 'premium_dining') return 'Reserve the occasion';
+  if (context.variant === 'bar_grill') return 'Plan tonight';
+  if (context.variant === 'nonprofit_cafe') return 'Choose how to help';
+  return 'Plan the visit';
+}
+
+function storyLabel(context: SiteContext) {
+  if (context.variant === 'local_service') return 'Proof and promise';
+  if (context.variant === 'nonprofit_cafe') return 'Mission and welcome';
+  if (context.variant === 'food_truck') return 'Route and flavor';
+  return 'Atmosphere and story';
+}
+
+function siteStoryBody(context: SiteContext) {
+  const style = positiveVisualDirection(context.rich.brand_style_notes) || positiveVisualDirection(context.rich.visual_direction);
+  const base = context.config.storyBody(context);
+  if (!style) return base;
+  return `${base} The visual direction leans into ${style.charAt(0).toLowerCase()}${style.slice(1)}`;
+}
+
+function positiveVisualDirection(value: string | null | undefined) {
+  const clean = cleanText(value);
+  if (!clean) return null;
+
+  const friendly = clean
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence && !/\b(avoid|current|broken|generic|should|needs|not)\b/i.test(sentence))
+    .slice(0, 2)
+    .join(' ');
+
+  return friendly || null;
+}
+
+function experienceEyebrow(context: SiteContext) {
+  if (context.variant === 'local_service') return 'Service paths';
+  if (context.variant === 'food_truck') return 'Route and booking';
+  if (context.variant === 'nonprofit_cafe') return 'Ways to participate';
+  return 'Featured experiences';
+}
+
+function experienceTitle(context: SiteContext) {
+  if (context.variant === 'coffee_shop') return `A few reasons ${context.city} comes in for coffee.`;
+  if (context.variant === 'premium_dining') return 'Occasions worth reserving for.';
+  if (context.variant === 'bar_grill') return 'What makes tonight feel worth the trip.';
+  if (context.variant === 'food_truck') return 'Find the stop, then book the truck.';
+  if (context.variant === 'local_service') return 'Services organized around quote intent.';
+  if (context.variant === 'nonprofit_cafe') return 'Eat, support, or show up to help.';
+  return 'The homepage starts with what guests actually choose.';
+}
+
+function menuTitle(context: SiteContext) {
+  if (context.variant === 'local_service') return 'Services presented like decisions, not a list.';
+  if (context.variant === 'food_truck') return 'Menu highlights for the next stop.';
+  if (context.variant === 'premium_dining') return 'Signature dishes and occasion paths.';
+  if (context.variant === 'bar_grill') return 'Food, drinks, and weekly reasons to come in.';
+  if (context.variant === 'coffee_shop') return 'Featured drinks, bites, and repeat-visit paths.';
+  if (context.variant === 'nonprofit_cafe') return 'Food, support, and community access.';
+  return 'Start with the signature choices guests notice first.';
+}
+
+function menuLeadBody(context: SiteContext) {
+  const titles = context.offers
+    .slice(0, 3)
+    .map((offer) => offer.title)
+    .join(', ');
+
+  if (context.variant === 'local_service') {
+    return `Core services like ${titles} are arranged around the quote decision instead of a long utility list.`;
+  }
+  if (context.variant === 'food_truck') {
+    return `The menu preview pairs ${titles} with location and catering prompts for fast mobile visitors.`;
+  }
+  if (context.variant === 'nonprofit_cafe') {
+    return `The page balances ${titles} so the food and the mission feel connected from the start.`;
+  }
+  return `The page leads with ${titles} so guests see real choices before they decide to order, reserve, or visit.`;
+}
+
+function visitHint(context: SiteContext) {
+  if (context.variant === 'food_truck') return 'Show the next stop before the menu gets long.';
+  if (context.variant === 'local_service') return 'Confirm service area before asking for the quote.';
+  return 'Address, hours, and next step stay out of the footer maze.';
+}
+
+function bestTimeLabel(context: SiteContext) {
+  if (context.variant === 'bar_grill') return 'Tonight or this weekend';
+  if (context.variant === 'coffee_shop') return 'Morning, lunch, or afternoon';
+  if (context.variant === 'premium_dining') return 'Date night or private dining';
+  if (context.variant === 'food_truck') return 'Next stop or event';
+  if (context.variant === 'local_service') return 'Book the first available slot';
+  return 'Pick the visit window';
+}
+
+function bestTimeBody(context: SiteContext) {
+  if (context.variant === 'bar_grill') return 'Give happy hour and events the same visibility as the menu.';
+  if (context.variant === 'coffee_shop') return 'Help visitors choose the drink, the pickup, or the place to sit.';
+  if (context.variant === 'premium_dining') return 'Route guests by occasion before they compare alternatives.';
+  if (context.variant === 'food_truck') return 'Treat schedule updates like core homepage content.';
+  if (context.variant === 'local_service') return 'Make proof and quote timing feel immediate.';
+  return 'Make the practical details part of the decision.';
+}
+
+function contactLabel(context: SiteContext) {
+  if (context.variant === 'local_service') return 'Quote request';
+  if (context.variant === 'food_truck') return 'Catering inquiry';
+  if (context.variant === 'nonprofit_cafe') return 'Support path';
+  if (context.variant === 'premium_dining') return 'Reserve or inquire';
+  return 'Order, reserve, or visit';
+}
+
+function growthBody(context: SiteContext, idea: string, index: number) {
+  if (index === 0) return `Turn "${idea}" into a homepage destination instead of a one-off post.`;
+  if (index === 1) return `Support local intent for ${context.city} with useful homepage content.`;
+  return 'Give Meta ads and social posts a clear place to land.';
+}
+
+function navHref(item: string) {
+  if (/menu|service/i.test(item)) return '#menu';
+  if (/visit|location|hour|area|contact/i.test(item)) return '#visit';
+  if (/event|happy|order|reserve|donate|volunteer|book|quote|cater/i.test(item)) return '#primary-action';
+  if (/story|community|mission|review|award|result|loyal/i.test(item)) return '#content';
+  return '#menu';
+}
+
+function severityFromText(value: string | null | undefined, fallback: IssueFix['severity']): IssueFix['severity'] {
+  const lower = (value || '').toLowerCase();
+  if (/404|broken|blank|empty|missing|hard|conflict|outdated|buried/.test(lower)) return 'high';
+  if (/weak|could|generic|opportunity|off-site/.test(lower)) return 'medium';
+  return fallback;
+}
+
+function photoLabel(role: PhotoRole) {
+  const labels: Record<PhotoRole, string> = {
+    coffee: 'Coffee and drink photo',
+    pastry: 'Coffee and pastry photo',
+    dish: 'Signature dish photo',
+    interior: 'Interior atmosphere photo',
+    event: 'Happy hour event photo',
+    privateDining: 'Private dining photo',
+    catering: 'Catering setup photo',
+    mission: 'Community impact photo',
+    truck: 'Location schedule photo',
+    service: 'Project proof photo',
+    social: 'Social content preview',
+  };
+  return labels[role];
 }
 
 function businessInitials(name: string) {
@@ -1069,4 +1308,17 @@ function businessInitials(name: string) {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join('');
+}
+
+function IconByVariant({ variant }: { variant: MockupTemplateVariant }) {
+  const icons: Record<MockupTemplateVariant, ReactNode> = {
+    coffee_shop: <Coffee size={18} />,
+    restaurant: <Utensils size={18} />,
+    bar_grill: <Music2 size={18} />,
+    premium_dining: <Sparkles size={18} />,
+    nonprofit_cafe: <HeartHandshake size={18} />,
+    food_truck: <Navigation size={18} />,
+    local_service: <Wrench size={18} />,
+  };
+  return icons[variant];
 }

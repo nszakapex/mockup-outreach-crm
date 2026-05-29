@@ -156,7 +156,10 @@ function cleanString(value: unknown) {
 
 function cleanList(value: unknown) {
   if (Array.isArray(value)) {
-    return value.map((item) => String(item).trim()).filter(Boolean).slice(0, 12);
+    return value
+      .map((item) => stringifyListItem(item))
+      .filter((item): item is string => Boolean(item))
+      .slice(0, 12);
   }
 
   const asString = cleanString(value);
@@ -165,6 +168,24 @@ function cleanList(value: unknown) {
   return asString
     .split(/[\n;|,]+/)
     .map((item) => item.trim())
-    .filter(Boolean)
+    .filter((item) => Boolean(item) && !/\[object Object\]/i.test(item))
     .slice(0, 12);
+}
+
+function stringifyListItem(item: unknown) {
+  if (typeof item === 'string') {
+    const trimmed = item.trim();
+    return trimmed && !/\[object Object\]/i.test(trimmed) ? trimmed : null;
+  }
+
+  if (item && typeof item === 'object' && !Array.isArray(item)) {
+    const record = item as Record<string, unknown>;
+    const parts = [record.label, record.title, record.current, record.issue, record.fix, record.value]
+      .map((part) => (typeof part === 'string' ? part.trim() : ''))
+      .filter(Boolean);
+    return parts.length > 0 ? parts.join(': ') : null;
+  }
+
+  const trimmed = String(item ?? '').trim();
+  return trimmed && !/\[object Object\]/i.test(trimmed) ? trimmed : null;
 }
