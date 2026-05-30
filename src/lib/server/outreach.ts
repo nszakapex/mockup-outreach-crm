@@ -74,6 +74,9 @@ export type SendQueueItem = {
   socialAuditUrl: string;
   usesMockupLink: boolean;
   usesSocialAuditLink: boolean;
+  linkReplacementApplied: boolean;
+  fallbackLinkAppended: boolean;
+  optOutIncluded: boolean;
   emailQualityWarnings: string[];
   status: string;
   sendable: boolean;
@@ -269,7 +272,7 @@ export async function sendOutreachEmail(prospectId: string, origin: string) {
   const config = getOutreachConfig();
   const supabase = getServerSupabase();
   const sanitized = sanitizeSendFields(item.toEmail, item.fromEmail, item.subject);
-  const body = buildEmailBody(item);
+  const body = item.finalBody;
   const now = new Date().toISOString();
   let providerMessageId: string | null = null;
   const sendStatus = config.testMode ? 'test_sent' : 'sent';
@@ -384,7 +387,7 @@ export async function skipOutreachEmail(prospectId: string, origin: string) {
     to_email: sanitized.to,
     from_email: sanitized.from,
     subject: sanitized.subject,
-    body: buildEmailBody(item),
+    body: item.finalBody,
     status: 'skipped',
     provider_message_id: null,
     error_message: 'Skipped manually from send queue.',
@@ -576,11 +579,16 @@ function buildQueueItem(
   const socialAuditUrl = buildPublicSocialAuditUrl(mockup.slug, origin);
   const usesMockupLink = containsMockupReference(emailDraft.body);
   const usesSocialAuditLink = containsSocialAuditReference(emailDraft.body);
+  const intentionalLinkPresent = hasIntentionalLink(emailDraft.body);
   const sanitizedTo = toValidation?.ok ? toValidation.value : prospect.public_email;
   const sanitizedFrom = fromValidation.ok ? fromValidation.value : fromCandidate;
   const sanitizedSubject = sanitizeHeaderValue(emailDraft.subject);
   const replacedBody = replaceOutreachReferences(emailDraft.body, mockupUrl, socialAuditUrl);
-  const finalBody = buildEmailBodyFromParts(replacedBody, mockupUrl);
+  const finalEmail = buildFinalEmailBody({
+    body: replacedBody,
+    fallbackUrl: mockupUrl,
+    intentionalLinkPresent,
+  });
 
   return {
     prospectId: prospect.id,
@@ -590,15 +598,18 @@ function buildQueueItem(
     fromEmail: sanitizedFrom,
     subject: sanitizedSubject.ok ? sanitizedSubject.value : emailDraft.subject,
     body: replacedBody,
-    finalBody,
+    finalBody: finalEmail.body,
     mockupUrl,
     socialAuditUrl,
     usesMockupLink,
     usesSocialAuditLink,
+    linkReplacementApplied: replacedBody !== emailDraft.body,
+    fallbackLinkAppended: finalEmail.fallbackLinkAppended,
+    optOutIncluded: finalEmail.optOutIncluded,
     emailQualityWarnings: getEmailQualityWarnings({
       businessName: prospect.business_name,
       rawBody: emailDraft.body,
-      finalBody,
+      finalBody: finalEmail.body,
       usesMockupLink,
       usesSocialAuditLink,
     }),
@@ -628,21 +639,24 @@ function buildMockupUrl(mockup: MockupRow, origin: string) {
   return buildPublicMockupUrl(mockup.slug, origin);
 }
 
-function buildEmailBody(item: SendQueueItem) {
-  return buildEmailBodyFromParts(
-    replaceOutreachReferences(item.body, item.mockupUrl, item.socialAuditUrl),
-    item.mockupUrl
-  );
-}
+function buildFinalEmailBody({
+  body,
+  fallbackUrl,
+  intentionalLinkPresent,
+}: {
+  body: string;
+  fallbackUrl: string;
+  intentionalLinkPresent: boolean;
+}) {
+  const fallbackLinkAppended = !intentionalLinkPresent && !hasIntentionalLink(body);
+  const withFallback = fallbackLinkAppended ? `${body.trim()}\n\nReference link: ${fallbackUrl}` : body.trim();
+  const withOptOut = appendOptOutOnce(withFallback);
 
-function buildEmailBodyFromParts(body: string, mockupUrl: string) {
-  return [
-    body,
-    '',
-    `Mockup link: ${mockupUrl}`,
-    '',
-    'If you would rather not hear from me again, reply with "opt out" and I will not contact you again.',
-  ].join('\n');
+  return {
+    body: withOptOut.body,
+    fallbackLinkAppended,
+    optOutIncluded: withOptOut.optOutIncluded,
+  };
 }
 
 function replaceOutreachReferences(body: string, mockupUrl: string, socialAuditUrl: string) {
@@ -659,6 +673,28 @@ function containsMockupReference(body: string) {
 
 function containsSocialAuditReference(body: string) {
   return /\[social audit link\]/i.test(body) || /\/social-audits\//i.test(body);
+}
+
+function hasIntentionalLink(body: string) {
+  return (
+    /\[mockup link\]/i.test(body) ||
+    /\[social audit link\]/i.test(body) ||
+    /\/mockups\//i.test(body) ||
+    /\/social-audits\//i.test(body)
+  );
+}
+
+function appendOptOutOnce(body: string) {
+  const optOutText = 'If you would rather not hear from me again, just reply and let me know.';
+  const cleanedBody = body
+    .replace(/(?:\n\s*)*if you would rather not hear from me again,[^\n]*(?:\n|$)/gi, '\n')
+    .replace(/(?:\n\s*)*[^\n]*(?:opt[-\s]?out|unsubscribe)[^\n]*(?:\n|$)/gi, '\n')
+    .trim();
+
+  return {
+    body: cleanedBody ? `${cleanedBody}\n\n${optOutText}` : optOutText,
+    optOutIncluded: true,
+  };
 }
 
 function getEmailQualityWarnings({

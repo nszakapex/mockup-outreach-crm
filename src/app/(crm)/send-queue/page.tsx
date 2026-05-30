@@ -35,6 +35,9 @@ type SendQueueItem = {
   socialAuditUrl: string;
   usesMockupLink: boolean;
   usesSocialAuditLink: boolean;
+  linkReplacementApplied: boolean;
+  fallbackLinkAppended: boolean;
+  optOutIncluded: boolean;
   emailQualityWarnings: string[];
   status: ProspectStatus;
   sendable: boolean;
@@ -334,6 +337,9 @@ export default function SendQueuePage() {
                       <PreviewField label="Sanitized To" value={item.toEmail} />
                       <PreviewField label="Sanitized From" value={item.fromEmail} />
                       <PreviewField label="Sanitized Subject" value={item.subject} className="sm:col-span-2" />
+                      <PreviewField label="Link replacement applied" value={yesNo(item.linkReplacementApplied)} />
+                      <PreviewField label="Fallback link appended" value={yesNo(item.fallbackLinkAppended)} />
+                      <PreviewField label="Opt-out included" value={yesNo(item.optOutIncluded)} />
                       {item.usesMockupLink && (
                         <PreviewField label="Final Mockup URL" value={item.mockupUrl} className="sm:col-span-2" />
                       )}
@@ -362,7 +368,7 @@ export default function SendQueuePage() {
                       </div>
                     )}
                     <div className="mt-3 text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>
-                      Final Sanitized Email Body Preview
+                      Final body
                     </div>
                     <div
                       className="mt-3 max-h-32 overflow-y-auto whitespace-pre-wrap rounded-lg p-3 text-xs leading-relaxed"
@@ -378,7 +384,7 @@ export default function SendQueuePage() {
 
                   <div>
                     <div className="text-xs font-medium mb-1.5" style={{ color: 'var(--color-ink-3)' }}>
-                      Final Public Mockup URL
+                      Available Mockup URL
                     </div>
                     <a
                       href={item.mockupUrl}
@@ -443,6 +449,10 @@ function PreviewField({ label, value, className = '' }: { label: string; value: 
       </div>
     </div>
   );
+}
+
+function yesNo(value: boolean) {
+  return value ? 'yes' : 'no';
 }
 
 function QueueMetric({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
