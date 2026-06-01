@@ -226,6 +226,7 @@ export default function ImportPage() {
             <Rule label="Source" value="hermes_import" />
             <Rule label="Creates" value="prospect, audit, mockup, and email draft rows" />
             <Rule label="Approval" value="email_ready rows can appear in /approval when email and mockup data exist" />
+            <Rule label="Resinate" value="campaign_type resinate_flooring creates a public flooring audit and supports [Flooring Audit Link]" />
             <p className="rounded-lg p-3 text-xs leading-5" style={{ background: 'var(--color-paper-3)' }}>
               Import never sends Gmail, never scrapes, and never bypasses Telegram approval.
             </p>
@@ -252,6 +253,7 @@ export default function ImportPage() {
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Status</th>
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Mockup data</th>
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Social audit</th>
+                  <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Campaign</th>
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Mockup slug</th>
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Eligibility</th>
                 </tr>
@@ -270,6 +272,7 @@ export default function ImportPage() {
                     <td className="px-3 py-3"><StatusBadge status={item.status} /></td>
                     <td className="px-3 py-3"><RichnessBadge level={item.mockupRichness.level} label={item.mockupRichness.label} /></td>
                     <td className="px-3 py-3"><RichnessBadge level={item.socialAuditRichness.level} label={item.socialAuditRichness.label} /></td>
+                    <td className="px-3 py-3"><CampaignCell item={item} /></td>
                     <td className="px-3 py-3 font-mono text-xs" style={{ color: 'var(--color-ink-2)' }}>{item.slug}</td>
                     <td className="px-3 py-3">
                       {item.valid ? (
@@ -328,6 +331,32 @@ function Rule({ label, value }: { label: string; value: string }) {
         {label}
       </div>
       <div>{value}</div>
+    </div>
+  );
+}
+
+function CampaignCell({ item }: { item: HermesImportPreview }) {
+  const resinate = item.resinateFlooring;
+  if (!resinate) {
+    return <span className="text-xs" style={{ color: 'var(--color-ink-3)' }}>Standard Apex</span>;
+  }
+
+  return (
+    <div className="min-w-48 space-y-1">
+      <span
+        className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap"
+        style={{ color: 'var(--color-accent)', background: 'var(--color-accent-subtle)' }}
+      >
+        Resinate Flooring Campaign
+      </span>
+      <div className="text-xs leading-5" style={{ color: 'var(--color-ink-2)' }}>
+        {resinate.buyerType && <div>Buyer: {resinate.buyerType}</div>}
+        {resinate.propertyType && <div>Property: {resinate.propertyType}</div>}
+        {resinate.recommendedSystem && <div>System: {resinate.recommendedSystem}</div>}
+        {resinate.bestOffer && <div>Offer: {resinate.bestOffer}</div>}
+        {resinate.nextSalesAction && <div>Next: {resinate.nextSalesAction}</div>}
+        {resinate.flooringAuditAvailable && <div>Flooring Audit available</div>}
+      </div>
     </div>
   );
 }

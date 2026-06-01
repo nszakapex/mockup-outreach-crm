@@ -1,0 +1,503 @@
+.page {
+  --floor-bg: oklch(13% 0.018 95);
+  --floor-panel: oklch(19% 0.025 96);
+  --floor-panel-2: oklch(95% 0.018 86);
+  --floor-ink: oklch(96% 0.012 86);
+  --floor-muted: oklch(78% 0.03 88);
+  --floor-dark: oklch(20% 0.03 92);
+  --floor-line: oklch(88% 0.035 84 / 0.18);
+  --floor-gold: oklch(76% 0.105 82);
+  --floor-copper: oklch(64% 0.13 52);
+  --floor-green: oklch(58% 0.085 156);
+  --floor-radius: 8px;
+  min-height: 100vh;
+  padding: 28px;
+  background:
+    radial-gradient(circle at 15% 5%, oklch(38% 0.065 78 / 0.32), transparent 32%),
+    linear-gradient(135deg, oklch(11% 0.018 95), oklch(18% 0.026 112) 52%, oklch(13% 0.018 95));
+  color: var(--floor-ink);
+  font-family: var(--font-body), system-ui, sans-serif;
+  overflow-x: clip;
+}
+
+.hero,
+.identityStrip,
+.twoColumn,
+.systemSection,
+.credibilitySection,
+.valueBand,
+.objectionSection,
+.linksSection,
+.ctaSection {
+  width: min(1160px, 100%);
+  margin-inline: auto;
+}
+
+.hero {
+  min-height: 620px;
+  padding: 24px;
+  border: 1px solid var(--floor-line);
+  border-radius: var(--floor-radius);
+  background:
+    linear-gradient(115deg, oklch(10% 0.02 96 / 0.72), oklch(22% 0.032 102 / 0.92)),
+    repeating-linear-gradient(135deg, oklch(100% 0 0 / 0.035) 0 1px, transparent 1px 12px);
+  box-shadow: 0 30px 100px oklch(5% 0.02 95 / 0.45);
+}
+
+.topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--floor-line);
+  color: var(--floor-muted);
+  font-size: 0.78rem;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.heroGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 34px;
+  align-items: end;
+  min-height: 520px;
+  padding-top: 42px;
+}
+
+.heroCopy {
+  max-width: 790px;
+}
+
+.kicker,
+.sectionIntro span,
+.contextItem span,
+.systemCard span,
+.offerPanel span,
+.offerList small,
+.valueBand span,
+.objectionSection span,
+.ctaSection span,
+.needCard span {
+  color: var(--floor-gold);
+  font-size: 0.76rem;
+  font-weight: 780;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  margin: 14px 0 0;
+  color: var(--floor-ink);
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-size: clamp(3.2rem, 8vw, 7.2rem);
+  font-weight: 840;
+  line-height: 0.88;
+  max-width: 900px;
+  overflow-wrap: anywhere;
+}
+
+.lede {
+  max-width: 700px;
+  margin: 24px 0 0;
+  color: var(--floor-muted);
+  font-size: clamp(1.05rem, 2vw, 1.28rem);
+  line-height: 1.68;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 34px;
+}
+
+.primaryCta,
+.secondaryCta,
+.finalCta {
+  display: inline-flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--floor-radius);
+  padding: 0 18px;
+  font-size: 0.94rem;
+  font-weight: 760;
+  text-decoration: none;
+}
+
+.primaryCta,
+.finalCta {
+  background: var(--floor-gold);
+  color: oklch(16% 0.025 88);
+}
+
+.secondaryCta {
+  border: 1px solid var(--floor-line);
+  color: var(--floor-ink);
+  background: oklch(100% 0 0 / 0.06);
+}
+
+.systemCard {
+  padding: 24px;
+  border: 1px solid oklch(90% 0.035 82 / 0.28);
+  border-radius: var(--floor-radius);
+  background:
+    linear-gradient(160deg, oklch(96% 0.025 82), oklch(84% 0.055 82)),
+    var(--floor-panel-2);
+  color: var(--floor-dark);
+}
+
+.systemCard strong {
+  display: block;
+  margin-top: 10px;
+  color: var(--floor-dark);
+  font-size: clamp(1.75rem, 4vw, 2.6rem);
+  line-height: 0.98;
+}
+
+.systemCard p {
+  margin: 18px 0 0;
+  color: oklch(34% 0.035 82);
+  line-height: 1.62;
+}
+
+.identityStrip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.contextItem,
+.needCard,
+.surfacePanel,
+.offerPanel,
+.systemSection,
+.credibilitySection > div,
+.objectionSection article,
+.presenceLink,
+.presenceMissing,
+.ctaSection {
+  border: 1px solid var(--floor-line);
+  border-radius: var(--floor-radius);
+}
+
+.contextItem {
+  padding: 18px;
+  background: oklch(100% 0 0 / 0.07);
+}
+
+.contextItem strong {
+  display: block;
+  margin-top: 8px;
+  color: var(--floor-ink);
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.twoColumn {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.surfacePanel,
+.offerPanel,
+.systemSection,
+.credibilitySection > div,
+.objectionSection article {
+  background: oklch(99% 0.008 86);
+  color: var(--floor-dark);
+}
+
+.surfacePanel,
+.offerPanel,
+.systemSection,
+.credibilitySection > div {
+  padding: 26px;
+}
+
+.surfacePanel > p,
+.offerPanel p,
+.systemBenefits p,
+.credibilitySection p,
+.valueBand p,
+.objectionSection p,
+.ctaSection p {
+  margin: 14px 0 0;
+  color: oklch(39% 0.03 85);
+  line-height: 1.68;
+}
+
+.sectionIntro h2,
+.offerPanel h2,
+.valueBand h2,
+.ctaSection h2 {
+  margin: 8px 0 0;
+  color: var(--floor-dark);
+  font-size: clamp(1.65rem, 3vw, 2.45rem);
+  font-weight: 820;
+  line-height: 1.02;
+}
+
+.needGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.needCard {
+  padding: 16px;
+  background:
+    linear-gradient(180deg, oklch(100% 0 0), oklch(94% 0.018 86));
+}
+
+.needCard strong {
+  display: block;
+  margin-top: 8px;
+  color: var(--floor-dark);
+  font-size: 1rem;
+}
+
+.needCard p {
+  margin: 10px 0 0;
+  color: oklch(43% 0.03 84);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.offerPanel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background:
+    linear-gradient(160deg, oklch(22% 0.035 96), oklch(13% 0.022 96));
+  color: var(--floor-ink);
+}
+
+.offerPanel h2,
+.offerPanel p,
+.offerList strong {
+  color: var(--floor-ink);
+}
+
+.offerPanel p,
+.offerList small {
+  color: var(--floor-muted);
+}
+
+.offerList {
+  display: grid;
+  gap: 8px;
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid var(--floor-line);
+}
+
+.offerList strong {
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.systemSection {
+  margin-top: 18px;
+}
+
+.systemGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.05fr;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.systemBenefits {
+  padding: 18px;
+  border-radius: var(--floor-radius);
+  background: oklch(95% 0.017 86);
+}
+
+.systemBenefits h3 {
+  margin: 0;
+  color: var(--floor-dark);
+  font-size: 1.05rem;
+}
+
+.systemBenefits ul {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.systemBenefits li {
+  position: relative;
+  padding-left: 18px;
+  color: oklch(39% 0.03 85);
+  line-height: 1.45;
+}
+
+.systemBenefits li::before {
+  position: absolute;
+  top: 0.62em;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--floor-green);
+  content: "";
+}
+
+.credibilitySection {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.valueBand {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 24px;
+  align-items: center;
+  margin-top: 18px;
+  padding: 28px;
+  border: 1px solid oklch(91% 0.04 82 / 0.24);
+  border-radius: var(--floor-radius);
+  background:
+    linear-gradient(135deg, oklch(24% 0.036 96), oklch(31% 0.055 72));
+}
+
+.valueBand h2 {
+  color: var(--floor-ink);
+}
+
+.valueBand p {
+  color: var(--floor-muted);
+}
+
+.objectionSection {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.objectionSection article {
+  padding: 20px;
+}
+
+.objectionSection p {
+  color: var(--floor-dark);
+  font-weight: 650;
+}
+
+.linksSection {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.presenceLink,
+.presenceMissing {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px;
+  color: var(--floor-ink);
+  background: oklch(100% 0 0 / 0.07);
+  font-size: 0.9rem;
+  font-weight: 720;
+  text-decoration: none;
+}
+
+.presenceMissing {
+  color: var(--floor-muted);
+}
+
+.presenceMissing small {
+  font-size: 0.72rem;
+}
+
+.ctaSection {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: 24px;
+  align-items: center;
+  margin-top: 18px;
+  padding: 28px;
+  background: oklch(99% 0.008 86);
+  color: var(--floor-dark);
+}
+
+@media (max-width: 960px) {
+  .page {
+    padding: 18px;
+  }
+
+  .hero,
+  .heroGrid {
+    min-height: auto;
+  }
+
+  .heroGrid,
+  .twoColumn,
+  .credibilitySection,
+  .valueBand,
+  .ctaSection {
+    grid-template-columns: 1fr;
+  }
+
+  .identityStrip,
+  .needGrid,
+  .systemGrid,
+  .objectionSection {
+    grid-template-columns: 1fr;
+  }
+
+  .linksSection {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .page {
+    padding: 12px;
+  }
+
+  .hero,
+  .surfacePanel,
+  .offerPanel,
+  .systemSection,
+  .credibilitySection > div,
+  .valueBand,
+  .ctaSection {
+    padding: 18px;
+  }
+
+  .topline {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .hero h1 {
+    font-size: 3rem;
+  }
+
+  .linksSection {
+    grid-template-columns: 1fr;
+  }
+
+  .primaryCta,
+  .secondaryCta,
+  .finalCta {
+    width: 100%;
+  }
+}

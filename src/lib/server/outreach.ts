@@ -6,7 +6,14 @@ import {
   sanitizeEmailAddress,
   sanitizeHeaderValue,
 } from '@/lib/email-sanitization';
-import { buildPublicMockupUrl, buildPublicSocialAuditUrl } from '@/lib/mockup-templates';
+import { buildPublicFlooringAuditUrl, buildPublicMockupUrl, buildPublicSocialAuditUrl } from '@/lib/mockup-templates';
+import {
+  getCampaignTypeForProspect,
+  getSenderProfileByKey,
+  getSenderProfileForProspect,
+  type SenderProfile,
+  type SenderProfileKey,
+} from './sender-identities';
 import { getErrorMessage, getServerSupabase } from './supabase';
 
 const SEND_SUCCESS_STATUSES = ['sent', 'test_sent'];
@@ -27,6 +34,7 @@ type MockupRow = {
   title: string;
   mockup_url: string | null;
   mockup_status: string;
+  concept_notes: string | null;
 };
 
 type ProspectRow = {
@@ -72,8 +80,22 @@ export type SendQueueItem = {
   finalBody: string;
   mockupUrl: string;
   socialAuditUrl: string;
+  flooringAuditUrl: string;
+  campaignTypeDetected: string;
+  campaignLabel: string;
+  selectedPrimaryArtifactUrl: string;
+  selectedPrimaryArtifactLabel: string;
+  hasMockupLink: boolean;
+  hasSocialAuditLink: boolean;
+  hasFlooringAuditLink: boolean;
   usesMockupLink: boolean;
   usesSocialAuditLink: boolean;
+  usesFlooringAuditLink: boolean;
+  senderProfileKey: SenderProfileKey;
+  senderLabel: string;
+  senderProviderName: 'gmail';
+  senderConfigured: boolean;
+  senderMissingFields: string[];
   linkReplacementApplied: boolean;
   fallbackLinkAppended: boolean;
   optOutIncluded: boolean;
@@ -134,12 +156,13 @@ export class GmailSendError extends Error {
 
 export function getOutreachConfig() {
   const rawCap = Number(process.env.OUTREACH_DAILY_SEND_CAP || DEFAULT_DAILY_CAP);
+  const apexProfile = getSenderProfileByKey('apex');
   return {
-    googleClientIdConfigured: Boolean(process.env.GOOGLE_CLIENT_ID?.trim()),
-    googleClientSecretConfigured: Boolean(process.env.GOOGLE_CLIENT_SECRET?.trim()),
-    googleRefreshTokenConfigured: Boolean(process.env.GOOGLE_REFRESH_TOKEN?.trim()),
-    gmailSenderEmailConfigured: Boolean(process.env.GMAIL_SENDER_EMAIL?.trim()),
-    gmailSenderEmail: process.env.GMAIL_SENDER_EMAIL?.trim() || '',
+    googleClientIdConfigured: apexProfile.clientIdConfigured,
+    googleClientSecretConfigured: apexProfile.clientSecretConfigured,
+    googleRefreshTokenConfigured: apexProfile.refreshTokenConfigured,
+    gmailSenderEmailConfigured: apexProfile.senderEmailConfigured,
+    gmailSenderEmail: apexProfile.senderEmail,
     testMode: (process.env.OUTREACH_EMAIL_TEST_MODE ?? 'true').toLowerCase() !== 'false',
     dailyCap: Number.isFinite(rawCap) && rawCap > 0 ? Math.floor(rawCap) : DEFAULT_DAILY_CAP,
   };
@@ -210,8 +233,7 @@ export async function getSendQueue(origin: string) {
 
   const items = prospects
     .map((prospect) => buildQueueItem(prospect, origin, optOutEmails, successfulKeys, config))
-    .filter((item): item is SendQueueItem => Boolean(item))
-    .filter((item) => item.sendable);
+    .filter((item): item is SendQueueItem => Boolean(item));
 
   return { items, stats, recentSends };
 }
@@ -304,11 +326,13 @@ export async function sendOutreachEmail(prospectId: string, origin: string) {
     if (config.testMode) {
       providerMessageId = `test_${Date.now()}`;
     } else {
+      const senderProfile = getSenderProfileByKey(item.senderProfileKey);
       const gmailResult = await sendGmailOutreachEmail({
         to: sanitized.to,
         from: sanitized.from,
         subject: sanitized.subject,
         body,
+        senderProfile,
       });
       providerMessageId = gmailResult.id;
     }
@@ -408,14 +432,16 @@ export async function sendGmailOutreachEmail({
   from,
   subject,
   body,
+  senderProfile,
 }: {
   to: string;
   from: string;
   subject: string;
   body: string;
+  senderProfile: SenderProfile;
 }) {
   const sanitized = sanitizeSendFields(to, from, subject);
-  const accessToken = await getGmailAccessToken();
+  const accessToken = await getGmailAccessToken(senderProfile);
   const raw = encodeBase64Url(buildMimeMessage({ ...sanitized, body }));
 
   const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
@@ -442,7 +468,7 @@ async function fetchQueueProspects() {
   const supabase = getServerSupabase();
   const { data, error } = await supabase
     .from('prospects')
-    .select('id, business_name, public_email, status, city, state, mockups(id, slug, title, mockup_url, mockup_status), email_drafts(id, subject, body, status)')
+    .select('id, business_name, public_email, status, city, state, mockups(id, slug, title, mockup_url, mockup_status, concept_notes), email_drafts(id, subject, body, status)')
     .eq('status', 'approved_to_send')
     .order('updated_at', { ascending: true });
 
@@ -454,7 +480,7 @@ async function fetchProspectForSend(prospectId: string) {
   const supabase = getServerSupabase();
   const { data, error } = await supabase
     .from('prospects')
-    .select('id, business_name, public_email, status, city, state, mockups(id, slug, title, mockup_url, mockup_status), email_drafts(id, subject, body, status)')
+    .select('id, business_name, public_email, status, city, state, mockups(id, slug, title, mockup_url, mockup_status, concept_notes), email_drafts(id, subject, body, status)')
     .eq('id', prospectId)
     .maybeSingle();
 
@@ -508,9 +534,9 @@ function sanitizeSendFields(to: string, from: string, subject: string): Sanitize
   };
 }
 
-function getSenderEmailForMode(config = getOutreachConfig()) {
-  if (config.gmailSenderEmail) return config.gmailSenderEmail;
-  return config.testMode ? 'test-mode@mockup-outreach-crm.local' : '';
+function getSenderEmailForMode(senderProfile: SenderProfile, config = getOutreachConfig()) {
+  if (senderProfile.senderEmail) return senderProfile.senderEmail;
+  return config.testMode && senderProfile.key === 'apex' ? 'test-mode@mockup-outreach-crm.local' : '';
 }
 
 function validationFieldFromReasons(reasons: string[]) {
@@ -530,9 +556,12 @@ function buildQueueItem(
   config = getOutreachConfig()
 ) {
   const blockedReasons: string[] = [];
-  const fromCandidate = getSenderEmailForMode(config);
+  const campaignTypeDetected = getCampaignTypeForProspect(prospect);
+  const senderProfile = getSenderProfileForProspect(prospect);
+  const fromCandidate = getSenderEmailForMode(senderProfile, config);
   const fromValidation = sanitizeEmailAddress(fromCandidate);
   const toValidation = prospect.public_email ? sanitizeEmailAddress(prospect.public_email) : null;
+  const senderBlockedReason = getSenderBlockedReason(senderProfile, config.testMode);
 
   if (prospect.status !== 'approved_to_send') {
     blockedReasons.push('Prospect must be approved through Telegram before sending.');
@@ -550,8 +579,12 @@ function buildQueueItem(
     blockedReasons.push('Prospect email is opted out.');
   }
 
-  if (!fromCandidate) {
-    blockedReasons.push('GMAIL_SENDER_EMAIL is not configured.');
+  if (senderBlockedReason) {
+    blockedReasons.push(senderBlockedReason);
+  }
+
+  if (!fromCandidate && !senderBlockedReason) {
+    blockedReasons.push(`${senderProfile.senderLabel} sender email is not configured.`);
   } else if (!fromValidation.ok) {
     blockedReasons.push(`Invalid sender email: ${fromValidation.errorMessage}`);
   }
@@ -577,16 +610,28 @@ function buildQueueItem(
 
   const mockupUrl = buildMockupUrl(mockup, origin);
   const socialAuditUrl = buildPublicSocialAuditUrl(mockup.slug, origin);
+  const flooringAuditUrl = buildPublicFlooringAuditUrl(mockup.slug, origin);
   const usesMockupLink = containsMockupReference(emailDraft.body);
   const usesSocialAuditLink = containsSocialAuditReference(emailDraft.body);
+  const usesFlooringAuditLink = containsFlooringAuditReference(emailDraft.body);
+  const isResinateCampaign = campaignTypeDetected === 'resinate_flooring';
+  const selectedArtifact = selectPrimaryArtifactUrl({
+    isResinateCampaign,
+    usesMockupLink,
+    usesSocialAuditLink,
+    usesFlooringAuditLink,
+    mockupUrl,
+    socialAuditUrl,
+    flooringAuditUrl,
+  });
   const intentionalLinkPresent = hasIntentionalLink(emailDraft.body);
   const sanitizedTo = toValidation?.ok ? toValidation.value : prospect.public_email;
   const sanitizedFrom = fromValidation.ok ? fromValidation.value : fromCandidate;
   const sanitizedSubject = sanitizeHeaderValue(emailDraft.subject);
-  const replacedBody = replaceOutreachReferences(emailDraft.body, mockupUrl, socialAuditUrl);
+  const replacedBody = replaceOutreachReferences(emailDraft.body, mockupUrl, socialAuditUrl, flooringAuditUrl);
   const finalEmail = buildFinalEmailBody({
     body: replacedBody,
-    fallbackUrl: mockupUrl,
+    fallbackUrl: selectedArtifact.url,
     intentionalLinkPresent,
   });
 
@@ -601,8 +646,22 @@ function buildQueueItem(
     finalBody: finalEmail.body,
     mockupUrl,
     socialAuditUrl,
+    flooringAuditUrl,
+    campaignTypeDetected,
+    campaignLabel: getCampaignLabel(campaignTypeDetected),
+    selectedPrimaryArtifactUrl: selectedArtifact.url,
+    selectedPrimaryArtifactLabel: selectedArtifact.label,
+    hasMockupLink: usesMockupLink,
+    hasSocialAuditLink: usesSocialAuditLink,
+    hasFlooringAuditLink: usesFlooringAuditLink,
     usesMockupLink,
     usesSocialAuditLink,
+    usesFlooringAuditLink,
+    senderProfileKey: senderProfile.key,
+    senderLabel: senderProfile.senderLabel,
+    senderProviderName: senderProfile.providerName,
+    senderConfigured: senderProfile.configured,
+    senderMissingFields: senderProfile.missingFields,
     linkReplacementApplied: replacedBody !== emailDraft.body,
     fallbackLinkAppended: finalEmail.fallbackLinkAppended,
     optOutIncluded: finalEmail.optOutIncluded,
@@ -612,11 +671,24 @@ function buildQueueItem(
       finalBody: finalEmail.body,
       usesMockupLink,
       usesSocialAuditLink,
+      usesFlooringAuditLink,
     }),
     status: prospect.status,
     sendable: blockedReasons.length === 0,
     blockedReasons,
   };
+}
+
+function getSenderBlockedReason(senderProfile: SenderProfile, testMode: boolean) {
+  if (senderProfile.key === 'resinate' && !senderProfile.configured) {
+    return 'Resinate Gmail sender is not configured.';
+  }
+
+  if (!testMode && !senderProfile.configured) {
+    return `${senderProfile.senderLabel} Gmail sender is not configured.`;
+  }
+
+  return null;
 }
 
 function pickEmailDraft(drafts: EmailDraftRow[] | null | undefined) {
@@ -639,6 +711,42 @@ function buildMockupUrl(mockup: MockupRow, origin: string) {
   return buildPublicMockupUrl(mockup.slug, origin);
 }
 
+function getCampaignLabel(campaignType: string) {
+  return campaignType === 'resinate_flooring' ? 'Resinate Commercial Flooring' : 'Apex Website/Social';
+}
+
+function selectPrimaryArtifactUrl({
+  isResinateCampaign,
+  usesMockupLink,
+  usesSocialAuditLink,
+  usesFlooringAuditLink,
+  mockupUrl,
+  socialAuditUrl,
+  flooringAuditUrl,
+}: {
+  isResinateCampaign: boolean;
+  usesMockupLink: boolean;
+  usesSocialAuditLink: boolean;
+  usesFlooringAuditLink: boolean;
+  mockupUrl: string;
+  socialAuditUrl: string;
+  flooringAuditUrl: string;
+}) {
+  if (isResinateCampaign || usesFlooringAuditLink) {
+    return { label: 'Flooring Brief URL', url: flooringAuditUrl };
+  }
+
+  if (usesSocialAuditLink) {
+    return { label: 'Social Audit URL', url: socialAuditUrl };
+  }
+
+  if (usesMockupLink) {
+    return { label: 'Mockup URL', url: mockupUrl };
+  }
+
+  return { label: 'Fallback Reference URL', url: mockupUrl };
+}
+
 function buildFinalEmailBody({
   body,
   fallbackUrl,
@@ -659,12 +767,14 @@ function buildFinalEmailBody({
   };
 }
 
-function replaceOutreachReferences(body: string, mockupUrl: string, socialAuditUrl: string) {
+function replaceOutreachReferences(body: string, mockupUrl: string, socialAuditUrl: string, flooringAuditUrl: string) {
   return body
     .replace(/\[mockup link\]/gi, mockupUrl)
     .replace(/\[social audit link\]/gi, socialAuditUrl)
+    .replace(/\[flooring audit link\]/gi, flooringAuditUrl)
     .replace(/https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/mockups\/[^\s)]+/gi, mockupUrl)
-    .replace(/https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/social-audits\/[^\s)]+/gi, socialAuditUrl);
+    .replace(/https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/social-audits\/[^\s)]+/gi, socialAuditUrl)
+    .replace(/https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/flooring-audits\/[^\s)]+/gi, flooringAuditUrl);
 }
 
 function containsMockupReference(body: string) {
@@ -675,12 +785,18 @@ function containsSocialAuditReference(body: string) {
   return /\[social audit link\]/i.test(body) || /\/social-audits\//i.test(body);
 }
 
+function containsFlooringAuditReference(body: string) {
+  return /\[flooring audit link\]/i.test(body) || /\/flooring-audits\//i.test(body);
+}
+
 function hasIntentionalLink(body: string) {
   return (
     /\[mockup link\]/i.test(body) ||
     /\[social audit link\]/i.test(body) ||
+    /\[flooring audit link\]/i.test(body) ||
     /\/mockups\//i.test(body) ||
-    /\/social-audits\//i.test(body)
+    /\/social-audits\//i.test(body) ||
+    /\/flooring-audits\//i.test(body)
   );
 }
 
@@ -703,12 +819,14 @@ function getEmailQualityWarnings({
   finalBody,
   usesMockupLink,
   usesSocialAuditLink,
+  usesFlooringAuditLink,
 }: {
   businessName: string;
   rawBody: string;
   finalBody: string;
   usesMockupLink: boolean;
   usesSocialAuditLink: boolean;
+  usesFlooringAuditLink: boolean;
 }) {
   const warnings: string[] = [];
   const lower = rawBody.toLowerCase();
@@ -717,8 +835,8 @@ function getEmailQualityWarnings({
     warnings.push('Opening sounds generic: remove "I hope this email finds you well."');
   }
 
-  if (!usesMockupLink && !usesSocialAuditLink) {
-    warnings.push('Draft does not include [Social Audit Link] or [Mockup Link].');
+  if (!usesMockupLink && !usesSocialAuditLink && !usesFlooringAuditLink) {
+    warnings.push('Draft does not include [Social Audit Link], [Mockup Link], or [Flooring Audit Link].');
   }
 
   if (!mentionsSpecificObservation(lower)) {
@@ -759,6 +877,14 @@ function mentionsSpecificObservation(value: string) {
     'happy hour',
     'event',
     'offer',
+    'flooring',
+    'surface',
+    'traffic',
+    'moisture',
+    'slip',
+    'walkthrough',
+    'facility',
+    'commercial',
   ].some((term) => value.includes(term));
 }
 
@@ -802,22 +928,18 @@ function addBusinessDays(startDate: Date, businessDays: number) {
   return date;
 }
 
-async function getGmailAccessToken() {
-  const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
-  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN?.trim();
-
-  if (!clientId) throw new Error('GOOGLE_CLIENT_ID is not configured.');
-  if (!clientSecret) throw new Error('GOOGLE_CLIENT_SECRET is not configured.');
-  if (!refreshToken) throw new Error('GOOGLE_REFRESH_TOKEN is not configured.');
+async function getGmailAccessToken(senderProfile: SenderProfile) {
+  if (!senderProfile.configured) {
+    throw new Error(`${senderProfile.senderLabel} Gmail sender is not configured.`);
+  }
 
   const response = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
-      client_id: clientId,
-      client_secret: clientSecret,
-      refresh_token: refreshToken,
+      client_id: senderProfile.clientId,
+      client_secret: senderProfile.clientSecret,
+      refresh_token: senderProfile.refreshToken,
       grant_type: 'refresh_token',
     }),
     cache: 'no-store',

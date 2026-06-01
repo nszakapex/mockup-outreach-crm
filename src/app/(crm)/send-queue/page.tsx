@@ -33,8 +33,22 @@ type SendQueueItem = {
   finalBody: string;
   mockupUrl: string;
   socialAuditUrl: string;
+  flooringAuditUrl: string;
+  campaignTypeDetected: string;
+  campaignLabel: string;
+  selectedPrimaryArtifactUrl: string;
+  selectedPrimaryArtifactLabel: string;
+  hasMockupLink: boolean;
+  hasSocialAuditLink: boolean;
+  hasFlooringAuditLink: boolean;
   usesMockupLink: boolean;
   usesSocialAuditLink: boolean;
+  usesFlooringAuditLink: boolean;
+  senderProfileKey: 'apex' | 'resinate';
+  senderLabel: string;
+  senderProviderName: string;
+  senderConfigured: boolean;
+  senderMissingFields: string[];
   linkReplacementApplied: boolean;
   fallbackLinkAppended: boolean;
   optOutIncluded: boolean;
@@ -147,6 +161,7 @@ export default function SendQueuePage() {
   };
 
   const sendDisabled = stats.remainingToday <= 0;
+  const sendableCount = items.filter((item) => item.sendable).length;
 
   return (
     <div>
@@ -168,7 +183,7 @@ export default function SendQueuePage() {
             </span>
           </div>
           <p className="text-sm mt-1" style={{ color: 'var(--color-ink-3)' }}>
-            {items.length} approved prospect{items.length !== 1 ? 's' : ''} ready for controlled Gmail sending
+            {sendableCount} approved prospect{sendableCount !== 1 ? 's' : ''} ready for controlled Gmail sending
           </p>
         </div>
         <Button variant="secondary" size="sm" onClick={loadQueue} disabled={loading}>
@@ -284,13 +299,20 @@ export default function SendQueuePage() {
                     <div className="mt-1 text-sm" style={{ color: 'var(--color-ink-3)' }}>
                       To: {item.toEmail}
                     </div>
+                    <div className="mt-1 text-sm" style={{ color: 'var(--color-ink-3)' }}>
+                      Campaign: {item.campaignLabel}
+                    </div>
+                    <div className="mt-1 text-sm" style={{ color: item.senderConfigured ? 'var(--color-ink-3)' : 'var(--color-warning)' }}>
+                      Sender: {item.senderLabel} - {item.fromEmail}
+                      {!item.senderConfigured && item.senderProfileKey === 'resinate' ? ' - Resinate sender not configured' : ''}
+                    </div>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
                     <Button
                       size="sm"
                       onClick={() => runAction(item, 'send')}
-                      disabled={sendBusy || skipBusy || sendDisabled}
+                      disabled={sendBusy || skipBusy || sendDisabled || !item.sendable}
                     >
                       <Send size={14} />
                       {sendBusy ? 'Sending...' : 'Send Now'}
@@ -337,14 +359,30 @@ export default function SendQueuePage() {
                       <PreviewField label="Sanitized To" value={item.toEmail} />
                       <PreviewField label="Sanitized From" value={item.fromEmail} />
                       <PreviewField label="Sanitized Subject" value={item.subject} className="sm:col-span-2" />
+                      <PreviewField label="Campaign" value={item.campaignLabel} />
+                      <PreviewField label="Campaign type detected" value={item.campaignTypeDetected} />
+                      <PreviewField label="Sender" value={item.senderLabel} />
+                      <PreviewField label="Sender configured" value={yesNo(item.senderConfigured)} />
+                      <PreviewField label="Primary artifact" value={item.selectedPrimaryArtifactLabel} />
+                      <PreviewField label="Has Mockup Link" value={yesNo(item.hasMockupLink)} />
+                      <PreviewField label="Has Social Audit Link" value={yesNo(item.hasSocialAuditLink)} />
+                      <PreviewField label="Has Flooring Audit Link" value={yesNo(item.hasFlooringAuditLink)} />
                       <PreviewField label="Link replacement applied" value={yesNo(item.linkReplacementApplied)} />
                       <PreviewField label="Fallback link appended" value={yesNo(item.fallbackLinkAppended)} />
                       <PreviewField label="Opt-out included" value={yesNo(item.optOutIncluded)} />
+                      <PreviewField
+                        label={item.selectedPrimaryArtifactLabel}
+                        value={item.selectedPrimaryArtifactUrl}
+                        className="sm:col-span-2"
+                      />
                       {item.usesMockupLink && (
                         <PreviewField label="Final Mockup URL" value={item.mockupUrl} className="sm:col-span-2" />
                       )}
                       {item.usesSocialAuditLink && (
                         <PreviewField label="Final Social Audit URL" value={item.socialAuditUrl} className="sm:col-span-2" />
+                      )}
+                      {item.usesFlooringAuditLink && (
+                        <PreviewField label="Final Flooring Audit URL" value={item.flooringAuditUrl} className="sm:col-span-2" />
                       )}
                     </div>
                     {item.emailQualityWarnings.length > 0 && (
@@ -367,6 +405,19 @@ export default function SendQueuePage() {
                         </ul>
                       </div>
                     )}
+                    {item.senderMissingFields.length > 0 && (
+                      <div
+                        className="mt-3 rounded-lg p-3 text-xs"
+                        style={{
+                          background: 'oklch(75% 0.16 85 / 0.08)',
+                          border: '1px solid oklch(75% 0.16 85 / 0.22)',
+                          color: 'var(--color-warning)',
+                        }}
+                      >
+                        <div className="font-medium mb-1">{item.senderLabel} sender missing fields</div>
+                        <div>{item.senderMissingFields.join(', ')}</div>
+                      </div>
+                    )}
                     <div className="mt-3 text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>
                       Final body
                     </div>
@@ -384,16 +435,16 @@ export default function SendQueuePage() {
 
                   <div>
                     <div className="text-xs font-medium mb-1.5" style={{ color: 'var(--color-ink-3)' }}>
-                      Available Mockup URL
+                      {item.selectedPrimaryArtifactLabel}
                     </div>
                     <a
-                      href={item.mockupUrl}
+                      href={item.selectedPrimaryArtifactUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex max-w-full items-center gap-1.5 truncate text-sm font-medium hover:underline"
                       style={{ color: 'var(--color-accent)' }}
                     >
-                      <span className="truncate">{item.mockupUrl}</span>
+                      <span className="truncate">{item.selectedPrimaryArtifactUrl}</span>
                       <ExternalLink size={13} className="shrink-0" />
                     </a>
                     {item.usesSocialAuditLink && (
@@ -409,6 +460,23 @@ export default function SendQueuePage() {
                           style={{ color: 'var(--color-accent)' }}
                         >
                           <span className="truncate">{item.socialAuditUrl}</span>
+                          <ExternalLink size={13} className="shrink-0" />
+                        </a>
+                      </>
+                    )}
+                    {item.usesFlooringAuditLink && (
+                      <>
+                        <div className="text-xs font-medium mb-1.5 mt-4" style={{ color: 'var(--color-ink-3)' }}>
+                          Final Flooring Audit URL
+                        </div>
+                        <a
+                          href={item.flooringAuditUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex max-w-full items-center gap-1.5 truncate text-sm font-medium hover:underline"
+                          style={{ color: 'var(--color-accent)' }}
+                        >
+                          <span className="truncate">{item.flooringAuditUrl}</span>
                           <ExternalLink size={13} className="shrink-0" />
                         </a>
                       </>

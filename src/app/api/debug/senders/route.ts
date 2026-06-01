@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getOutreachConfig, getOutreachStats } from '@/lib/server/outreach';
 import { getSenderProfilesDebug } from '@/lib/server/sender-identities';
-import { getErrorMessage, getServerSupabase } from '@/lib/server/supabase';
+import { getOutreachConfig, getOutreachStats } from '@/lib/server/outreach';
+import { getErrorMessage } from '@/lib/server/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,23 +11,14 @@ export async function GET() {
 
   try {
     const stats = await getOutreachStats();
-    const { error: tableError } = await getServerSupabase()
-      .from('outreach_sends')
-      .select('id, prospect_id', { count: 'exact' })
-      .limit(0);
-    if (tableError) throw new Error(`Check outreach_sends table: ${tableError.message}`);
-
     return NextResponse.json({
-      googleClientIdConfigured: config.googleClientIdConfigured,
-      googleClientSecretConfigured: config.googleClientSecretConfigured,
-      googleRefreshTokenConfigured: config.googleRefreshTokenConfigured,
-      gmailSenderEmailConfigured: config.gmailSenderEmailConfigured,
+      defaultSenderConfigured: senderProfiles.apexSenderConfigured,
+      apexSenderConfigured: senderProfiles.apexSenderConfigured,
+      resinateSenderConfigured: senderProfiles.resinateSenderConfigured,
       testMode: config.testMode,
       dailyCap: stats.dailyCap,
       sendsToday: stats.sentToday,
       remainingToday: stats.remainingToday,
-      apexSenderConfigured: senderProfiles.apexSenderConfigured,
-      resinateSenderConfigured: senderProfiles.resinateSenderConfigured,
       profiles: {
         apex: senderProfiles.apex,
         resinate: senderProfiles.resinate,
@@ -40,16 +31,13 @@ export async function GET() {
     });
   } catch (error) {
     return NextResponse.json({
-      googleClientIdConfigured: config.googleClientIdConfigured,
-      googleClientSecretConfigured: config.googleClientSecretConfigured,
-      googleRefreshTokenConfigured: config.googleRefreshTokenConfigured,
-      gmailSenderEmailConfigured: config.gmailSenderEmailConfigured,
+      defaultSenderConfigured: senderProfiles.apexSenderConfigured,
+      apexSenderConfigured: senderProfiles.apexSenderConfigured,
+      resinateSenderConfigured: senderProfiles.resinateSenderConfigured,
       testMode: config.testMode,
       dailyCap: config.dailyCap,
       sendsToday: 0,
       remainingToday: config.dailyCap,
-      apexSenderConfigured: senderProfiles.apexSenderConfigured,
-      resinateSenderConfigured: senderProfiles.resinateSenderConfigured,
       profiles: {
         apex: senderProfiles.apex,
         resinate: senderProfiles.resinate,

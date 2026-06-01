@@ -6,15 +6,29 @@ import Card from './Card';
 import Button from './Button';
 
 type GmailDebug = {
-  googleClientIdConfigured: boolean;
-  googleClientSecretConfigured: boolean;
-  googleRefreshTokenConfigured: boolean;
-  gmailSenderEmailConfigured: boolean;
+  apexSenderConfigured: boolean;
+  resinateSenderConfigured: boolean;
+  profiles: {
+    apex: SenderProfileDebug;
+    resinate: SenderProfileDebug;
+  };
   testMode: boolean;
   dailyCap: number;
   sendsToday: number;
   remainingToday: number;
   errorMessage: string | null;
+};
+
+type SenderProfileDebug = {
+  key: 'apex' | 'resinate';
+  providerName: string;
+  senderLabel: string;
+  configured: boolean;
+  missingFields: string[];
+  clientIdConfigured: boolean;
+  clientSecretConfigured: boolean;
+  refreshTokenConfigured: boolean;
+  senderEmailConfigured: boolean;
 };
 
 export default function GmailStatusPanel() {
@@ -27,7 +41,7 @@ export default function GmailStatusPanel() {
     setError(null);
 
     try {
-      const response = await fetch('/api/debug/gmail', { cache: 'no-store' });
+      const response = await fetch('/api/debug/senders', { cache: 'no-store' });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload?.errorMessage || `Gmail status failed with HTTP ${response.status}`);
       setData(payload);
@@ -48,7 +62,7 @@ export default function GmailStatusPanel() {
 
   return (
     <Card
-      title="Gmail Sender Status"
+      title="Sender Identity Status"
       action={
         <Button variant="secondary" size="sm" onClick={loadStatus} disabled={loading}>
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
@@ -73,11 +87,12 @@ export default function GmailStatusPanel() {
           </span>
         </div>
 
+        <div className="grid grid-cols-1 gap-3">
+          <SenderIdentityBlock label="Apex sender" profile={data?.profiles.apex} />
+          <SenderIdentityBlock label="Resinate sender" profile={data?.profiles.resinate} />
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
-          <StatusRow label="Google client ID configured" value={data?.googleClientIdConfigured} />
-          <StatusRow label="Google client secret configured" value={data?.googleClientSecretConfigured} />
-          <StatusRow label="Google refresh token configured" value={data?.googleRefreshTokenConfigured} />
-          <StatusRow label="Gmail sender email configured" value={data?.gmailSenderEmailConfigured} />
           <TextRow label="Test mode" value={data ? (data.testMode ? 'Yes' : 'No') : 'Checking...'} ok={data?.testMode === false ? true : undefined} />
           <TextRow label="Daily cap" value={data ? String(data.dailyCap) : 'Checking...'} />
           <TextRow label="Sends today" value={data ? String(data.sendsToday) : 'Checking...'} />
@@ -98,6 +113,44 @@ export default function GmailStatusPanel() {
         )}
       </div>
     </Card>
+  );
+}
+
+function SenderIdentityBlock({ label, profile }: { label: string; profile?: SenderProfileDebug }) {
+  return (
+    <div
+      className="rounded-lg p-3"
+      style={{
+        background: 'var(--color-paper-3)',
+        border: '1px solid var(--color-border)',
+      }}
+    >
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <span className="text-sm font-medium" style={{ color: 'var(--color-ink)' }}>
+          {label}
+        </span>
+        <span
+          className="rounded-full px-2 py-0.5 text-xs font-medium"
+          style={{
+            background: profile?.configured ? 'var(--color-emerald-muted)' : 'oklch(65% 0.22 25 / 0.1)',
+            color: profile?.configured ? 'var(--color-success)' : 'var(--color-error)',
+          }}
+        >
+          {typeof profile === 'undefined' ? 'Checking...' : profile.configured ? 'Configured' : 'Missing'}
+        </span>
+      </div>
+      <div className="grid grid-cols-1 gap-y-2 sm:grid-cols-2 sm:gap-x-6">
+        <StatusRow label="Client ID configured" value={profile?.clientIdConfigured} />
+        <StatusRow label="Client secret configured" value={profile?.clientSecretConfigured} />
+        <StatusRow label="Refresh token configured" value={profile?.refreshTokenConfigured} />
+        <StatusRow label="Sender email configured" value={profile?.senderEmailConfigured} />
+      </div>
+      {profile && profile.missingFields.length > 0 && (
+        <div className="mt-2 text-xs leading-5" style={{ color: 'var(--color-warning)' }}>
+          Missing: {profile.missingFields.join(', ')}
+        </div>
+      )}
+    </div>
   );
 }
 

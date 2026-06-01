@@ -26,8 +26,9 @@ import ScoreBar from '@/components/ScoreBar';
 import ErrorBanner from '@/components/ErrorBanner';
 import { upsertAudit, upsertEmailDraft, upsertMockup, useProspect } from '@/lib/hooks';
 import { parseMockupConceptNotes, type RichMockupData } from '@/lib/mockup-rich-data';
-import { buildPublicMockupUrl, buildPublicSocialAuditUrl, getMockupTemplateVariant, getMockupVariantLabel } from '@/lib/mockup-templates';
+import { buildPublicFlooringAuditUrl, buildPublicMockupUrl, buildPublicSocialAuditUrl, getMockupTemplateVariant, getMockupVariantLabel } from '@/lib/mockup-templates';
 import { slugifyBusinessName } from '@/lib/prospect-intake';
+import { isResinateCampaign, parseResinateConceptNotes, type ResinateFlooringData } from '@/lib/resinate-data';
 import { parseSocialAuditConceptNotes, type SocialAuditData } from '@/lib/social-audit-data';
 import { PROSPECT_STATUSES, type Audit, type EmailDraft, type Mockup, type Prospect, type ProspectStatus } from '@/lib/types';
 
@@ -106,9 +107,12 @@ export default function ProspectDetailPage({
   const followUps = prospect.follow_up_tasks || [];
   const mockupPublicUrl = mockup?.slug ? buildPublicMockupUrl(mockup.slug) : mockup?.mockup_url || null;
   const socialAuditPublicUrl = mockup?.slug ? buildPublicSocialAuditUrl(mockup.slug) : null;
+  const flooringAuditPublicUrl = mockup?.slug ? buildPublicFlooringAuditUrl(mockup.slug) : null;
   const mockupVariant = getMockupTemplateVariant(prospect.niche);
   const mockupStrategy = mockup ? parseMockupConceptNotes(mockup.concept_notes) : null;
   const socialAuditStrategy = mockup ? parseSocialAuditConceptNotes(mockup.concept_notes) : {};
+  const resinateStrategy = mockup ? parseResinateConceptNotes(mockup.concept_notes) : {};
+  const isResinate = isResinateCampaign(resinateStrategy);
 
   return (
     <div>
@@ -395,6 +399,53 @@ export default function ProspectDetailPage({
             )}
           </Card>
 
+          {isResinate && (
+            <Card title="Resinate Flooring Campaign" action={flooringAuditPublicUrl ? (
+              <a href={flooringAuditPublicUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-medium hover:underline flex items-center gap-1" style={{ color: 'var(--color-accent)' }}>
+                Open Flooring Audit <ExternalLink size={10} />
+              </a>
+            ) : undefined}>
+              <div className="space-y-3">
+                {flooringAuditPublicUrl && (
+                  <div>
+                    <span className="text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>Public Flooring Audit URL</span>
+                    <div
+                      className="mt-1.5 rounded-lg p-3 text-xs break-all"
+                      style={{
+                        background: 'var(--color-paper-3)',
+                        border: '1px solid var(--color-divider)',
+                        color: 'var(--color-ink-2)',
+                      }}
+                    >
+                      {flooringAuditPublicUrl}
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Button size="sm" variant="secondary" onClick={() => copyToClipboard(flooringAuditPublicUrl, 'flooring-audit-link')}>
+                        {copiedField === 'flooring-audit-link' ? <Check size={14} /> : <Copy size={14} />}
+                        {copiedField === 'flooring-audit-link' ? 'Copied' : 'Copy Link'}
+                      </Button>
+                      <a
+                        href={flooringAuditPublicUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
+                        style={{
+                          background: 'var(--color-paper-3)',
+                          border: '1px solid var(--color-border)',
+                          color: 'var(--color-ink)',
+                        }}
+                      >
+                        <ExternalLink size={14} />
+                        Open Flooring Audit
+                      </a>
+                    </div>
+                  </div>
+                )}
+                <ResinateStrategyPanel flooring={resinateStrategy} />
+              </div>
+            </Card>
+          )}
+
           <Card title="Follow-up Tasks">
             {followUps.length > 0 ? (
               <div className="space-y-3">
@@ -522,6 +573,51 @@ function SocialAuditStrategyPanel({ social, audit }: { social: SocialAuditData; 
       ) : (
         <p className="text-xs" style={{ color: 'var(--color-ink-3)' }}>
           No rich social audit fields yet. The public page will fall back to audit notes and generated content guidance.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function ResinateStrategyPanel({ flooring }: { flooring: ResinateFlooringData }) {
+  const hasFlooringData = Boolean(
+    flooring.buyer_type ||
+      flooring.property_type ||
+      flooring.likely_surface_problem ||
+      flooring.traffic_needs ||
+      flooring.moisture_needs ||
+      flooring.slip_resistance_needs ||
+      flooring.recommended_flooring_system ||
+      flooring.system_reasoning ||
+      flooring.best_resinate_offer ||
+      flooring.likely_objection ||
+      flooring.objection_response ||
+      flooring.next_sales_action
+  );
+
+  return (
+    <div className="pt-3" style={{ borderTop: '1px solid var(--color-divider)' }}>
+      <div className="text-xs font-medium mb-2" style={{ color: 'var(--color-ink-3)' }}>
+        Commercial Flooring Preview
+      </div>
+      {hasFlooringData ? (
+        <div className="space-y-3">
+          {flooring.buyer_type && <FieldBlock label="Buyer Type" value={flooring.buyer_type} />}
+          {flooring.property_type && <FieldBlock label="Property Type" value={flooring.property_type} />}
+          {flooring.likely_surface_problem && <FieldBlock label="Likely Surface Issue" value={flooring.likely_surface_problem} />}
+          {flooring.traffic_needs && <FieldBlock label="Traffic Needs" value={flooring.traffic_needs} />}
+          {flooring.moisture_needs && <FieldBlock label="Moisture Needs" value={flooring.moisture_needs} />}
+          {flooring.slip_resistance_needs && <FieldBlock label="Slip-Resistance Needs" value={flooring.slip_resistance_needs} />}
+          {flooring.recommended_flooring_system && <FieldBlock label="Recommended Flooring System" value={flooring.recommended_flooring_system} />}
+          {flooring.system_reasoning && <FieldBlock label="System Reasoning" value={flooring.system_reasoning} />}
+          {flooring.best_resinate_offer && <FieldBlock label="Best Resinate Offer" value={flooring.best_resinate_offer} />}
+          {flooring.likely_objection && <FieldBlock label="Likely Objection" value={flooring.likely_objection} />}
+          {flooring.objection_response && <FieldBlock label="Objection Response" value={flooring.objection_response} />}
+          {flooring.next_sales_action && <FieldBlock label="Next Sales Action" value={flooring.next_sales_action} />}
+        </div>
+      ) : (
+        <p className="text-xs" style={{ color: 'var(--color-ink-3)' }}>
+          Campaign is marked as Resinate flooring, but the rich flooring fields are still sparse.
         </p>
       )}
     </div>

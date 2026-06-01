@@ -93,12 +93,19 @@ export function buildPublicSocialAuditUrl(slug: string | null | undefined, fallb
   return cleanSlug ? `${base}/social-audits/${encodeURIComponent(cleanSlug)}` : base;
 }
 
+export function buildPublicFlooringAuditUrl(slug: string | null | undefined, fallbackOrigin?: string | null) {
+  const base = getPublicBaseUrl(fallbackOrigin);
+  const cleanSlug = cleanPublicSlug(slug, 'flooring-audits');
+
+  return cleanSlug ? `${base}/flooring-audits/${encodeURIComponent(cleanSlug)}` : base;
+}
+
 function getPublicBaseUrl(fallbackOrigin?: string | null) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
   return (appUrl || fallbackOrigin || 'https://mockupcrm67.netlify.app').replace(/\/+$/, '');
 }
 
-function cleanPublicSlug(slug: string | null | undefined, route: 'mockups' | 'social-audits') {
+function cleanPublicSlug(slug: string | null | undefined, route: 'mockups' | 'social-audits' | 'flooring-audits') {
   return (slug || '')
     .trim()
     .replace(new RegExp(`^https?:\\/\\/[^/]+\\/${route}\\/`, 'i'), '')

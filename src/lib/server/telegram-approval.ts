@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { buildPublicFlooringAuditUrl, buildPublicMockupUrl } from '@/lib/mockup-templates';
+import { isResinateCampaign, parseResinateConceptNotes, type ResinateFlooringData } from '@/lib/resinate-data';
 import { getServerSupabase } from './supabase';
 
 const TELEGRAM_TIMEOUT_MS = 10000;
@@ -14,6 +16,7 @@ interface ApprovalMockup {
   slug: string;
   title: string;
   mockup_status: string;
+  concept_notes: string | null;
 }
 
 interface ApprovalEmailDraft {
@@ -109,7 +112,10 @@ export async function sendApprovalCard(prospectId: string, origin: string) {
   const prospect = await fetchApprovalProspect(prospectId);
   const { mockup, emailDraft } = await validateApprovalCandidate(prospect);
   if (!mockup) throw new Error('Prospect is missing a mockup.');
-  const mockupUrl = `${origin.replace(/\/$/, '')}/mockups/${mockup.slug}`;
+  const mockupUrl = buildPublicMockupUrl(mockup.slug, origin);
+  const flooring = parseResinateConceptNotes(mockup.concept_notes);
+  const resinateCampaign = isResinateCampaign(flooring);
+  const flooringAuditUrl = buildPublicFlooringAuditUrl(mockup.slug, origin);
   const inlineKeyboard: TelegramInlineKeyboardButton[][] = [
     [
       { text: 'Approve', callback_data: buildCallbackData('approve', prospect.id) },
@@ -122,7 +128,11 @@ export async function sendApprovalCard(prospectId: string, origin: string) {
     inlineKeyboard.push([{ text: 'Open Mockup', url: mockupUrl }]);
   }
 
-  const message = buildApprovalMessage(prospect, emailDraft, mockupUrl);
+  if (resinateCampaign && isPublicHttpsUrl(flooringAuditUrl)) {
+    inlineKeyboard.push([{ text: 'Open Flooring Audit', url: flooringAuditUrl }]);
+  }
+
+  const message = buildApprovalMessage(prospect, emailDraft, mockupUrl, resinateCampaign ? flooring : null, flooringAuditUrl);
   const response = await telegramApi<TelegramMessageResult>('sendMessage', {
     chat_id: config.chatId,
     text: message,
@@ -240,7 +250,7 @@ async function fetchApprovalProspect(prospectId: string): Promise<ApprovalProspe
   const { data, error } = await supabase
     .from('prospects')
     .select(
-      'id, business_name, niche, city, state, public_email, status, lead_score, notes, mockups(id, slug, title, mockup_status), email_drafts(id, subject, body, status, reply_status)'
+      'id, business_name, niche, city, state, public_email, status, lead_score, notes, mockups(id, slug, title, mockup_status, concept_notes), email_drafts(id, subject, body, status, reply_status)'
     )
     .eq('id', prospectId)
     .maybeSingle();
@@ -323,10 +333,23 @@ async function assertNotOptedOut(email: string | null) {
 function buildApprovalMessage(
   prospect: ApprovalProspect,
   emailDraft: ApprovalEmailDraft,
-  mockupUrl: string
+  mockupUrl: string,
+  flooring: ResinateFlooringData | null,
+  flooringAuditUrl: string
 ) {
   const location = [prospect.city, prospect.state].filter(Boolean).join(', ');
   const notes = prospect.notes ? `\n\n<b>Notes</b>\n${escapeHtml(prospect.notes)}` : '';
+  const flooringBlock = flooring
+    ? [
+        '',
+        '<b>Campaign</b>: Resinate Flooring',
+        flooring.recommended_flooring_system
+          ? `<b>Recommended system</b>: ${escapeHtml(flooring.recommended_flooring_system)}`
+          : null,
+        flooring.next_sales_action ? `<b>Next action</b>: ${escapeHtml(flooring.next_sales_action)}` : null,
+        `<b>Flooring audit</b>: ${escapeHtml(flooringAuditUrl)}`,
+      ].filter(Boolean)
+    : [];
 
   return [
     `<b>Approval needed: ${escapeHtml(prospect.business_name)}</b>`,
@@ -344,6 +367,7 @@ function buildApprovalMessage(
     '',
     `<b>Mockup</b>`,
     escapeHtml(mockupUrl),
+    ...flooringBlock,
     notes,
   ].join('\n');
 }

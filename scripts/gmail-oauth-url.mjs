@@ -6,8 +6,10 @@ const DEFAULT_REDIRECT_URI = 'http://localhost:3001/oauth2callback';
 
 loadLocalEnv();
 
-const clientId = requireEnv('GOOGLE_CLIENT_ID');
-const senderEmail = requireEnv('GMAIL_SENDER_EMAIL');
+const profile = getProfile();
+const profileConfig = getProfileConfig(profile);
+const clientId = requireAnyEnv(profileConfig.clientIdVars);
+const senderEmail = requireAnyEnv(profileConfig.senderEmailVars);
 const redirectUri = process.env.GOOGLE_OAUTH_REDIRECT_URI?.trim() || DEFAULT_REDIRECT_URI;
 
 const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
@@ -19,11 +21,40 @@ authUrl.searchParams.set('access_type', 'offline');
 authUrl.searchParams.set('prompt', 'consent');
 authUrl.searchParams.set('login_hint', senderEmail);
 
-console.log('\nGmail OAuth consent URL\n');
+console.log(`\nGmail OAuth consent URL (${profileConfig.label} profile)\n`);
 console.log(authUrl.toString());
 console.log('\nAfter approving, copy the code= value from the redirected URL.');
 console.log(`Redirect URI used: ${redirectUri}`);
+console.log(`Sender email: ${senderEmail}`);
 console.log('Keep OUTREACH_EMAIL_TEST_MODE=true until you intentionally test one live message.\n');
+
+function getProfile() {
+  const profileArg = process.argv.find((arg) => arg.startsWith('--profile='));
+  const profileValue = profileArg?.split('=')[1]?.trim().toLowerCase() || 'apex';
+
+  if (profileValue !== 'apex' && profileValue !== 'resinate') {
+    console.error('Invalid profile. Use --profile=apex or --profile=resinate.');
+    process.exit(1);
+  }
+
+  return profileValue;
+}
+
+function getProfileConfig(profileValue) {
+  if (profileValue === 'resinate') {
+    return {
+      label: 'Resinate',
+      clientIdVars: ['RESINATE_GOOGLE_CLIENT_ID'],
+      senderEmailVars: ['RESINATE_GMAIL_SENDER_EMAIL'],
+    };
+  }
+
+  return {
+    label: 'Apex',
+    clientIdVars: ['APEX_GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_ID'],
+    senderEmailVars: ['APEX_GMAIL_SENDER_EMAIL', 'GMAIL_SENDER_EMAIL'],
+  };
+}
 
 function loadLocalEnv() {
   const envPath = resolve(process.cwd(), '.env.local');
@@ -40,11 +71,12 @@ function loadLocalEnv() {
   }
 }
 
-function requireEnv(name) {
-  const value = process.env[name]?.trim();
-  if (!value) {
-    console.error(`${name} is required. Put it in .env.local or export it in this shell.`);
-    process.exit(1);
+function requireAnyEnv(names) {
+  for (const name of names) {
+    const value = process.env[name]?.trim();
+    if (value) return value;
   }
-  return value;
+
+  console.error(`${names.join(' or ')} is required. Put it in .env.local or export it in this shell.`);
+  process.exit(1);
 }

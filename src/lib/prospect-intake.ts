@@ -14,6 +14,13 @@ import {
   type SocialAuditScorecard,
   type SocialContentPlan,
 } from './social-audit-data';
+import {
+  getResinateImportSummary,
+  hasResinateFlooringData,
+  normalizeResinateFlooringData,
+  type ResinateCampaignType,
+  type ResinateImportSummary,
+} from './resinate-data';
 import { sanitizeEmailAddress } from './email-sanitization';
 import { PROSPECT_STATUSES, type Prospect, type ProspectStatus } from './types';
 
@@ -75,6 +82,32 @@ export type ProspectIntakeInput = {
   website_social_gap?: string | null;
   first_email_angle?: string | null;
   call_follow_up_angle?: CallFollowUpAngle | null;
+  campaign_type?: ResinateCampaignType | string | null;
+  buyer_type?: string | null;
+  property_type?: string | null;
+  portfolio_or_property_context?: string | null;
+  likely_surface_problem?: string | null;
+  likely_surface_areas?: string | null;
+  traffic_needs?: string | null;
+  cleaning_needs?: string | null;
+  downtime_needs?: string | null;
+  moisture_needs?: string | null;
+  slip_resistance_needs?: string | null;
+  recommended_flooring_system?: string | null;
+  system_reasoning?: string | null;
+  best_resinate_offer?: string | null;
+  facility_use_case?: string | null;
+  decision_maker_path?: string | null;
+  procurement_path?: string | null;
+  likely_objection?: string | null;
+  objection_response?: string | null;
+  next_sales_action?: string | null;
+  walkthrough_offer?: string | null;
+  vendor_packet_angle?: string | null;
+  prep_considerations?: string | null;
+  moisture_considerations?: string | null;
+  polyaspartic_value?: string | null;
+  surface_system_summary?: string | null;
   email_subject?: string | null;
   email_body?: string | null;
 };
@@ -103,6 +136,7 @@ export type HermesImportPreview = {
   warnings: string[];
   mockupRichness: MockupRichness;
   socialAuditRichness: SocialAuditRichness;
+  resinateFlooring: ResinateImportSummary | null;
 };
 
 const STATUS_ALIASES: Record<string, ProspectStatus> = {
@@ -226,7 +260,8 @@ function hasMockupData(input: ProspectIntakeInput) {
       clean(input.primary_cta) ||
       stringifyFeatureList(input.features_included) ||
       clean(input.concept_notes) ||
-      hasRichMockupData(input as Record<string, unknown>)
+      hasRichMockupData(input as Record<string, unknown>) ||
+      hasResinateFlooringData(input as Record<string, unknown>)
   );
 }
 
@@ -380,7 +415,8 @@ export async function createProspectBundle(
       concept_notes: encodeMockupConceptNotes(
         clean(input.concept_notes),
         normalizeRichMockupData(input as Record<string, unknown>),
-        normalizeSocialAuditData(input as Record<string, unknown>)
+        normalizeSocialAuditData(input as Record<string, unknown>),
+        normalizeResinateFlooringData(input as Record<string, unknown>)
       ),
     };
 
@@ -435,6 +471,11 @@ export async function createProspectBundle(
 export function normalizeHermesJsonRecord(value: unknown): ProspectIntakeInput | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const record = value as Record<string, unknown>;
+  const nestedResinate =
+    cleanRecord(record.resinate_flooring_data) ||
+    cleanRecord(record.resinateFlooringData) ||
+    cleanRecord(record.resinate);
+  const resinateRecord = nestedResinate ? { ...record, ...nestedResinate } : record;
 
   return {
     business_name: cleanRequired(record.business_name),
@@ -502,6 +543,32 @@ export function normalizeHermesJsonRecord(value: unknown): ProspectIntakeInput |
     website_social_gap: clean(record.website_social_gap),
     first_email_angle: clean(record.first_email_angle),
     call_follow_up_angle: cleanRecord(record.call_follow_up_angle) as CallFollowUpAngle | null,
+    campaign_type: clean(resinateRecord.campaign_type),
+    buyer_type: clean(resinateRecord.buyer_type),
+    property_type: clean(resinateRecord.property_type),
+    portfolio_or_property_context: clean(resinateRecord.portfolio_or_property_context),
+    likely_surface_problem: clean(resinateRecord.likely_surface_problem),
+    likely_surface_areas: clean(resinateRecord.likely_surface_areas),
+    traffic_needs: clean(resinateRecord.traffic_needs),
+    cleaning_needs: clean(resinateRecord.cleaning_needs),
+    downtime_needs: clean(resinateRecord.downtime_needs),
+    moisture_needs: clean(resinateRecord.moisture_needs),
+    slip_resistance_needs: clean(resinateRecord.slip_resistance_needs),
+    recommended_flooring_system: clean(resinateRecord.recommended_flooring_system),
+    system_reasoning: clean(resinateRecord.system_reasoning),
+    best_resinate_offer: clean(resinateRecord.best_resinate_offer),
+    facility_use_case: clean(resinateRecord.facility_use_case),
+    decision_maker_path: clean(resinateRecord.decision_maker_path),
+    procurement_path: clean(resinateRecord.procurement_path),
+    likely_objection: clean(resinateRecord.likely_objection),
+    objection_response: clean(resinateRecord.objection_response),
+    next_sales_action: clean(resinateRecord.next_sales_action),
+    walkthrough_offer: clean(resinateRecord.walkthrough_offer),
+    vendor_packet_angle: clean(resinateRecord.vendor_packet_angle),
+    prep_considerations: clean(resinateRecord.prep_considerations),
+    moisture_considerations: clean(resinateRecord.moisture_considerations),
+    polyaspartic_value: clean(resinateRecord.polyaspartic_value),
+    surface_system_summary: clean(resinateRecord.surface_system_summary),
     email_subject: clean(record.email_subject),
     email_body: clean(record.email_body),
     notes: clean(record.notes),
@@ -556,6 +623,9 @@ export async function previewHermesImport(records: ProspectIntakeInput[]) {
   return records.map<HermesImportPreview>((record, index) => {
     const validation = validateBaseInput(record, true);
     const duplicate = duplicateIndexes.has(index);
+    const resinateFlooring = getResinateImportSummary(record as Record<string, unknown>, record.email_body);
+    const resinateWarnings =
+      resinateFlooring?.missingFields.map((field) => `Resinate missing ${field}.`) ?? [];
     return {
       index,
       input: record,
@@ -567,9 +637,10 @@ export async function previewHermesImport(records: ProspectIntakeInput[]) {
       valid: validation.errors.length === 0 && !duplicate,
       duplicate,
       errors: duplicate ? [...validation.errors, 'Duplicate website_url or public_email detected.'] : validation.errors,
-      warnings: validation.warnings,
+      warnings: [...validation.warnings, ...resinateWarnings],
       mockupRichness: getMockupRichness(record as Record<string, unknown>, hasMockupData(record)),
       socialAuditRichness: getSocialAuditRichness(record as Record<string, unknown>),
+      resinateFlooring,
     };
   });
 }

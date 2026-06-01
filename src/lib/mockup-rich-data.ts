@@ -1,3 +1,5 @@
+import { hasNormalizedResinateFlooringData, type ResinateFlooringData } from './resinate-data';
+
 export const RICH_MOCKUP_TEXT_FIELDS = [
   'brand_style_notes',
   'visual_direction',
@@ -55,6 +57,7 @@ type StoredConceptNotes = {
   notes?: string | null;
   rich_mockup_data?: RichMockupData;
   social_audit_data?: unknown;
+  resinate_flooring_data?: ResinateFlooringData;
 };
 
 export function normalizeRichMockupData(input: Record<string, unknown> | null | undefined): RichMockupData {
@@ -99,14 +102,20 @@ export function getMockupRichness(input: Record<string, unknown>, hasBasicMockup
   return { level: 'missing', label: 'Missing Mockup Data', signalCount };
 }
 
-export function encodeMockupConceptNotes(notes: string | null, rich: RichMockupData, socialAuditData?: unknown) {
+export function encodeMockupConceptNotes(
+  notes: string | null,
+  rich: RichMockupData,
+  socialAuditData?: unknown,
+  resinateFlooringData?: ResinateFlooringData
+) {
   const hasSocialAuditData =
     Boolean(socialAuditData) &&
     typeof socialAuditData === 'object' &&
     !Array.isArray(socialAuditData) &&
     Object.keys(socialAuditData as Record<string, unknown>).length > 0;
+  const hasResinateFlooringData = hasNormalizedResinateFlooringData(resinateFlooringData);
 
-  if (getRichMockupSignalCount(rich) === 0 && !hasSocialAuditData) return notes;
+  if (getRichMockupSignalCount(rich) === 0 && !hasSocialAuditData && !hasResinateFlooringData) return notes;
 
   const payload: StoredConceptNotes = {
     notes,
@@ -114,6 +123,7 @@ export function encodeMockupConceptNotes(notes: string | null, rich: RichMockupD
   };
 
   if (hasSocialAuditData) payload.social_audit_data = socialAuditData;
+  if (hasResinateFlooringData) payload.resinate_flooring_data = resinateFlooringData;
 
   return JSON.stringify(payload);
 }

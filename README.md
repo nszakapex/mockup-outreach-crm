@@ -46,7 +46,12 @@ Keep `OUTREACH_EMAIL_TEST_MODE=true` until Gmail OAuth is verified end to end.
 
 ## Gmail OAuth Setup
 
-This repo includes local-only helpers for generating the `GOOGLE_REFRESH_TOKEN` needed by the Gmail API sender. These helpers print to the terminal only; they do not expose OAuth credentials in browser UI.
+This repo includes local-only helpers for generating Gmail API refresh tokens. They support two sender profiles:
+
+- `apex`
+- `resinate`
+
+These helpers print to the terminal only; they do not expose OAuth credentials in browser UI.
 
 Keep this setting in place while doing OAuth setup:
 
@@ -77,19 +82,38 @@ https://www.googleapis.com/auth/gmail.send
 
 ### Local Env Placement
 
-Put these in `C:\Users\nates\mockup-outreach-crm\.env.local` while generating the refresh token:
+Put these in `C:\Users\nates\mockup-outreach-crm\.env.local` while generating an Apex refresh token:
 
 ```bash
-GOOGLE_CLIENT_ID=your-google-oauth-client-id.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=your-google-oauth-client-secret
-GMAIL_SENDER_EMAIL=you@example.com
+APEX_GOOGLE_CLIENT_ID=your-apex-google-oauth-client-id.apps.googleusercontent.com
+APEX_GOOGLE_CLIENT_SECRET=your-apex-google-oauth-client-secret
+APEX_GMAIL_SENDER_EMAIL=you@example.com
 OUTREACH_EMAIL_TEST_MODE=true
 ```
 
-After the token exchange, add this to `.env.local` too:
+Apex can also fall back to the existing legacy variables:
 
 ```bash
-GOOGLE_REFRESH_TOKEN=the-refresh-token-from-the-terminal
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GMAIL_SENDER_EMAIL=
+GOOGLE_REFRESH_TOKEN=
+```
+
+Put these in `.env.local` while generating a Resinate refresh token:
+
+```bash
+RESINATE_GOOGLE_CLIENT_ID=your-resinate-google-oauth-client-id.apps.googleusercontent.com
+RESINATE_GOOGLE_CLIENT_SECRET=your-resinate-google-oauth-client-secret
+RESINATE_GMAIL_SENDER_EMAIL=resinate-sender@example.com
+OUTREACH_EMAIL_TEST_MODE=true
+```
+
+After the token exchange, add the printed profile-specific refresh token too:
+
+```bash
+APEX_GOOGLE_REFRESH_TOKEN=the-apex-refresh-token-from-the-terminal
+RESINATE_GOOGLE_REFRESH_TOKEN=the-resinate-refresh-token-from-the-terminal
 ```
 
 Do not put Google OAuth secrets in any `NEXT_PUBLIC_` variable.
@@ -97,31 +121,39 @@ Do not put Google OAuth secrets in any `NEXT_PUBLIC_` variable.
 ### Generate The Auth URL
 
 ```bash
-npm run gmail:auth-url
+npm run gmail:auth-url -- --profile=apex
+npm run gmail:auth-url -- --profile=resinate
 ```
 
-Open the printed URL, approve the Gmail send scope for the account matching `GMAIL_SENDER_EMAIL`, then copy the `code=` value from the redirected URL.
+Open the printed URL, approve the Gmail send scope for the account matching the selected profile sender email, then copy the `code=` value from the redirected URL.
 
 ### Exchange The Code
 
 ```bash
-npm run gmail:exchange-code -- "PASTE_CODE_HERE"
+npm run gmail:exchange-code -- --profile=apex "PASTE_CODE_HERE"
+npm run gmail:exchange-code -- --profile=resinate "PASTE_CODE_HERE"
 ```
 
-The script prints the refresh token in the terminal only. Store it as `GOOGLE_REFRESH_TOKEN`.
+The script prints the refresh token in the terminal only. Store it as `APEX_GOOGLE_REFRESH_TOKEN` or `RESINATE_GOOGLE_REFRESH_TOKEN` based on the selected profile.
 
 ### Netlify Env Placement
 
 In Netlify project `mockupcrm67`, add these under Site configuration -> Environment variables:
 
 ```bash
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-GOOGLE_REFRESH_TOKEN=
-GMAIL_SENDER_EMAIL=
+APEX_GOOGLE_CLIENT_ID=
+APEX_GOOGLE_CLIENT_SECRET=
+APEX_GOOGLE_REFRESH_TOKEN=
+APEX_GMAIL_SENDER_EMAIL=
+RESINATE_GOOGLE_CLIENT_ID=
+RESINATE_GOOGLE_CLIENT_SECRET=
+RESINATE_GOOGLE_REFRESH_TOKEN=
+RESINATE_GMAIL_SENDER_EMAIL=
 OUTREACH_EMAIL_TEST_MODE=true
 OUTREACH_DAILY_SEND_CAP=30
 ```
+
+For Apex only, the older `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, and `GMAIL_SENDER_EMAIL` vars can still be used as a fallback. Resinate requires the `RESINATE_*` variables.
 
 Keep `OUTREACH_EMAIL_TEST_MODE=true` until you intentionally test one live Gmail message.
 

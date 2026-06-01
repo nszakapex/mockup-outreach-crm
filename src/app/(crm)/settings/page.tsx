@@ -121,6 +121,14 @@ export default function SettingsPage() {
                 <li><code className="font-mono">TELEGRAM_BOT_TOKEN</code></li>
                 <li><code className="font-mono">TELEGRAM_CHAT_ID</code></li>
                 <li><code className="font-mono">TELEGRAM_WEBHOOK_SECRET</code></li>
+                <li><code className="font-mono">APEX_GOOGLE_CLIENT_ID</code></li>
+                <li><code className="font-mono">APEX_GOOGLE_CLIENT_SECRET</code></li>
+                <li><code className="font-mono">APEX_GOOGLE_REFRESH_TOKEN</code></li>
+                <li><code className="font-mono">APEX_GMAIL_SENDER_EMAIL</code></li>
+                <li><code className="font-mono">RESINATE_GOOGLE_CLIENT_ID</code></li>
+                <li><code className="font-mono">RESINATE_GOOGLE_CLIENT_SECRET</code></li>
+                <li><code className="font-mono">RESINATE_GOOGLE_REFRESH_TOKEN</code></li>
+                <li><code className="font-mono">RESINATE_GMAIL_SENDER_EMAIL</code></li>
                 <li><code className="font-mono">GOOGLE_CLIENT_ID</code></li>
                 <li><code className="font-mono">GOOGLE_CLIENT_SECRET</code></li>
                 <li><code className="font-mono">GOOGLE_REFRESH_TOKEN</code></li>
