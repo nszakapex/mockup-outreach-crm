@@ -7,6 +7,12 @@ import {
   type MockupRichness,
 } from './mockup-rich-data';
 import {
+  getApexImportSummary,
+  normalizeApexDeliveryData,
+  type ApexDeliveryMode,
+  type ApexImportSummary,
+} from './apex-delivery-data';
+import {
   getSocialAuditRichness,
   normalizeSocialAuditData,
   type CallFollowUpAngle,
@@ -83,6 +89,7 @@ export type ProspectIntakeInput = {
   website_social_gap?: string | null;
   first_email_angle?: string | null;
   call_follow_up_angle?: CallFollowUpAngle | null;
+  apex_delivery_mode?: ApexDeliveryMode | string | null;
   campaign_type?: ResinateCampaignType | string | null;
   resinate_delivery_mode?: ResinateDeliveryMode | string | null;
   buyer_type?: string | null;
@@ -138,6 +145,7 @@ export type HermesImportPreview = {
   warnings: string[];
   mockupRichness: MockupRichness;
   socialAuditRichness: SocialAuditRichness;
+  apexDelivery: ApexImportSummary | null;
   resinateFlooring: ResinateImportSummary | null;
 };
 
@@ -220,6 +228,21 @@ function inferResinateDeliveryMode(record: Record<string, unknown>, resinateReco
   if (hasInlineBrief && hasPublicBrief) return 'link_plus_summary';
   if (hasInlineBrief) return 'inline_brief';
   if (hasPublicBrief) return 'public_brief';
+  return null;
+}
+
+function inferApexDeliveryMode(record: Record<string, unknown>) {
+  const explicit = clean(record.apex_delivery_mode);
+  if (explicit) return explicit;
+  const body = clean(record.email_body) || '';
+  const hasInlineBrief = /\[inline apex brief\]/i.test(body);
+  const hasSocialAudit = /\[social audit link\]/i.test(body);
+  const hasMockup = /\[mockup link\]/i.test(body);
+  if (hasInlineBrief && (hasSocialAudit || hasMockup)) return 'link_plus_summary';
+  if (hasSocialAudit && hasMockup) return 'link_plus_summary';
+  if (hasInlineBrief) return 'inline_apex_brief';
+  if (hasSocialAudit) return 'public_social_audit';
+  if (hasMockup) return 'public_mockup';
   return null;
 }
 
@@ -430,7 +453,8 @@ export async function createProspectBundle(
         clean(input.concept_notes),
         normalizeRichMockupData(input as Record<string, unknown>),
         normalizeSocialAuditData(input as Record<string, unknown>),
-        normalizeResinateFlooringData(input as Record<string, unknown>)
+        normalizeResinateFlooringData(input as Record<string, unknown>),
+        normalizeApexDeliveryData(input as Record<string, unknown>, input.email_body)
       ),
     };
 
@@ -557,6 +581,7 @@ export function normalizeHermesJsonRecord(value: unknown): ProspectIntakeInput |
     website_social_gap: clean(record.website_social_gap),
     first_email_angle: clean(record.first_email_angle),
     call_follow_up_angle: cleanRecord(record.call_follow_up_angle) as CallFollowUpAngle | null,
+    apex_delivery_mode: inferApexDeliveryMode(record),
     campaign_type: clean(resinateRecord.campaign_type),
     resinate_delivery_mode: inferResinateDeliveryMode(record, resinateRecord),
     buyer_type: clean(resinateRecord.buyer_type),
@@ -639,6 +664,7 @@ export async function previewHermesImport(records: ProspectIntakeInput[]) {
     const validation = validateBaseInput(record, true);
     const duplicate = duplicateIndexes.has(index);
     const resinateFlooring = getResinateImportSummary(record as Record<string, unknown>, record.email_body);
+    const apexDelivery = getApexImportSummary(record as Record<string, unknown>, record.email_body);
     const resinateWarnings =
       resinateFlooring?.missingFields.map((field) => `Resinate missing ${field}.`) ?? [];
     return {
@@ -655,6 +681,7 @@ export async function previewHermesImport(records: ProspectIntakeInput[]) {
       warnings: [...validation.warnings, ...resinateWarnings],
       mockupRichness: getMockupRichness(record as Record<string, unknown>, hasMockupData(record)),
       socialAuditRichness: getSocialAuditRichness(record as Record<string, unknown>),
+      apexDelivery,
       resinateFlooring,
     };
   });

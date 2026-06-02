@@ -25,6 +25,13 @@ import LeadScoreBadge from '@/components/LeadScoreBadge';
 import ScoreBar from '@/components/ScoreBar';
 import ErrorBanner from '@/components/ErrorBanner';
 import { upsertAudit, upsertEmailDraft, upsertMockup, useProspect } from '@/lib/hooks';
+import {
+  buildInlineApexBrief,
+  getApexDeliveryMode,
+  getApexDeliveryModeLabel,
+  getApexPublicArtifactRequired,
+  parseApexDeliveryConceptNotes,
+} from '@/lib/apex-delivery-data';
 import { parseMockupConceptNotes, type RichMockupData } from '@/lib/mockup-rich-data';
 import { buildPublicFlooringAuditUrl, buildPublicMockupUrl, buildPublicSocialAuditUrl, getMockupTemplateVariant, getMockupVariantLabel } from '@/lib/mockup-templates';
 import { slugifyBusinessName } from '@/lib/prospect-intake';
@@ -119,8 +126,21 @@ export default function ProspectDetailPage({
   const mockupVariant = getMockupTemplateVariant(prospect.niche);
   const mockupStrategy = mockup ? parseMockupConceptNotes(mockup.concept_notes) : null;
   const socialAuditStrategy = mockup ? parseSocialAuditConceptNotes(mockup.concept_notes) : {};
+  const apexDeliveryStrategy = mockup ? parseApexDeliveryConceptNotes(mockup.concept_notes) : {};
   const resinateStrategy = mockup ? parseResinateConceptNotes(mockup.concept_notes) : {};
   const isResinate = isResinateCampaign(resinateStrategy);
+  const apexDeliveryMode = !isResinate ? getApexDeliveryMode(apexDeliveryStrategy, emailDraft?.body) : null;
+  const apexPublicArtifactRequired = !isResinate
+    ? getApexPublicArtifactRequired(apexDeliveryStrategy, emailDraft?.body)
+    : false;
+  const inlineApexBriefPreview = !isResinate
+    ? buildInlineApexBrief({
+        prospect,
+        audit,
+        rich: mockupStrategy?.rich || {},
+        social: socialAuditStrategy,
+      })
+    : '';
   const resinateDeliveryMode = isResinate ? getResinateDeliveryMode(resinateStrategy, emailDraft?.body) : null;
   const resinatePublicArtifactRequired = isResinate
     ? getResinatePublicArtifactRequired(resinateStrategy, emailDraft?.body)
@@ -411,6 +431,49 @@ export default function ProspectDetailPage({
               </p>
             )}
           </Card>
+
+          {!isResinate && apexDeliveryMode === 'inline_apex_brief' && (
+            <Card title="Apex Delivery">
+              <div className="space-y-3">
+                <FieldBlock label="Delivery Mode" value={getApexDeliveryModeLabel(apexDeliveryMode)} />
+                <div
+                  className="rounded-lg p-3 text-xs"
+                  style={{
+                    background: 'var(--color-paper-3)',
+                    border: '1px solid var(--color-divider)',
+                    color: 'var(--color-ink-2)',
+                  }}
+                >
+                  Public artifact: {apexPublicArtifactRequired ? 'required' : 'not required for inline brief delivery.'}
+                </div>
+                {mockupPublicUrl && (
+                  <FieldBlock label="Secondary Mockup Link" value={mockupPublicUrl} />
+                )}
+                {socialAuditPublicUrl && (
+                  <FieldBlock label="Secondary Social Audit Link" value={socialAuditPublicUrl} />
+                )}
+                <div>
+                  <span className="text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>
+                    Suggested Inline Apex Brief Preview
+                  </span>
+                  <div
+                    className="mt-1.5 rounded-lg p-3 text-xs whitespace-pre-wrap"
+                    style={{
+                      background: 'var(--color-paper-3)',
+                      border: '1px solid var(--color-divider)',
+                      color: 'var(--color-ink-2)',
+                    }}
+                  >
+                    {inlineApexBriefPreview}
+                  </div>
+                  <Button size="sm" variant="secondary" className="mt-2" onClick={() => copyToClipboard(inlineApexBriefPreview, 'inline-apex-brief')}>
+                    {copiedField === 'inline-apex-brief' ? <Check size={14} /> : <Copy size={14} />}
+                    {copiedField === 'inline-apex-brief' ? 'Copied' : 'Copy Inline Brief'}
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
 
           {isResinate && (
             <Card title="Resinate Flooring Campaign" action={resinatePublicArtifactRequired && flooringAuditPublicUrl ? (

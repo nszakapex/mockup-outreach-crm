@@ -226,6 +226,7 @@ export default function ImportPage() {
             <Rule label="Source" value="hermes_import" />
             <Rule label="Creates" value="prospect, audit, mockup, and email draft rows" />
             <Rule label="Approval" value="email_ready rows can appear in /approval when email and mockup data exist" />
+            <Rule label="Apex inline" value="apex_delivery_mode inline_apex_brief supports [Inline Apex Brief] without requiring a public mockup or social audit link" />
             <Rule label="Resinate" value="campaign_type resinate_flooring creates a commercial surface brief and supports [Flooring Brief Link] or [Inline Flooring Brief]" />
             <p className="rounded-lg p-3 text-xs leading-5" style={{ background: 'var(--color-paper-3)' }}>
               Import never sends Gmail, never scrapes, and never bypasses Telegram approval.
@@ -337,8 +338,28 @@ function Rule({ label, value }: { label: string; value: string }) {
 
 function CampaignCell({ item }: { item: HermesImportPreview }) {
   const resinate = item.resinateFlooring;
+  const apex = item.apexDelivery;
   if (!resinate) {
-    return <span className="text-xs" style={{ color: 'var(--color-ink-3)' }}>Standard Apex</span>;
+    if (!apex) {
+      return <span className="text-xs" style={{ color: 'var(--color-ink-3)' }}>Standard Apex</span>;
+    }
+
+    return (
+      <div className="min-w-48 space-y-1">
+        <span
+          className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap"
+          style={{ color: 'var(--color-accent)', background: 'var(--color-accent-subtle)' }}
+        >
+          {apex.deliveryMode === 'inline_apex_brief' ? 'Apex Inline Brief' : 'Apex Delivery'}
+        </span>
+        <div className="text-xs leading-5" style={{ color: 'var(--color-ink-2)' }}>
+          <div>Delivery: {formatDeliveryMode(apex.deliveryMode)}</div>
+          <div>Public artifact: {apex.publicArtifactRequired ? 'Required' : 'Not required'}</div>
+          <div>Content/ad data: {apex.contentDataPresent ? 'yes' : 'no'}</div>
+          <div>Email has inline brief: {apex.inlineBriefPlaceholderPresent ? 'yes' : 'no'}</div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -355,14 +376,14 @@ function CampaignCell({ item }: { item: HermesImportPreview }) {
         {resinate.recommendedSystem && <div>System: {resinate.recommendedSystem}</div>}
         {resinate.bestOffer && <div>Offer: {resinate.bestOffer}</div>}
         {resinate.nextSalesAction && <div>Next: {resinate.nextSalesAction}</div>}
-        <div>Delivery: {formatResinateDeliveryMode(resinate.deliveryMode)}</div>
+        <div>Delivery: {formatDeliveryMode(resinate.deliveryMode)}</div>
         <div>Public artifact: {resinate.publicArtifactRequired ? 'Commercial Surface Brief available' : 'Not required'}</div>
       </div>
     </div>
   );
 }
 
-function formatResinateDeliveryMode(value: string) {
+function formatDeliveryMode(value: string) {
   return value.replace(/_/g, ' ').replace(/\b\w/g, (character) => character.toUpperCase());
 }
 

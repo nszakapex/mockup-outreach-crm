@@ -8,6 +8,19 @@ import {
 } from '@/lib/email-sanitization';
 import { buildPublicFlooringAuditUrl, buildPublicMockupUrl, buildPublicSocialAuditUrl } from '@/lib/mockup-templates';
 import {
+  buildInlineApexBrief,
+  containsInlineApexBriefReference,
+  getApexDeliveryMode,
+  getApexDeliveryModeLabel,
+  getApexPublicArtifactRequired,
+  getApexPublicMockupRequired,
+  getApexPublicSocialAuditRequired,
+  hasApexContentDirection,
+  parseApexDeliveryConceptNotes,
+  type ApexDeliveryMode,
+} from '@/lib/apex-delivery-data';
+import { parseMockupConceptNotes } from '@/lib/mockup-rich-data';
+import {
   buildInlineFlooringBrief,
   containsInlineFlooringBriefReference,
   containsPublicFlooringBriefReference,
@@ -17,6 +30,7 @@ import {
   parseResinateConceptNotes,
   type ResinateDeliveryMode,
 } from '@/lib/resinate-data';
+import { parseSocialAuditConceptNotes } from '@/lib/social-audit-data';
 import {
   getCampaignTypeForProspect,
   getSenderProfileByKey,
@@ -47,15 +61,25 @@ type MockupRow = {
   concept_notes: string | null;
 };
 
+type AuditRow = {
+  main_problem: string | null;
+  conversion_opportunity: string | null;
+  recommended_offer: string | null;
+  audit_notes: string | null;
+};
+
 type ProspectRow = {
   id: string;
   business_name: string;
+  niche: string;
+  notes: string | null;
   public_email: string | null;
   status: string;
   city: string;
   state: string;
   mockups?: MockupRow[] | null;
   email_drafts?: EmailDraftRow[] | null;
+  audits?: AuditRow[] | null;
 };
 
 type OutreachSendRow = {
@@ -92,23 +116,34 @@ export type SendQueueItem = {
   socialAuditUrl: string;
   flooringAuditUrl: string;
   inlineFlooringBrief: string;
+  inlineApexBrief: string;
   campaignTypeDetected: string;
   campaignLabel: string;
+  apexDeliveryMode: ApexDeliveryMode | null;
+  apexDeliveryModeLabel: string;
   resinateDeliveryMode: ResinateDeliveryMode | null;
   resinateDeliveryModeLabel: string;
   publicArtifactRequired: boolean;
+  publicSocialAuditRequired: boolean;
+  publicMockupRequired: boolean;
+  publicSocialAuditIncluded: boolean;
+  publicMockupIncluded: boolean;
   selectedPrimaryArtifactUrl: string;
   selectedPrimaryArtifactLabel: string;
+  primaryArtifactType: string;
   hasMockupLink: boolean;
   hasSocialAuditLink: boolean;
   hasFlooringAuditLink: boolean;
   hasInlineFlooringBrief: boolean;
+  hasInlineApexBrief: boolean;
   usesMockupLink: boolean;
   usesSocialAuditLink: boolean;
   usesFlooringAuditLink: boolean;
   usesInlineFlooringBrief: boolean;
+  usesInlineApexBrief: boolean;
   publicBriefLinkIncluded: boolean;
   inlineBriefIncluded: boolean;
+  inlineApexBriefIncluded: boolean;
   senderProfileKey: SenderProfileKey;
   senderLabel: string;
   senderProviderName: 'gmail';
@@ -486,7 +521,7 @@ async function fetchQueueProspects() {
   const supabase = getServerSupabase();
   const { data, error } = await supabase
     .from('prospects')
-    .select('id, business_name, public_email, status, city, state, mockups(id, slug, title, mockup_url, mockup_status, concept_notes), email_drafts(id, subject, body, status)')
+    .select('id, business_name, niche, notes, public_email, status, city, state, audits(main_problem, conversion_opportunity, recommended_offer, audit_notes), mockups(id, slug, title, mockup_url, mockup_status, concept_notes), email_drafts(id, subject, body, status)')
     .eq('status', 'approved_to_send')
     .order('updated_at', { ascending: true });
 
@@ -498,7 +533,7 @@ async function fetchProspectForSend(prospectId: string) {
   const supabase = getServerSupabase();
   const { data, error } = await supabase
     .from('prospects')
-    .select('id, business_name, public_email, status, city, state, mockups(id, slug, title, mockup_url, mockup_status, concept_notes), email_drafts(id, subject, body, status)')
+    .select('id, business_name, niche, notes, public_email, status, city, state, audits(main_problem, conversion_opportunity, recommended_offer, audit_notes), mockups(id, slug, title, mockup_url, mockup_status, concept_notes), email_drafts(id, subject, body, status)')
     .eq('id', prospectId)
     .maybeSingle();
 
@@ -621,18 +656,29 @@ function buildQueueItem(
 
   const mockup = pickMockup(prospect.mockups);
   const isResinateCampaign = campaignTypeDetected === 'resinate_flooring';
+  const isApexCampaign = !isResinateCampaign;
   const resinateFlooring = mockup ? parseResinateConceptNotes(mockup.concept_notes) : {};
+  const apexDelivery = mockup ? parseApexDeliveryConceptNotes(mockup.concept_notes) : {};
   const draftBody = emailDraft?.body || '';
+  const apexDeliveryMode = isApexCampaign
+    ? getApexDeliveryMode(apexDelivery, draftBody)
+    : null;
   const resinateDeliveryMode = isResinateCampaign
     ? getResinateDeliveryMode(resinateFlooring, draftBody)
     : null;
+  const publicSocialAuditRequired = isApexCampaign
+    ? getApexPublicSocialAuditRequired(apexDelivery, draftBody)
+    : false;
+  const publicMockupRequired = isApexCampaign
+    ? getApexPublicMockupRequired(apexDelivery, draftBody)
+    : false;
   const publicArtifactRequired = isResinateCampaign
     ? getResinatePublicArtifactRequired(resinateFlooring, draftBody)
-    : true;
+    : getApexPublicArtifactRequired(apexDelivery, draftBody);
 
   if (!mockup) {
     blockedReasons.push('Prospect is missing internal campaign content.');
-  } else if (publicArtifactRequired && !mockup.slug && !mockup.mockup_url) {
+  } else if ((publicArtifactRequired || publicSocialAuditRequired) && !mockup.slug && !mockup.mockup_url) {
     blockedReasons.push('Prospect is missing a public artifact slug or URL.');
   }
 
@@ -641,17 +687,41 @@ function buildQueueItem(
   const mockupUrl = buildMockupUrl(mockup, origin);
   const socialAuditUrl = buildPublicSocialAuditUrl(mockup.slug, origin);
   const flooringAuditUrl = publicArtifactRequired ? buildPublicFlooringAuditUrl(mockup.slug, origin) : '';
+  const audit = pickAudit(prospect.audits);
+  const mockupStrategy = parseMockupConceptNotes(mockup.concept_notes);
+  const socialAuditStrategy = parseSocialAuditConceptNotes(mockup.concept_notes);
   const inlineFlooringBrief = buildInlineFlooringBrief(resinateFlooring);
+  const inlineApexBrief = buildInlineApexBrief({
+    prospect: {
+      business_name: prospect.business_name,
+      city: prospect.city,
+      niche: prospect.niche,
+      notes: prospect.notes,
+    },
+    audit,
+    rich: mockupStrategy.rich,
+    social: socialAuditStrategy,
+  });
   const usesMockupLink = containsMockupReference(emailDraft.body);
   const usesSocialAuditLink = containsSocialAuditReference(emailDraft.body);
   const usesFlooringAuditLink = containsPublicFlooringBriefReference(emailDraft.body);
   const usesInlineFlooringBrief = containsInlineFlooringBriefReference(emailDraft.body);
+  const usesInlineApexBrief = containsInlineApexBriefReference(emailDraft.body);
+  const apexContentDirectionPresent = hasApexContentDirection({
+    ...audit,
+    ...mockupStrategy.rich,
+    ...socialAuditStrategy,
+    business_name: prospect.business_name,
+    city: prospect.city,
+  });
   const selectedArtifact = selectPrimaryArtifactUrl({
     isResinateCampaign,
+    apexDeliveryMode,
     resinateDeliveryMode,
     usesMockupLink,
     usesSocialAuditLink,
     usesFlooringAuditLink,
+    usesInlineApexBrief,
     mockupUrl,
     socialAuditUrl,
     flooringAuditUrl,
@@ -665,7 +735,8 @@ function buildQueueItem(
     mockupUrl,
     socialAuditUrl,
     flooringAuditUrl,
-    inlineFlooringBrief
+    inlineFlooringBrief,
+    inlineApexBrief
   );
   const finalEmail = buildFinalEmailBody({
     body: replacedBody,
@@ -686,23 +757,34 @@ function buildQueueItem(
     socialAuditUrl,
     flooringAuditUrl,
     inlineFlooringBrief,
+    inlineApexBrief,
     campaignTypeDetected,
     campaignLabel: getCampaignLabel(campaignTypeDetected),
+    apexDeliveryMode,
+    apexDeliveryModeLabel: apexDeliveryMode ? getApexDeliveryModeLabel(apexDeliveryMode) : 'Standard',
     resinateDeliveryMode,
     resinateDeliveryModeLabel: resinateDeliveryMode ? getResinateDeliveryModeLabel(resinateDeliveryMode) : 'Standard',
     publicArtifactRequired,
+    publicSocialAuditRequired,
+    publicMockupRequired,
+    publicSocialAuditIncluded: usesSocialAuditLink,
+    publicMockupIncluded: usesMockupLink,
     selectedPrimaryArtifactUrl: selectedArtifact.url,
     selectedPrimaryArtifactLabel: selectedArtifact.label,
+    primaryArtifactType: selectedArtifact.type,
     hasMockupLink: usesMockupLink,
     hasSocialAuditLink: usesSocialAuditLink,
     hasFlooringAuditLink: usesFlooringAuditLink,
     hasInlineFlooringBrief: usesInlineFlooringBrief,
+    hasInlineApexBrief: usesInlineApexBrief,
     usesMockupLink,
     usesSocialAuditLink,
     usesFlooringAuditLink,
     usesInlineFlooringBrief,
+    usesInlineApexBrief,
     publicBriefLinkIncluded: usesFlooringAuditLink && Boolean(flooringAuditUrl),
     inlineBriefIncluded: usesInlineFlooringBrief,
+    inlineApexBriefIncluded: usesInlineApexBrief,
     senderProfileKey: senderProfile.key,
     senderLabel: senderProfile.senderLabel,
     senderProviderName: senderProfile.providerName,
@@ -719,6 +801,9 @@ function buildQueueItem(
       usesSocialAuditLink,
       usesFlooringAuditLink,
       usesInlineFlooringBrief,
+      usesInlineApexBrief,
+      apexDeliveryMode,
+      apexContentDirectionPresent,
     }),
     status: prospect.status,
     sendable: blockedReasons.length === 0,
@@ -753,6 +838,11 @@ function pickMockup(mockups: MockupRow[] | null | undefined) {
   );
 }
 
+function pickAudit(audits: AuditRow[] | null | undefined) {
+  if (!audits || audits.length === 0) return null;
+  return audits[0];
+}
+
 function buildMockupUrl(mockup: MockupRow, origin: string) {
   if (mockup.mockup_url) return mockup.mockup_url;
   return buildPublicMockupUrl(mockup.slug, origin);
@@ -764,40 +854,56 @@ function getCampaignLabel(campaignType: string) {
 
 function selectPrimaryArtifactUrl({
   isResinateCampaign,
+  apexDeliveryMode,
   resinateDeliveryMode,
   usesMockupLink,
   usesSocialAuditLink,
   usesFlooringAuditLink,
+  usesInlineApexBrief,
   mockupUrl,
   socialAuditUrl,
   flooringAuditUrl,
 }: {
   isResinateCampaign: boolean;
+  apexDeliveryMode: ApexDeliveryMode | null;
   resinateDeliveryMode: ResinateDeliveryMode | null;
   usesMockupLink: boolean;
   usesSocialAuditLink: boolean;
   usesFlooringAuditLink: boolean;
+  usesInlineApexBrief: boolean;
   mockupUrl: string;
   socialAuditUrl: string;
   flooringAuditUrl: string;
 }) {
   if (isResinateCampaign && resinateDeliveryMode === 'inline_brief') {
-    return { label: 'Inline commercial surface note', url: '' };
+    return { label: 'Inline commercial surface note', url: '', type: 'inline_flooring_brief' };
+  }
+
+  if (!isResinateCampaign && apexDeliveryMode === 'inline_apex_brief') {
+    return { label: 'Inline content + ads note', url: '', type: 'inline_apex_brief' };
   }
 
   if ((isResinateCampaign || usesFlooringAuditLink) && flooringAuditUrl) {
-    return { label: 'Commercial Surface Brief URL', url: flooringAuditUrl };
+    return { label: 'Commercial Surface Brief URL', url: flooringAuditUrl, type: 'flooring_brief_url' };
   }
 
   if (usesSocialAuditLink) {
-    return { label: 'Social Audit URL', url: socialAuditUrl };
+    return {
+      label: usesMockupLink ? 'Social audit + mockup links' : 'Social Audit URL',
+      url: socialAuditUrl,
+      type: usesMockupLink ? 'social_audit_and_mockup_urls' : 'social_audit_url',
+    };
   }
 
   if (usesMockupLink) {
-    return { label: 'Mockup URL', url: mockupUrl };
+    return { label: 'Mockup URL', url: mockupUrl, type: 'mockup_url' };
   }
 
-  return { label: 'Fallback Reference URL', url: mockupUrl };
+  if (usesInlineApexBrief) {
+    return { label: 'Inline content + ads note', url: '', type: 'inline_apex_brief' };
+  }
+
+  return { label: 'Fallback Reference URL', url: mockupUrl, type: 'fallback_url' };
 }
 
 function buildFinalEmailBody({
@@ -825,11 +931,13 @@ function replaceOutreachReferences(
   mockupUrl: string,
   socialAuditUrl: string,
   flooringAuditUrl: string,
-  inlineFlooringBrief: string
+  inlineFlooringBrief: string,
+  inlineApexBrief: string
 ) {
   return body
     .replace(/\[mockup link\]/gi, mockupUrl)
     .replace(/\[social audit link\]/gi, socialAuditUrl)
+    .replace(/\[inline apex brief\]/gi, inlineApexBrief)
     .replace(/\[inline flooring brief\]/gi, inlineFlooringBrief)
     .replace(/\[flooring audit link\]/gi, flooringAuditUrl)
     .replace(/\[flooring brief link\]/gi, flooringAuditUrl)
@@ -851,6 +959,7 @@ function hasIntentionalLink(body: string) {
   return (
     /\[mockup link\]/i.test(body) ||
     /\[social audit link\]/i.test(body) ||
+    /\[inline apex brief\]/i.test(body) ||
     /\[inline flooring brief\]/i.test(body) ||
     /\[flooring audit link\]/i.test(body) ||
     /\[flooring brief link\]/i.test(body) ||
@@ -882,6 +991,9 @@ function getEmailQualityWarnings({
   usesSocialAuditLink,
   usesFlooringAuditLink,
   usesInlineFlooringBrief,
+  usesInlineApexBrief,
+  apexDeliveryMode,
+  apexContentDirectionPresent,
 }: {
   businessName: string;
   rawBody: string;
@@ -890,6 +1002,9 @@ function getEmailQualityWarnings({
   usesSocialAuditLink: boolean;
   usesFlooringAuditLink: boolean;
   usesInlineFlooringBrief: boolean;
+  usesInlineApexBrief: boolean;
+  apexDeliveryMode: ApexDeliveryMode | null;
+  apexContentDirectionPresent: boolean;
 }) {
   const warnings: string[] = [];
   const lower = rawBody.toLowerCase();
@@ -898,8 +1013,18 @@ function getEmailQualityWarnings({
     warnings.push('Opening sounds generic: remove "I hope this email finds you well."');
   }
 
-  if (!usesMockupLink && !usesSocialAuditLink && !usesFlooringAuditLink && !usesInlineFlooringBrief) {
+  if (
+    !usesMockupLink &&
+    !usesSocialAuditLink &&
+    !usesFlooringAuditLink &&
+    !usesInlineFlooringBrief &&
+    !usesInlineApexBrief
+  ) {
     warnings.push('Draft does not include an approved artifact placeholder.');
+  }
+
+  if (apexDeliveryMode === 'inline_apex_brief' && !apexContentDirectionPresent) {
+    warnings.push('Apex inline brief needs more specific content, website/social, or Meta ads direction fields.');
   }
 
   if (!mentionsSpecificObservation(lower)) {
@@ -910,8 +1035,9 @@ function getEmailQualityWarnings({
     warnings.push('Draft may sound generic because it does not mention the business or a concrete content issue.');
   }
 
-  if (countWords(finalBody) > 160) {
-    warnings.push('Final email body is over 160 words.');
+  const maxWords = apexDeliveryMode === 'inline_apex_brief' ? 170 : 160;
+  if (countWords(finalBody) > maxWords) {
+    warnings.push(`Final email body is over ${maxWords} words.`);
   }
 
   if (!hasHumanSignoff(rawBody)) {
@@ -940,6 +1066,12 @@ function mentionsSpecificObservation(value: string) {
     'happy hour',
     'event',
     'offer',
+    'ads',
+    'meta',
+    'shoot',
+    'weekly',
+    'inquiry',
+    'inquiries',
     'flooring',
     'surface',
     'traffic',

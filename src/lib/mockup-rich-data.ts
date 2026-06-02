@@ -1,3 +1,4 @@
+import { hasNormalizedApexDeliveryData, type ApexDeliveryData } from './apex-delivery-data';
 import { hasNormalizedResinateFlooringData, type ResinateFlooringData } from './resinate-data';
 
 export const RICH_MOCKUP_TEXT_FIELDS = [
@@ -58,6 +59,7 @@ type StoredConceptNotes = {
   rich_mockup_data?: RichMockupData;
   social_audit_data?: unknown;
   resinate_flooring_data?: ResinateFlooringData;
+  apex_delivery_data?: ApexDeliveryData;
 };
 
 export function normalizeRichMockupData(input: Record<string, unknown> | null | undefined): RichMockupData {
@@ -106,7 +108,8 @@ export function encodeMockupConceptNotes(
   notes: string | null,
   rich: RichMockupData,
   socialAuditData?: unknown,
-  resinateFlooringData?: ResinateFlooringData
+  resinateFlooringData?: ResinateFlooringData,
+  apexDeliveryData?: ApexDeliveryData
 ) {
   const hasSocialAuditData =
     Boolean(socialAuditData) &&
@@ -114,8 +117,16 @@ export function encodeMockupConceptNotes(
     !Array.isArray(socialAuditData) &&
     Object.keys(socialAuditData as Record<string, unknown>).length > 0;
   const hasResinateFlooringData = hasNormalizedResinateFlooringData(resinateFlooringData);
+  const hasApexDeliveryData = hasNormalizedApexDeliveryData(apexDeliveryData);
 
-  if (getRichMockupSignalCount(rich) === 0 && !hasSocialAuditData && !hasResinateFlooringData) return notes;
+  if (
+    getRichMockupSignalCount(rich) === 0 &&
+    !hasSocialAuditData &&
+    !hasResinateFlooringData &&
+    !hasApexDeliveryData
+  ) {
+    return notes;
+  }
 
   const payload: StoredConceptNotes = {
     notes,
@@ -124,6 +135,7 @@ export function encodeMockupConceptNotes(
 
   if (hasSocialAuditData) payload.social_audit_data = socialAuditData;
   if (hasResinateFlooringData) payload.resinate_flooring_data = resinateFlooringData;
+  if (hasApexDeliveryData) payload.apex_delivery_data = apexDeliveryData;
 
   return JSON.stringify(payload);
 }

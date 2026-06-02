@@ -35,23 +35,34 @@ type SendQueueItem = {
   socialAuditUrl: string;
   flooringAuditUrl: string;
   inlineFlooringBrief: string;
+  inlineApexBrief: string;
   campaignTypeDetected: string;
   campaignLabel: string;
+  apexDeliveryMode: 'public_social_audit' | 'public_mockup' | 'link_plus_summary' | 'inline_apex_brief' | null;
+  apexDeliveryModeLabel: string;
   resinateDeliveryMode: 'public_brief' | 'inline_brief' | 'link_plus_summary' | null;
   resinateDeliveryModeLabel: string;
   publicArtifactRequired: boolean;
+  publicSocialAuditRequired: boolean;
+  publicMockupRequired: boolean;
+  publicSocialAuditIncluded: boolean;
+  publicMockupIncluded: boolean;
   selectedPrimaryArtifactUrl: string;
   selectedPrimaryArtifactLabel: string;
+  primaryArtifactType: string;
   hasMockupLink: boolean;
   hasSocialAuditLink: boolean;
   hasFlooringAuditLink: boolean;
   hasInlineFlooringBrief: boolean;
+  hasInlineApexBrief: boolean;
   usesMockupLink: boolean;
   usesSocialAuditLink: boolean;
   usesFlooringAuditLink: boolean;
   usesInlineFlooringBrief: boolean;
+  usesInlineApexBrief: boolean;
   publicBriefLinkIncluded: boolean;
   inlineBriefIncluded: boolean;
+  inlineApexBriefIncluded: boolean;
   senderProfileKey: 'apex' | 'resinate';
   senderLabel: string;
   senderProviderName: string;
@@ -315,6 +326,11 @@ export default function SendQueuePage() {
                         Delivery mode: {item.resinateDeliveryModeLabel}
                       </div>
                     )}
+                    {item.senderProfileKey === 'apex' && item.apexDeliveryMode && (
+                      <div className="mt-1 text-sm" style={{ color: 'var(--color-ink-3)' }}>
+                        Delivery mode: {item.apexDeliveryModeLabel}
+                      </div>
+                    )}
                     <div className="mt-1 text-sm" style={{ color: item.senderConfigured ? 'var(--color-ink-3)' : 'var(--color-warning)' }}>
                       Sender: {item.senderLabel} - {item.fromEmail}
                       {!item.senderConfigured && item.senderProfileKey === 'resinate' ? ' - Resinate sender not configured' : ''}
@@ -377,12 +393,26 @@ export default function SendQueuePage() {
                       {item.senderProfileKey === 'resinate' && (
                         <PreviewField label="Delivery mode" value={item.resinateDeliveryModeLabel} />
                       )}
+                      {item.senderProfileKey === 'apex' && item.apexDeliveryMode && (
+                        <PreviewField label="Delivery mode" value={item.apexDeliveryModeLabel} />
+                      )}
                       <PreviewField label="Sender" value={item.senderLabel} />
                       <PreviewField label="Sender configured" value={yesNo(item.senderConfigured)} />
                       <PreviewField label="Primary artifact" value={item.selectedPrimaryArtifactLabel} />
+                      <PreviewField label="Primary artifact type" value={item.primaryArtifactType} />
                       <PreviewField label="Has Mockup Link" value={yesNo(item.hasMockupLink)} />
                       <PreviewField label="Has Social Audit Link" value={yesNo(item.hasSocialAuditLink)} />
                       <PreviewField label="Has Surface Brief Link" value={yesNo(item.hasFlooringAuditLink)} />
+                      {item.senderProfileKey === 'apex' && (
+                        <>
+                          <PreviewField label="Has Inline Apex Brief" value={yesNo(item.hasInlineApexBrief)} />
+                          <PreviewField label="Public social audit required" value={yesNo(item.publicSocialAuditRequired)} />
+                          <PreviewField label="Public mockup required" value={yesNo(item.publicMockupRequired)} />
+                          <PreviewField label="Public social audit included" value={yesNo(item.publicSocialAuditIncluded)} />
+                          <PreviewField label="Public mockup included" value={yesNo(item.publicMockupIncluded)} />
+                          <PreviewField label="Inline Apex brief included" value={yesNo(item.inlineApexBriefIncluded)} />
+                        </>
+                      )}
                       {item.senderProfileKey === 'resinate' && (
                         <>
                           <PreviewField label="Has Inline Brief" value={yesNo(item.hasInlineFlooringBrief)} />
@@ -524,6 +554,21 @@ export default function SendQueuePage() {
                           Inline brief included
                         </div>
                         {item.inlineFlooringBrief}
+                      </div>
+                    )}
+                    {item.usesInlineApexBrief && (
+                      <div
+                        className="mt-4 rounded-lg p-3 text-xs whitespace-pre-wrap"
+                        style={{
+                          background: 'var(--color-paper-3)',
+                          border: '1px solid var(--color-divider)',
+                          color: 'var(--color-ink-2)',
+                        }}
+                      >
+                        <div className="font-medium mb-2" style={{ color: 'var(--color-ink)' }}>
+                          Inline Apex brief included
+                        </div>
+                        {item.inlineApexBrief}
                       </div>
                     )}
                     {item.blockedReasons.length > 0 && (
