@@ -208,11 +208,13 @@ function hasFlooringArtifactSignal(value: unknown) {
     /\[flooring audit link\]/i.test(normalized) ||
     /\[flooring brief link\]/i.test(normalized) ||
     /\[commercial surface brief link\]/i.test(normalized) ||
+    /\[inline flooring brief\]/i.test(normalized) ||
     normalized.includes('/flooring-audits/') ||
     normalized.includes('flooring-audit') ||
     normalized.includes('flooring audit link') ||
     normalized.includes('flooring brief link') ||
     normalized.includes('commercial surface brief link') ||
+    normalized.includes('inline flooring brief') ||
     normalized.includes('flooring brief') ||
     normalized.includes('commercial surface fit note')
   );

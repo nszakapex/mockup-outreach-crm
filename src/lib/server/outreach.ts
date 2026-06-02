@@ -8,6 +8,15 @@ import {
 } from '@/lib/email-sanitization';
 import { buildPublicFlooringAuditUrl, buildPublicMockupUrl, buildPublicSocialAuditUrl } from '@/lib/mockup-templates';
 import {
+  buildInlineFlooringBrief,
+  containsInlineFlooringBriefReference,
+  containsPublicFlooringBriefReference,
+  getResinateDeliveryMode,
+  getResinateDeliveryModeLabel,
+  parseResinateConceptNotes,
+  type ResinateDeliveryMode,
+} from '@/lib/resinate-data';
+import {
   getCampaignTypeForProspect,
   getSenderProfileByKey,
   getSenderProfileForProspect,
@@ -81,16 +90,23 @@ export type SendQueueItem = {
   mockupUrl: string;
   socialAuditUrl: string;
   flooringAuditUrl: string;
+  inlineFlooringBrief: string;
   campaignTypeDetected: string;
   campaignLabel: string;
+  resinateDeliveryMode: ResinateDeliveryMode | null;
+  resinateDeliveryModeLabel: string;
   selectedPrimaryArtifactUrl: string;
   selectedPrimaryArtifactLabel: string;
   hasMockupLink: boolean;
   hasSocialAuditLink: boolean;
   hasFlooringAuditLink: boolean;
+  hasInlineFlooringBrief: boolean;
   usesMockupLink: boolean;
   usesSocialAuditLink: boolean;
   usesFlooringAuditLink: boolean;
+  usesInlineFlooringBrief: boolean;
+  publicBriefLinkIncluded: boolean;
+  inlineBriefIncluded: boolean;
   senderProfileKey: SenderProfileKey;
   senderLabel: string;
   senderProviderName: 'gmail';
@@ -611,10 +627,16 @@ function buildQueueItem(
   const mockupUrl = buildMockupUrl(mockup, origin);
   const socialAuditUrl = buildPublicSocialAuditUrl(mockup.slug, origin);
   const flooringAuditUrl = buildPublicFlooringAuditUrl(mockup.slug, origin);
+  const resinateFlooring = parseResinateConceptNotes(mockup.concept_notes);
+  const inlineFlooringBrief = buildInlineFlooringBrief(resinateFlooring);
   const usesMockupLink = containsMockupReference(emailDraft.body);
   const usesSocialAuditLink = containsSocialAuditReference(emailDraft.body);
-  const usesFlooringAuditLink = containsFlooringAuditReference(emailDraft.body);
+  const usesFlooringAuditLink = containsPublicFlooringBriefReference(emailDraft.body);
+  const usesInlineFlooringBrief = containsInlineFlooringBriefReference(emailDraft.body);
   const isResinateCampaign = campaignTypeDetected === 'resinate_flooring';
+  const resinateDeliveryMode = isResinateCampaign
+    ? getResinateDeliveryMode(resinateFlooring, emailDraft.body)
+    : null;
   const selectedArtifact = selectPrimaryArtifactUrl({
     isResinateCampaign,
     usesMockupLink,
@@ -628,7 +650,13 @@ function buildQueueItem(
   const sanitizedTo = toValidation?.ok ? toValidation.value : prospect.public_email;
   const sanitizedFrom = fromValidation.ok ? fromValidation.value : fromCandidate;
   const sanitizedSubject = sanitizeHeaderValue(emailDraft.subject);
-  const replacedBody = replaceOutreachReferences(emailDraft.body, mockupUrl, socialAuditUrl, flooringAuditUrl);
+  const replacedBody = replaceOutreachReferences(
+    emailDraft.body,
+    mockupUrl,
+    socialAuditUrl,
+    flooringAuditUrl,
+    inlineFlooringBrief
+  );
   const finalEmail = buildFinalEmailBody({
     body: replacedBody,
     fallbackUrl: selectedArtifact.url,
@@ -647,16 +675,23 @@ function buildQueueItem(
     mockupUrl,
     socialAuditUrl,
     flooringAuditUrl,
+    inlineFlooringBrief,
     campaignTypeDetected,
     campaignLabel: getCampaignLabel(campaignTypeDetected),
+    resinateDeliveryMode,
+    resinateDeliveryModeLabel: resinateDeliveryMode ? getResinateDeliveryModeLabel(resinateDeliveryMode) : 'Standard',
     selectedPrimaryArtifactUrl: selectedArtifact.url,
     selectedPrimaryArtifactLabel: selectedArtifact.label,
     hasMockupLink: usesMockupLink,
     hasSocialAuditLink: usesSocialAuditLink,
     hasFlooringAuditLink: usesFlooringAuditLink,
+    hasInlineFlooringBrief: usesInlineFlooringBrief,
     usesMockupLink,
     usesSocialAuditLink,
     usesFlooringAuditLink,
+    usesInlineFlooringBrief,
+    publicBriefLinkIncluded: usesFlooringAuditLink,
+    inlineBriefIncluded: usesInlineFlooringBrief,
     senderProfileKey: senderProfile.key,
     senderLabel: senderProfile.senderLabel,
     senderProviderName: senderProfile.providerName,
@@ -672,6 +707,7 @@ function buildQueueItem(
       usesMockupLink,
       usesSocialAuditLink,
       usesFlooringAuditLink,
+      usesInlineFlooringBrief,
     }),
     status: prospect.status,
     sendable: blockedReasons.length === 0,
@@ -767,10 +803,17 @@ function buildFinalEmailBody({
   };
 }
 
-function replaceOutreachReferences(body: string, mockupUrl: string, socialAuditUrl: string, flooringAuditUrl: string) {
+function replaceOutreachReferences(
+  body: string,
+  mockupUrl: string,
+  socialAuditUrl: string,
+  flooringAuditUrl: string,
+  inlineFlooringBrief: string
+) {
   return body
     .replace(/\[mockup link\]/gi, mockupUrl)
     .replace(/\[social audit link\]/gi, socialAuditUrl)
+    .replace(/\[inline flooring brief\]/gi, inlineFlooringBrief)
     .replace(/\[flooring audit link\]/gi, flooringAuditUrl)
     .replace(/\[flooring brief link\]/gi, flooringAuditUrl)
     .replace(/\[commercial surface brief link\]/gi, flooringAuditUrl)
@@ -787,19 +830,11 @@ function containsSocialAuditReference(body: string) {
   return /\[social audit link\]/i.test(body) || /\/social-audits\//i.test(body);
 }
 
-function containsFlooringAuditReference(body: string) {
-  return (
-    /\[flooring audit link\]/i.test(body) ||
-    /\[flooring brief link\]/i.test(body) ||
-    /\[commercial surface brief link\]/i.test(body) ||
-    /\/flooring-audits\//i.test(body)
-  );
-}
-
 function hasIntentionalLink(body: string) {
   return (
     /\[mockup link\]/i.test(body) ||
     /\[social audit link\]/i.test(body) ||
+    /\[inline flooring brief\]/i.test(body) ||
     /\[flooring audit link\]/i.test(body) ||
     /\[flooring brief link\]/i.test(body) ||
     /\[commercial surface brief link\]/i.test(body) ||
@@ -829,6 +864,7 @@ function getEmailQualityWarnings({
   usesMockupLink,
   usesSocialAuditLink,
   usesFlooringAuditLink,
+  usesInlineFlooringBrief,
 }: {
   businessName: string;
   rawBody: string;
@@ -836,6 +872,7 @@ function getEmailQualityWarnings({
   usesMockupLink: boolean;
   usesSocialAuditLink: boolean;
   usesFlooringAuditLink: boolean;
+  usesInlineFlooringBrief: boolean;
 }) {
   const warnings: string[] = [];
   const lower = rawBody.toLowerCase();
@@ -844,8 +881,8 @@ function getEmailQualityWarnings({
     warnings.push('Opening sounds generic: remove "I hope this email finds you well."');
   }
 
-  if (!usesMockupLink && !usesSocialAuditLink && !usesFlooringAuditLink) {
-    warnings.push('Draft does not include an approved public artifact placeholder.');
+  if (!usesMockupLink && !usesSocialAuditLink && !usesFlooringAuditLink && !usesInlineFlooringBrief) {
+    warnings.push('Draft does not include an approved artifact placeholder.');
   }
 
   if (!mentionsSpecificObservation(lower)) {

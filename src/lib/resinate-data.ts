@@ -1,5 +1,7 @@
 export const RESINATE_CAMPAIGN_TYPE = 'resinate_flooring' as const;
 
+export const RESINATE_DELIVERY_MODES = ['public_brief', 'inline_brief', 'link_plus_summary'] as const;
+
 export const RESINATE_TEXT_FIELDS = [
   'buyer_type',
   'property_type',
@@ -36,11 +38,13 @@ export const RESINATE_IMPORT_REQUIRED_FIELDS = [
 ] as const;
 
 export type ResinateCampaignType = typeof RESINATE_CAMPAIGN_TYPE;
+export type ResinateDeliveryMode = (typeof RESINATE_DELIVERY_MODES)[number];
 export type ResinateTextField = (typeof RESINATE_TEXT_FIELDS)[number];
 export type ResinateImportRequiredField = (typeof RESINATE_IMPORT_REQUIRED_FIELDS)[number];
 
 export type ResinateFlooringData = {
   campaign_type?: ResinateCampaignType | null;
+  resinate_delivery_mode?: ResinateDeliveryMode | null;
 } & Partial<Record<ResinateTextField, string | null>>;
 
 export type FlooringSystemKey =
@@ -70,6 +74,7 @@ export type ResinateImportSummary = {
   bestOffer: string | null;
   nextSalesAction: string | null;
   flooringAuditAvailable: boolean;
+  deliveryMode: ResinateDeliveryMode;
 };
 
 type StoredConceptNotes = {
@@ -212,11 +217,14 @@ export function normalizeResinateFlooringData(
   const source = mergeNestedResinateSource(input);
   const data: ResinateFlooringData = {};
   const campaignType = cleanString(source.campaign_type)?.toLowerCase();
+  const deliveryMode = normalizeResinateDeliveryMode(source.resinate_delivery_mode);
 
   for (const field of RESINATE_TEXT_FIELDS) {
     const value = cleanString(source[field]);
     if (value) data[field] = value;
   }
+
+  if (deliveryMode) data.resinate_delivery_mode = deliveryMode;
 
   if (campaignType === RESINATE_CAMPAIGN_TYPE || getResinateSignalCount(data) > 0) {
     data.campaign_type = RESINATE_CAMPAIGN_TYPE;
@@ -268,13 +276,8 @@ export function getMissingResinateImportFields(
   const body = cleanString(emailBody) || '';
 
   if (!body) missing.push('email_body');
-  if (
-    body &&
-    !/\[flooring audit link\]/i.test(body) &&
-    !/\[flooring brief link\]/i.test(body) &&
-    !/\[commercial surface brief link\]/i.test(body)
-  ) {
-    missing.push('[Flooring Brief Link]');
+  if (body && !containsPublicFlooringBriefReference(body) && !containsInlineFlooringBriefReference(body)) {
+    missing.push('[Flooring Brief Link] or [Inline Flooring Brief]');
   }
 
   return missing;
@@ -297,6 +300,7 @@ export function getResinateImportSummary(
     bestOffer: data.best_resinate_offer || data.walkthrough_offer || data.vendor_packet_angle || null,
     nextSalesAction: data.next_sales_action || null,
     flooringAuditAvailable: Boolean(data.campaign_type === RESINATE_CAMPAIGN_TYPE),
+    deliveryMode: getResinateDeliveryMode(data, emailBody),
   };
 }
 
@@ -315,6 +319,92 @@ export function getFlooringSystemProfile(system: string | null | undefined): Flo
 
 export function getResinateDisplayValue(value: string | null | undefined, fallback: string) {
   return cleanString(value) || fallback;
+}
+
+export function normalizeResinateDeliveryMode(value: unknown): ResinateDeliveryMode | null {
+  const normalized = cleanString(value)?.toLowerCase();
+  if (!normalized) return null;
+  return (RESINATE_DELIVERY_MODES as readonly string[]).includes(normalized)
+    ? (normalized as ResinateDeliveryMode)
+    : null;
+}
+
+export function containsPublicFlooringBriefReference(body: string | null | undefined) {
+  const value = cleanString(body) || '';
+  return (
+    /\[flooring audit link\]/i.test(value) ||
+    /\[flooring brief link\]/i.test(value) ||
+    /\[commercial surface brief link\]/i.test(value) ||
+    /\/flooring-audits\//i.test(value)
+  );
+}
+
+export function containsInlineFlooringBriefReference(body: string | null | undefined) {
+  return /\[inline flooring brief\]/i.test(cleanString(body) || '');
+}
+
+export function getResinateDeliveryMode(
+  data: ResinateFlooringData | null | undefined,
+  emailBody?: string | null
+): ResinateDeliveryMode {
+  const hasPublicBrief = containsPublicFlooringBriefReference(emailBody);
+  const hasInlineBrief = containsInlineFlooringBriefReference(emailBody);
+
+  if (hasPublicBrief && hasInlineBrief) return 'link_plus_summary';
+  if (hasInlineBrief) return 'inline_brief';
+  if (hasPublicBrief) return 'public_brief';
+
+  return data?.resinate_delivery_mode || 'public_brief';
+}
+
+export function getResinateDeliveryModeLabel(mode: ResinateDeliveryMode | null | undefined) {
+  switch (mode) {
+    case 'inline_brief':
+      return 'Inline brief';
+    case 'link_plus_summary':
+      return 'Link plus summary';
+    case 'public_brief':
+    default:
+      return 'Public brief';
+  }
+}
+
+export function buildInlineFlooringBrief(data: ResinateFlooringData | null | undefined) {
+  const likelyUseCase = firstUsefulValue(
+    data?.facility_use_case,
+    data?.likely_surface_areas,
+    'High-traffic commercial concrete or utility surfaces'
+  );
+  const systemDirection = firstUsefulValue(
+    data?.recommended_flooring_system,
+    'Surface system selected after walkthrough'
+  );
+  const whyItFits = shortenSentence(
+    firstUsefulValue(
+      data?.system_reasoning,
+      data?.surface_system_summary,
+      'Match the system to traffic, moisture, cleaning needs, slip resistance, and long-term use.'
+    ),
+    24
+  );
+  const nextStep = shortenSentence(
+    firstUsefulValue(
+      data?.next_sales_action,
+      data?.walkthrough_offer,
+      data?.vendor_packet_angle,
+      'Schedule a walkthrough or send a capabilities packet.'
+    ),
+    18
+  );
+
+  return [
+    'Surface fit note:',
+    `\u2022 Likely use case: ${likelyUseCase}`,
+    `\u2022 System direction: ${systemDirection}`,
+    `\u2022 Why it fits: ${whyItFits}`,
+    '\u2022 Walkthrough would confirm: concrete condition, traffic level, moisture risk, cleaning needs, slip-resistance needs, and schedule constraints',
+    `\u2022 Next step: ${nextStep}`,
+  ].join('\n');
 }
 
 function mergeNestedResinateSource(input: Record<string, unknown> | null | undefined) {
@@ -347,4 +437,14 @@ function cleanString(value: unknown): string | null {
 
   if (typeof value === 'number' && Number.isFinite(value)) return String(value);
   return null;
+}
+
+function firstUsefulValue(...values: Array<string | null | undefined>) {
+  return values.map((value) => cleanString(value)).find((value): value is string => Boolean(value)) || '';
+}
+
+function shortenSentence(value: string, maxWords: number) {
+  const words = value.trim().split(/\s+/).filter(Boolean);
+  if (words.length <= maxWords) return value.trim();
+  return `${words.slice(0, maxWords).join(' ').replace(/[.,;:!?]+$/g, '')}.`;
 }

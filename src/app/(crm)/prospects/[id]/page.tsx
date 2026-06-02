@@ -28,7 +28,14 @@ import { upsertAudit, upsertEmailDraft, upsertMockup, useProspect } from '@/lib/
 import { parseMockupConceptNotes, type RichMockupData } from '@/lib/mockup-rich-data';
 import { buildPublicFlooringAuditUrl, buildPublicMockupUrl, buildPublicSocialAuditUrl, getMockupTemplateVariant, getMockupVariantLabel } from '@/lib/mockup-templates';
 import { slugifyBusinessName } from '@/lib/prospect-intake';
-import { isResinateCampaign, parseResinateConceptNotes, type ResinateFlooringData } from '@/lib/resinate-data';
+import {
+  buildInlineFlooringBrief,
+  getResinateDeliveryMode,
+  getResinateDeliveryModeLabel,
+  isResinateCampaign,
+  parseResinateConceptNotes,
+  type ResinateFlooringData,
+} from '@/lib/resinate-data';
 import { parseSocialAuditConceptNotes, type SocialAuditData } from '@/lib/social-audit-data';
 import { PROSPECT_STATUSES, type Audit, type EmailDraft, type Mockup, type Prospect, type ProspectStatus } from '@/lib/types';
 
@@ -113,6 +120,8 @@ export default function ProspectDetailPage({
   const socialAuditStrategy = mockup ? parseSocialAuditConceptNotes(mockup.concept_notes) : {};
   const resinateStrategy = mockup ? parseResinateConceptNotes(mockup.concept_notes) : {};
   const isResinate = isResinateCampaign(resinateStrategy);
+  const resinateDeliveryMode = isResinate ? getResinateDeliveryMode(resinateStrategy, emailDraft?.body) : null;
+  const inlineFlooringBriefPreview = isResinate ? buildInlineFlooringBrief(resinateStrategy) : '';
 
   return (
     <div>
@@ -439,6 +448,30 @@ export default function ProspectDetailPage({
                         Open Commercial Surface Brief
                       </a>
                     </div>
+                  </div>
+                )}
+                {resinateDeliveryMode && (
+                  <FieldBlock label="Delivery Mode" value={getResinateDeliveryModeLabel(resinateDeliveryMode)} />
+                )}
+                {inlineFlooringBriefPreview && (
+                  <div>
+                    <span className="text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>
+                      Suggested Inline Brief Preview
+                    </span>
+                    <div
+                      className="mt-1.5 rounded-lg p-3 text-xs whitespace-pre-wrap"
+                      style={{
+                        background: 'var(--color-paper-3)',
+                        border: '1px solid var(--color-divider)',
+                        color: 'var(--color-ink-2)',
+                      }}
+                    >
+                      {inlineFlooringBriefPreview}
+                    </div>
+                    <Button size="sm" variant="secondary" className="mt-2" onClick={() => copyToClipboard(inlineFlooringBriefPreview, 'inline-flooring-brief')}>
+                      {copiedField === 'inline-flooring-brief' ? <Check size={14} /> : <Copy size={14} />}
+                      {copiedField === 'inline-flooring-brief' ? 'Copied' : 'Copy Inline Brief'}
+                    </Button>
                   </div>
                 )}
                 <ResinateStrategyPanel flooring={resinateStrategy} />

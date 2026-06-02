@@ -19,6 +19,7 @@ import {
   hasResinateFlooringData,
   normalizeResinateFlooringData,
   type ResinateCampaignType,
+  type ResinateDeliveryMode,
   type ResinateImportSummary,
 } from './resinate-data';
 import { sanitizeEmailAddress } from './email-sanitization';
@@ -83,6 +84,7 @@ export type ProspectIntakeInput = {
   first_email_angle?: string | null;
   call_follow_up_angle?: CallFollowUpAngle | null;
   campaign_type?: ResinateCampaignType | string | null;
+  resinate_delivery_mode?: ResinateDeliveryMode | string | null;
   buyer_type?: string | null;
   property_type?: string | null;
   portfolio_or_property_context?: string | null;
@@ -544,6 +546,7 @@ export function normalizeHermesJsonRecord(value: unknown): ProspectIntakeInput |
     first_email_angle: clean(record.first_email_angle),
     call_follow_up_angle: cleanRecord(record.call_follow_up_angle) as CallFollowUpAngle | null,
     campaign_type: clean(resinateRecord.campaign_type),
+    resinate_delivery_mode: clean(resinateRecord.resinate_delivery_mode),
     buyer_type: clean(resinateRecord.buyer_type),
     property_type: clean(resinateRecord.property_type),
     portfolio_or_property_context: clean(resinateRecord.portfolio_or_property_context),

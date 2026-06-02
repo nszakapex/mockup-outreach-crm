@@ -34,16 +34,23 @@ type SendQueueItem = {
   mockupUrl: string;
   socialAuditUrl: string;
   flooringAuditUrl: string;
+  inlineFlooringBrief: string;
   campaignTypeDetected: string;
   campaignLabel: string;
+  resinateDeliveryMode: 'public_brief' | 'inline_brief' | 'link_plus_summary' | null;
+  resinateDeliveryModeLabel: string;
   selectedPrimaryArtifactUrl: string;
   selectedPrimaryArtifactLabel: string;
   hasMockupLink: boolean;
   hasSocialAuditLink: boolean;
   hasFlooringAuditLink: boolean;
+  hasInlineFlooringBrief: boolean;
   usesMockupLink: boolean;
   usesSocialAuditLink: boolean;
   usesFlooringAuditLink: boolean;
+  usesInlineFlooringBrief: boolean;
+  publicBriefLinkIncluded: boolean;
+  inlineBriefIncluded: boolean;
   senderProfileKey: 'apex' | 'resinate';
   senderLabel: string;
   senderProviderName: string;
@@ -302,6 +309,11 @@ export default function SendQueuePage() {
                     <div className="mt-1 text-sm" style={{ color: 'var(--color-ink-3)' }}>
                       Campaign: {item.campaignLabel}
                     </div>
+                    {item.senderProfileKey === 'resinate' && (
+                      <div className="mt-1 text-sm" style={{ color: 'var(--color-ink-3)' }}>
+                        Delivery mode: {item.resinateDeliveryModeLabel}
+                      </div>
+                    )}
                     <div className="mt-1 text-sm" style={{ color: item.senderConfigured ? 'var(--color-ink-3)' : 'var(--color-warning)' }}>
                       Sender: {item.senderLabel} - {item.fromEmail}
                       {!item.senderConfigured && item.senderProfileKey === 'resinate' ? ' - Resinate sender not configured' : ''}
@@ -361,12 +373,22 @@ export default function SendQueuePage() {
                       <PreviewField label="Sanitized Subject" value={item.subject} className="sm:col-span-2" />
                       <PreviewField label="Campaign" value={item.campaignLabel} />
                       <PreviewField label="Campaign type detected" value={item.campaignTypeDetected} />
+                      {item.senderProfileKey === 'resinate' && (
+                        <PreviewField label="Delivery mode" value={item.resinateDeliveryModeLabel} />
+                      )}
                       <PreviewField label="Sender" value={item.senderLabel} />
                       <PreviewField label="Sender configured" value={yesNo(item.senderConfigured)} />
                       <PreviewField label="Primary artifact" value={item.selectedPrimaryArtifactLabel} />
                       <PreviewField label="Has Mockup Link" value={yesNo(item.hasMockupLink)} />
                       <PreviewField label="Has Social Audit Link" value={yesNo(item.hasSocialAuditLink)} />
                       <PreviewField label="Has Surface Brief Link" value={yesNo(item.hasFlooringAuditLink)} />
+                      {item.senderProfileKey === 'resinate' && (
+                        <>
+                          <PreviewField label="Has Inline Brief" value={yesNo(item.hasInlineFlooringBrief)} />
+                          <PreviewField label="Public brief link included" value={yesNo(item.publicBriefLinkIncluded)} />
+                          <PreviewField label="Inline brief included" value={yesNo(item.inlineBriefIncluded)} />
+                        </>
+                      )}
                       <PreviewField label="Link replacement applied" value={yesNo(item.linkReplacementApplied)} />
                       <PreviewField label="Fallback link appended" value={yesNo(item.fallbackLinkAppended)} />
                       <PreviewField label="Opt-out included" value={yesNo(item.optOutIncluded)} />
@@ -480,6 +502,21 @@ export default function SendQueuePage() {
                           <ExternalLink size={13} className="shrink-0" />
                         </a>
                       </>
+                    )}
+                    {item.usesInlineFlooringBrief && (
+                      <div
+                        className="mt-4 rounded-lg p-3 text-xs whitespace-pre-wrap"
+                        style={{
+                          background: 'var(--color-paper-3)',
+                          border: '1px solid var(--color-divider)',
+                          color: 'var(--color-ink-2)',
+                        }}
+                      >
+                        <div className="font-medium mb-2" style={{ color: 'var(--color-ink)' }}>
+                          Inline brief included
+                        </div>
+                        {item.inlineFlooringBrief}
+                      </div>
                     )}
                     {item.blockedReasons.length > 0 && (
                       <div

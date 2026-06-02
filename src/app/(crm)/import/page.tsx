@@ -226,7 +226,7 @@ export default function ImportPage() {
             <Rule label="Source" value="hermes_import" />
             <Rule label="Creates" value="prospect, audit, mockup, and email draft rows" />
             <Rule label="Approval" value="email_ready rows can appear in /approval when email and mockup data exist" />
-            <Rule label="Resinate" value="campaign_type resinate_flooring creates a public commercial surface brief and supports [Flooring Brief Link]" />
+            <Rule label="Resinate" value="campaign_type resinate_flooring creates a commercial surface brief and supports [Flooring Brief Link] or [Inline Flooring Brief]" />
             <p className="rounded-lg p-3 text-xs leading-5" style={{ background: 'var(--color-paper-3)' }}>
               Import never sends Gmail, never scrapes, and never bypasses Telegram approval.
             </p>
@@ -355,10 +355,15 @@ function CampaignCell({ item }: { item: HermesImportPreview }) {
         {resinate.recommendedSystem && <div>System: {resinate.recommendedSystem}</div>}
         {resinate.bestOffer && <div>Offer: {resinate.bestOffer}</div>}
         {resinate.nextSalesAction && <div>Next: {resinate.nextSalesAction}</div>}
+        <div>Delivery: {formatResinateDeliveryMode(resinate.deliveryMode)}</div>
         {resinate.flooringAuditAvailable && <div>Commercial Surface Brief available</div>}
       </div>
     </div>
   );
+}
+
+function formatResinateDeliveryMode(value: string) {
+  return value.replace(/_/g, ' ').replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
 function RichnessBadge({ level, label }: { level: 'rich' | 'basic' | 'missing'; label: string }) {
