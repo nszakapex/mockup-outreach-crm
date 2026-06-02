@@ -366,7 +366,7 @@ export default function SendQueuePage() {
                       <PreviewField label="Primary artifact" value={item.selectedPrimaryArtifactLabel} />
                       <PreviewField label="Has Mockup Link" value={yesNo(item.hasMockupLink)} />
                       <PreviewField label="Has Social Audit Link" value={yesNo(item.hasSocialAuditLink)} />
-                      <PreviewField label="Has Flooring Audit Link" value={yesNo(item.hasFlooringAuditLink)} />
+                      <PreviewField label="Has Surface Brief Link" value={yesNo(item.hasFlooringAuditLink)} />
                       <PreviewField label="Link replacement applied" value={yesNo(item.linkReplacementApplied)} />
                       <PreviewField label="Fallback link appended" value={yesNo(item.fallbackLinkAppended)} />
                       <PreviewField label="Opt-out included" value={yesNo(item.optOutIncluded)} />
@@ -382,7 +382,7 @@ export default function SendQueuePage() {
                         <PreviewField label="Final Social Audit URL" value={item.socialAuditUrl} className="sm:col-span-2" />
                       )}
                       {item.usesFlooringAuditLink && (
-                        <PreviewField label="Final Flooring Audit URL" value={item.flooringAuditUrl} className="sm:col-span-2" />
+                        <PreviewField label="Final Commercial Surface Brief URL" value={item.flooringAuditUrl} className="sm:col-span-2" />
                       )}
                     </div>
                     {item.emailQualityWarnings.length > 0 && (
@@ -467,7 +467,7 @@ export default function SendQueuePage() {
                     {item.usesFlooringAuditLink && (
                       <>
                         <div className="text-xs font-medium mb-1.5 mt-4" style={{ color: 'var(--color-ink-3)' }}>
-                          Final Flooring Audit URL
+                          Final Commercial Surface Brief URL
                         </div>
                         <a
                           href={item.flooringAuditUrl}

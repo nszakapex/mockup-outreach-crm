@@ -402,13 +402,13 @@ export default function ProspectDetailPage({
           {isResinate && (
             <Card title="Resinate Flooring Campaign" action={flooringAuditPublicUrl ? (
               <a href={flooringAuditPublicUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-medium hover:underline flex items-center gap-1" style={{ color: 'var(--color-accent)' }}>
-                Open Flooring Audit <ExternalLink size={10} />
+                Open Commercial Surface Brief <ExternalLink size={10} />
               </a>
             ) : undefined}>
               <div className="space-y-3">
                 {flooringAuditPublicUrl && (
                   <div>
-                    <span className="text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>Public Flooring Audit URL</span>
+                    <span className="text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>Public Commercial Surface Brief URL</span>
                     <div
                       className="mt-1.5 rounded-lg p-3 text-xs break-all"
                       style={{
@@ -420,9 +420,9 @@ export default function ProspectDetailPage({
                       {flooringAuditPublicUrl}
                     </div>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      <Button size="sm" variant="secondary" onClick={() => copyToClipboard(flooringAuditPublicUrl, 'flooring-audit-link')}>
-                        {copiedField === 'flooring-audit-link' ? <Check size={14} /> : <Copy size={14} />}
-                        {copiedField === 'flooring-audit-link' ? 'Copied' : 'Copy Link'}
+                      <Button size="sm" variant="secondary" onClick={() => copyToClipboard(flooringAuditPublicUrl, 'flooring-brief-link')}>
+                        {copiedField === 'flooring-brief-link' ? <Check size={14} /> : <Copy size={14} />}
+                        {copiedField === 'flooring-brief-link' ? 'Copied' : 'Copy Surface Brief Link'}
                       </Button>
                       <a
                         href={flooringAuditPublicUrl}
@@ -436,7 +436,7 @@ export default function ProspectDetailPage({
                         }}
                       >
                         <ExternalLink size={14} />
-                        Open Flooring Audit
+                        Open Commercial Surface Brief
                       </a>
                     </div>
                   </div>

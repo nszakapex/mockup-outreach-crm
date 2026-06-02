@@ -226,7 +226,7 @@ export default function ImportPage() {
             <Rule label="Source" value="hermes_import" />
             <Rule label="Creates" value="prospect, audit, mockup, and email draft rows" />
             <Rule label="Approval" value="email_ready rows can appear in /approval when email and mockup data exist" />
-            <Rule label="Resinate" value="campaign_type resinate_flooring creates a public flooring audit and supports [Flooring Audit Link]" />
+            <Rule label="Resinate" value="campaign_type resinate_flooring creates a public commercial surface brief and supports [Flooring Brief Link]" />
             <p className="rounded-lg p-3 text-xs leading-5" style={{ background: 'var(--color-paper-3)' }}>
               Import never sends Gmail, never scrapes, and never bypasses Telegram approval.
             </p>
@@ -347,7 +347,7 @@ function CampaignCell({ item }: { item: HermesImportPreview }) {
         className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap"
         style={{ color: 'var(--color-accent)', background: 'var(--color-accent-subtle)' }}
       >
-        Resinate Flooring Campaign
+        Resinate Commercial Deal
       </span>
       <div className="text-xs leading-5" style={{ color: 'var(--color-ink-2)' }}>
         {resinate.buyerType && <div>Buyer: {resinate.buyerType}</div>}
@@ -355,7 +355,7 @@ function CampaignCell({ item }: { item: HermesImportPreview }) {
         {resinate.recommendedSystem && <div>System: {resinate.recommendedSystem}</div>}
         {resinate.bestOffer && <div>Offer: {resinate.bestOffer}</div>}
         {resinate.nextSalesAction && <div>Next: {resinate.nextSalesAction}</div>}
-        {resinate.flooringAuditAvailable && <div>Flooring Audit available</div>}
+        {resinate.flooringAuditAvailable && <div>Commercial Surface Brief available</div>}
       </div>
     </div>
   );

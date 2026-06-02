@@ -16,13 +16,13 @@ export default async function FlooringAuditPage({
   try {
     audit = await getPublicFlooringAuditBySlug(slug);
   } catch (error) {
-    loadError = error instanceof Error ? error.message : 'Unknown flooring audit error.';
+    loadError = error instanceof Error ? error.message : 'Unknown surface brief error.';
   }
 
   if (loadError) {
     return (
       <FlooringAuditState
-        title="Flooring Audit Did Not Load"
+        title="Surface Brief Did Not Load"
         message={loadError}
         tone="error"
       />
@@ -32,8 +32,8 @@ export default async function FlooringAuditPage({
   if (!audit) {
     return (
       <FlooringAuditState
-        title="Flooring Audit Not Found"
-        message="This audit may have been removed or the link is incorrect."
+        title="Surface Brief Not Found"
+        message="This brief may have been removed or the link is incorrect."
       />
     );
   }

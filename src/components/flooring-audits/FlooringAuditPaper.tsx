@@ -1,4 +1,3 @@
-import { ExternalLink } from 'lucide-react';
 import {
   getFlooringSystemProfile,
   getResinateDisplayValue,
@@ -6,284 +5,396 @@ import {
 import type { PublicFlooringAudit } from '@/lib/server/flooring-audit';
 import styles from './FlooringAuditPaper.module.css';
 
-type NeedCard = {
+type PacketRow = {
   label: string;
   value: string;
+};
+
+type SystemNote = {
+  label: string;
+  use: string;
   note: string;
 };
+
+const DEFAULT_AREAS = [
+  'garages',
+  'maintenance rooms',
+  'storage spaces',
+  'laundry rooms',
+  'common-use concrete',
+  'utility spaces',
+];
+
+const PREP_STEPS = [
+  'Concrete inspection',
+  'Diamond grinding',
+  'Crack and pit repair',
+  'Dust extraction',
+  'Primer or moisture mitigation when needed',
+  'Base coat',
+  'Broadcast or finish system',
+  'Polyaspartic or appropriate topcoat',
+];
+
+const SYSTEM_NOTES: SystemNote[] = [
+  {
+    label: 'Flake',
+    use: 'Multifamily garages, utility rooms, light commercial, maintenance rooms, common-use concrete',
+    note: 'Decorative, durable, hides imperfections, and can add texture for everyday commercial use.',
+  },
+  {
+    label: 'Quartz',
+    use: 'Wet areas, locker rooms, restrooms, schools, heavy-use commercial, slip-resistance needs',
+    note: 'More textured and durable than flake, making it stronger for wet and public-use spaces.',
+  },
+  {
+    label: 'Metallic',
+    use: 'Showrooms, luxury garages, salons, bars, statement commercial spaces',
+    note: 'A custom artistic finish where the final movement and pattern naturally vary.',
+  },
+  {
+    label: 'Solid color / neat coat',
+    use: 'Clean utility spaces, commercial back-of-house, basements, simple upgrades',
+    note: 'A straightforward finish when the space needs clean, durable surface protection.',
+  },
+  {
+    label: 'Moisture mitigation',
+    use: 'Slab-on-grade spaces, basements, vapor risk, prior coating failure, adhesion concerns',
+    note: 'Moisture needs to be handled before the finish system is selected.',
+  },
+];
 
 export function FlooringAuditPaper({ audit }: { audit: PublicFlooringAudit }) {
   const flooring = audit.flooring;
   const system = getFlooringSystemProfile(flooring.recommended_flooring_system);
   const buyerType = getResinateDisplayValue(flooring.buyer_type, deriveBuyerType(audit));
   const propertyType = getResinateDisplayValue(flooring.property_type, derivePropertyType(audit));
-  const surfaceProblem = getResinateDisplayValue(
-    flooring.likely_surface_problem,
-    audit.audit?.main_problem || 'The surface likely needs a more durable system matched to traffic, moisture, and long-term use.'
-  );
+  const location = [audit.prospect.city, audit.prospect.state].filter(Boolean).join(', ');
+  const likelyAreas = parseList(flooring.likely_surface_areas, DEFAULT_AREAS);
+  const recommendedSystem = getResinateDisplayValue(flooring.recommended_flooring_system, system.label);
   const primaryOffer = getResinateDisplayValue(
     flooring.walkthrough_offer || flooring.best_resinate_offer,
-    'Free high-traffic flooring walkthrough'
+    'High-traffic surface walkthrough'
   );
   const nextAction = getResinateDisplayValue(
     flooring.next_sales_action,
-    'Confirm the right decision-maker and schedule a walkthrough of one priority surface area.'
+    'Confirm the right decision-maker and review one priority surface area.'
   );
-  const facilityUse = getResinateDisplayValue(
-    flooring.facility_use_case,
-    `${propertyType} surface upgrade for safer daily use, easier maintenance, and a more professional finish.`
-  );
-  const objection = getResinateDisplayValue(
-    flooring.likely_objection,
-    'We are not ready to replace the floor yet.'
-  );
-  const response = getResinateDisplayValue(
-    flooring.objection_response,
-    'That is fair. The first step can simply identify the right surface system, moisture risk, and budget range before any project decision.'
-  );
-  const needCards = buildNeedCards(audit);
+  const executiveSummary = buildExecutiveSummary(audit, buyerType, propertyType, primaryOffer);
+  const packetRows = buildPacketRows({
+    buyerType,
+    propertyType,
+    likelyAreas,
+    audit,
+    recommendedSystem,
+    nextAction,
+  });
+  const buyerNotes = buildBuyerNotes(buyerType);
 
   return (
     <main className={styles.page}>
-      <header className={styles.hero}>
-        <nav className={styles.topline} aria-label="Audit header">
-          <span>Resinate Commercial Surface Audit</span>
-          <span>Prepared for {audit.prospect.city}, {audit.prospect.state}</span>
-        </nav>
-        <div className={styles.heroGrid}>
-          <div className={styles.heroCopy}>
-            <div className={styles.kicker}>Commercial Surface Opportunity</div>
-            <h1>{audit.prospect.business_name}</h1>
-            <p className={styles.lede}>
-              Premium, long-lasting flooring systems designed around the surface, traffic, moisture
-              conditions, and long-term use of the space.
+      <article className={styles.packet}>
+        <header className={styles.documentHeader}>
+          <div className={styles.brandBlock}>
+            <span className={styles.brandName}>Resinate Custom Flooring</span>
+            <h1>Commercial Surface Opportunity Brief</h1>
+            <p>
+              Premium, long-lasting flooring systems designed around the surface, traffic,
+              moisture conditions, and long-term use of the space.
             </p>
-            <div className={styles.heroActions}>
-              <a href="#walkthrough" className={styles.primaryCta}>
-                Schedule a Walkthrough
-              </a>
-              <a href="#system" className={styles.secondaryCta}>
-                Review Recommended System
-              </a>
-            </div>
           </div>
-          <aside className={styles.systemCard} id="system">
-            <span>Recommended Resinate System</span>
-            <strong>{flooring.recommended_flooring_system || system.label}</strong>
-            <p>{flooring.system_reasoning || system.note}</p>
+
+          <aside className={styles.metaPanel} aria-label="Brief context">
+            <MetaLine label="Prepared for" value={audit.prospect.business_name} />
+            <MetaLine label="Buyer type" value={buyerType} />
+            <MetaLine label="Property type" value={propertyType} />
+            <MetaLine label="Location" value={location || 'Northern Colorado'} />
+            <MetaLine label="Prepared by" value="Resinate" />
           </aside>
-        </div>
-      </header>
+        </header>
 
-      <section className={styles.identityStrip} aria-label="Prospect context">
-        <ContextItem label="Prospect / property type" value={propertyType} />
-        <ContextItem label="Buyer type" value={buyerType} />
-        <ContextItem label="Facility use case" value={facilityUse} />
-      </section>
+        <section className={styles.summarySection}>
+          <div>
+            <SectionTitle label="Executive Fit Summary" title="Why this may be worth a walkthrough" />
+            <p>{executiveSummary}</p>
+          </div>
+          <a className={styles.topCta} href="#next-step">
+            Request walkthrough / capabilities packet
+          </a>
+        </section>
 
-      <section className={styles.twoColumn}>
-        <div className={styles.surfacePanel}>
-          <SectionIntro label="Likely Surface Problem" title={surfaceProblem} />
-          <p>
-            Resinate should not be positioned as a simple coating vendor here. The stronger angle is
-            a commercial-grade surface system chosen after looking at the concrete, use case,
-            moisture conditions, and expected wear.
-          </p>
-          <div className={styles.needGrid}>
-            {needCards.map((card) => (
-              <article key={card.label} className={styles.needCard}>
-                <span>{card.label}</span>
-                <strong>{card.value}</strong>
-                <p>{card.note}</p>
-              </article>
+        <section className={styles.tableSection} aria-labelledby="surface-opportunity">
+          <SectionTitle
+            id="surface-opportunity"
+            label="Surface Opportunity Table"
+            title="Deal context and system fit"
+          />
+          <div className={styles.packetTable}>
+            {packetRows.map((row) => (
+              <div className={styles.tableRow} key={row.label}>
+                <div>{row.label}</div>
+                <div>{row.value}</div>
+              </div>
             ))}
           </div>
-        </div>
+        </section>
 
-        <aside className={styles.offerPanel}>
-          <span>Commercial Offer</span>
-          <h2>{primaryOffer}</h2>
-          <p>
-            Start with one practical surface area instead of a full project pitch. The goal is to
-            understand conditions, risk, decision path, and fit.
-          </p>
-          <div className={styles.offerList}>
-            <small>Decision path</small>
-            <strong>{flooring.decision_maker_path || 'Facility manager, owner, or operations lead'}</strong>
-            <small>Procurement path</small>
-            <strong>{flooring.procurement_path || 'Walkthrough, scope confirmation, estimate, then vendor packet if needed'}</strong>
-          </div>
-        </aside>
-      </section>
-
-      <section className={styles.systemSection}>
-        <SectionIntro label="Why This System Fits" title={flooring.surface_system_summary || `${system.label} for ${propertyType}`} />
-        <div className={styles.systemGrid}>
-          <div className={styles.systemBenefits}>
-            <h3>{system.label}</h3>
-            <ul>
-              {system.benefits.map((benefit) => (
-                <li key={benefit}>{benefit}</li>
+        <section className={styles.splitSection}>
+          <div className={styles.paperPanel}>
+            <SectionTitle label="Likely Surface Areas" title="Areas to review first" />
+            <ul className={styles.checkList}>
+              {likelyAreas.map((area) => (
+                <li key={area}>{area}</li>
               ))}
             </ul>
           </div>
-          <div className={styles.systemBenefits}>
-            <h3>Best-fit spaces</h3>
-            <ul>
-              {system.bestFor.slice(0, 6).map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-          <div className={styles.systemBenefits}>
-            <h3>Polyaspartic topcoat value</h3>
-            <p>
-              {flooring.polyaspartic_value ||
-                'A premium protective topcoat can add UV stability, fast cure time, chemical resistance, abrasion resistance, and a high-end finish.'}
-            </p>
-          </div>
-        </div>
-      </section>
 
-      <section className={styles.credibilitySection}>
-        <div>
-          <SectionIntro label="Surface Preparation Credibility" title="The finished floor is only as good as the prep." />
+          <div className={styles.paperPanel}>
+            <SectionTitle label="Buyer-Specific Angle" title={buyerNotes.title} />
+            <p>{buyerNotes.body}</p>
+          </div>
+        </section>
+
+        <section className={styles.recommendationSection}>
+          <SectionTitle label="Recommended Resinate System" title={recommendedSystem} />
+          <div className={styles.recommendationGrid}>
+            <div>
+              <h3>Why it fits</h3>
+              <p>{flooring.system_reasoning || system.note}</p>
+            </div>
+            <div>
+              <h3>Where it should be used</h3>
+              <p>
+                {flooring.facility_use_case ||
+                  `Prioritize ${likelyAreas.slice(0, 3).join(', ')} where traffic, cleaning, and presentation matter.`}
+              </p>
+            </div>
+            <div>
+              <h3>Conditions to check</h3>
+              <p>
+                {flooring.moisture_considerations ||
+                  'Concrete condition, moisture vapor risk, slab age, prior coating failure, traffic, and slip-resistance needs should be checked before final specification.'}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className={styles.systemExplanation}>
+          <SectionTitle label="Surface System Explanation" title="A full system, not a quick coating" />
+          <ol className={styles.processList}>
+            {PREP_STEPS.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
           <p>
             {flooring.prep_considerations ||
-              'A credible commercial recommendation should include concrete inspection, diamond grinding, crack or pit repair, dust extraction, and the right primer, base, broadcast, and topcoat sequence.'}
+              'The finished surface depends on preparation quality, concrete condition, the right base system, and the correct protective topcoat for the space.'}
           </p>
-        </div>
-        <div>
-          <SectionIntro label="Moisture Mitigation" title="Moisture risk needs to be checked early." />
+        </section>
+
+        <section className={styles.systemMatchSection}>
+          <SectionTitle label="System Match Notes" title="How the system choice should be framed" />
+          <div className={styles.systemTable}>
+            {SYSTEM_NOTES.map((note) => (
+              <div className={styles.systemRow} key={note.label}>
+                <strong>{note.label}</strong>
+                <span>{note.use}</span>
+                <p>{note.note}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className={styles.valueSection}>
+          <SectionTitle label="Commercial Value" title="Why this can matter beyond appearance" />
+          <ul className={styles.valueList}>
+            <li>Lower maintenance burden</li>
+            <li>Cleaner property presentation</li>
+            <li>Longer-lasting surface protection</li>
+            <li>Easier cleaning for maintenance teams</li>
+            <li>Better tenant, user, or buyer perception</li>
+            <li>Schedule-conscious installation planning</li>
+            <li>Repeatable use across similar properties or projects</li>
+          </ul>
+        </section>
+
+        <section className={styles.nextStepSection} id="next-step">
+          <div>
+            <SectionTitle label="Walkthrough / Vendor Packet Next Step" title={primaryOffer} />
+            <div className={styles.nextGrid}>
+              <NextItem label="Walkthrough offer" value={primaryOffer} />
+              <NextItem
+                label="Vendor packet angle"
+                value={
+                  flooring.vendor_packet_angle ||
+                  'Provide capabilities, preparation process, system options, moisture review, and commercial scheduling information.'
+                }
+              />
+              <NextItem
+                label="Decision-maker path"
+                value={flooring.decision_maker_path || 'Route to the property, facilities, maintenance, estimating, or owner contact.'}
+              />
+              <NextItem
+                label="Procurement path"
+                value={flooring.procurement_path || 'Start with capabilities packet, then walkthrough, then scope and estimate if there is fit.'}
+              />
+              <NextItem label="Next sales action" value={nextAction} />
+            </div>
+          </div>
+          <div className={styles.closeBox}>
+            <h3>Recommended ask</h3>
+            <p>Identify one high-traffic area to review, or forward this to the facilities, maintenance, estimating, or vendor contact.</p>
+          </div>
+        </section>
+
+        <section className={styles.objectionSection}>
+          <div>
+            <span>Likely objection</span>
+            <p>{flooring.likely_objection || 'We already have vendors or are not ready to start a flooring project.'}</p>
+          </div>
+          <div>
+            <span>Response</span>
+            <p>
+              {flooring.objection_response ||
+                'That is fair. The first step is only a fit review: concrete condition, use case, moisture risk, and whether Resinate belongs in the vendor conversation.'}
+            </p>
+          </div>
+        </section>
+
+        <footer className={styles.footer}>
           <p>
-            {flooring.moisture_considerations ||
-              'Slab-on-grade areas, basements, elevated vapor transmission, failed plastic moisture tests, and long-term adhesion concerns should be handled before system selection.'}
+            This is a preliminary fit note based on public information and expected surface use.
+            Final system recommendations require a walkthrough and concrete inspection.
           </p>
-        </div>
-      </section>
-
-      <section className={styles.valueBand}>
-        <div>
-          <span>Commercial Value</span>
-          <h2>{audit.audit?.conversion_opportunity || flooring.best_resinate_offer || 'Turn one problem surface into a cleaner, safer, easier-to-maintain space.'}</h2>
-        </div>
-        <p>
-          {flooring.vendor_packet_angle ||
-            'If the organization needs vendor review, Resinate can lead with capabilities, system examples, surface prep credibility, and a practical walkthrough before asking for a formal bid.'}
-        </p>
-      </section>
-
-      <section className={styles.objectionSection}>
-        <article>
-          <span>Likely Objection</span>
-          <p>{objection}</p>
-        </article>
-        <article>
-          <span>Response</span>
-          <p>{response}</p>
-        </article>
-        <article>
-          <span>Next Sales Action</span>
-          <p>{nextAction}</p>
-        </article>
-      </section>
-
-      <section className={styles.linksSection}>
-        <PresenceLink href={audit.prospect.website_url} label="Website" />
-        <PresenceLink href={audit.prospect.google_maps_url} label="Google Profile" />
-        <PresenceLink href={audit.prospect.facebook_url} label="Facebook" />
-        <PresenceLink href={audit.prospect.instagram_url} label="Instagram" />
-      </section>
-
-      <section className={styles.ctaSection} id="walkthrough">
-        <div>
-          <span>Walkthrough / Estimate Offer</span>
-          <h2>{primaryOffer}</h2>
-          <p>
-            This is a directional commercial flooring audit, not a final specification. A
-            walkthrough, concrete inspection, and moisture review determine the final system.
-          </p>
-        </div>
-        <a href={audit.prospect.website_url || '#'} className={styles.finalCta}>
-          Request a Capabilities Packet
-        </a>
-      </section>
+          <strong>Resinate Custom Flooring</strong>
+        </footer>
+      </article>
     </main>
   );
 }
 
-function ContextItem({ label, value }: { label: string; value: string }) {
+function SectionTitle({ label, title, id }: { label: string; title: string; id?: string }) {
   return (
-    <div className={styles.contextItem}>
+    <div className={styles.sectionTitle}>
+      <span>{label}</span>
+      <h2 id={id}>{title}</h2>
+    </div>
+  );
+}
+
+function MetaLine({ label, value }: { label: string; value: string }) {
+  return (
+    <div className={styles.metaLine}>
       <span>{label}</span>
       <strong>{value}</strong>
     </div>
   );
 }
 
-function SectionIntro({ label, title }: { label: string; title: string }) {
+function NextItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className={styles.sectionIntro}>
+    <div className={styles.nextItem}>
       <span>{label}</span>
-      <h2>{title}</h2>
+      <p>{value}</p>
     </div>
   );
 }
 
-function PresenceLink({ href, label }: { href?: string | null; label: string }) {
-  if (!href) {
-    return (
-      <div className={styles.presenceMissing}>
-        <span>{label}</span>
-        <small>Not listed</small>
-      </div>
-    );
-  }
-
-  return (
-    <a className={styles.presenceLink} href={href} target="_blank" rel="noopener noreferrer">
-      <span>{label}</span>
-      <ExternalLink size={14} />
-    </a>
-  );
-}
-
-function buildNeedCards(audit: PublicFlooringAudit): NeedCard[] {
+function buildPacketRows({
+  buyerType,
+  propertyType,
+  likelyAreas,
+  audit,
+  recommendedSystem,
+  nextAction,
+}: {
+  buyerType: string;
+  propertyType: string;
+  likelyAreas: string[];
+  audit: PublicFlooringAudit;
+  recommendedSystem: string;
+  nextAction: string;
+}): PacketRow[] {
   const flooring = audit.flooring;
   return [
-    {
-      label: 'Traffic needs',
-      value: flooring.traffic_needs || 'Daily commercial traffic',
-      note: 'Match the system to how the space is actually used, not just how it looks on day one.',
-    },
-    {
-      label: 'Moisture needs',
-      value: flooring.moisture_needs || 'Moisture review before specification',
-      note: 'Concrete moisture can affect adhesion, especially in slab-on-grade and basement conditions.',
-    },
-    {
-      label: 'Slip-resistance needs',
-      value: flooring.slip_resistance_needs || 'Texture selected for the environment',
-      note: 'Wet areas, kitchens, locker rooms, and public traffic zones need a serious slip-resistance conversation.',
-    },
+    { label: 'Buyer type', value: buyerType },
+    { label: 'Property type', value: propertyType },
+    { label: 'Likely surface areas', value: likelyAreas.join(', ') },
+    { label: 'Traffic needs', value: flooring.traffic_needs || 'Match finish durability to daily use, equipment, tenants, residents, staff, or public traffic.' },
+    { label: 'Cleaning / maintenance needs', value: flooring.cleaning_needs || 'Reduce surface wear, concrete dusting, stains, and repeat maintenance friction.' },
+    { label: 'Moisture considerations', value: flooring.moisture_needs || 'Review slab-on-grade, basement, vapor, or prior coating failure risk before coating.' },
+    { label: 'Slip-resistance considerations', value: flooring.slip_resistance_needs || 'Select texture by use case, especially wet, public, utility, or service areas.' },
+    { label: 'Downtime / scheduling considerations', value: flooring.downtime_needs || 'Plan around tenants, residents, other trades, access windows, or operating schedules.' },
+    { label: 'Recommended system', value: recommendedSystem },
+    { label: 'Next action', value: nextAction },
   ];
+}
+
+function buildExecutiveSummary(
+  audit: PublicFlooringAudit,
+  buyerType: string,
+  propertyType: string,
+  offer: string
+) {
+  const problem =
+    audit.flooring.likely_surface_problem ||
+    audit.audit?.main_problem ||
+    'there may be concrete surfaces where durability, cleaning, moisture, and long-term use should drive the system choice';
+  return `${audit.prospect.business_name} appears to be a fit because the buyer context is ${buyerType.toLowerCase()} tied to ${propertyType.toLowerCase()}. ${problem} The right next step is not a hard pitch; it is a ${offer.toLowerCase()} to confirm surface condition, traffic, moisture risk, and the correct Resinate system.`;
+}
+
+function buildBuyerNotes(buyerType: string) {
+  const value = buyerType.toLowerCase();
+  if (value.includes('contractor') || value.includes('construction')) {
+    return {
+      title: 'Subcontractor reliability and scope clarity',
+      body: 'For contractors, the value is a specialty surface partner who can support clear scope, fast estimates, clean execution, preparation credibility, and schedule protection.',
+    };
+  }
+
+  if (value.includes('real estate') || value.includes('broker') || value.includes('invest')) {
+    return {
+      title: 'Asset presentation and deal support',
+      body: 'For real estate groups, the value is a practical surface upgrade option for leasing, tenant improvements, investor properties, listing preparation, and portfolio presentation.',
+    };
+  }
+
+  if (value.includes('school') || value.includes('facility') || value.includes('maintenance')) {
+    return {
+      title: 'Facilities, cleaning, and durability',
+      body: 'For facilities teams, the value is safer, cleaner, durable surfaces with serious attention to slip resistance, sanitation, downtime, procurement, and long-term maintenance.',
+    };
+  }
+
+  return {
+    title: 'Property maintenance and repeatability',
+    body: 'For property managers, the value is lower maintenance, cleaner common areas, better tenant perception, vendor reliability, and a repeatable surface option across similar properties.',
+  };
+}
+
+function parseList(value: string | null | undefined, fallback: string[]) {
+  const cleaned = value
+    ?.split(/[\n,;|]+/g)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  return cleaned && cleaned.length > 0 ? cleaned : fallback;
 }
 
 function deriveBuyerType(audit: PublicFlooringAudit) {
   const niche = audit.prospect.niche.toLowerCase();
   if (niche.includes('school')) return 'school facilities or operations leader';
-  if (niche.includes('restaurant') || niche.includes('bar') || niche.includes('kitchen')) return 'owner or operations manager';
-  if (niche.includes('vet') || niche.includes('clinic')) return 'clinic owner or practice manager';
-  if (niche.includes('property')) return 'property manager';
+  if (niche.includes('contractor') || niche.includes('construction')) return 'general contractor or estimating lead';
+  if (niche.includes('real estate') || niche.includes('broker')) return 'real estate, investor, or commercial property advisor';
+  if (niche.includes('property')) return 'property manager or maintenance lead';
   return 'owner, facility manager, or operations decision-maker';
 }
 
 function derivePropertyType(audit: PublicFlooringAudit) {
   const niche = audit.prospect.niche.toLowerCase();
-  if (niche.includes('restaurant') || niche.includes('bar')) return 'hospitality / food-service property';
+  if (niche.includes('contractor') || niche.includes('construction')) return 'commercial construction or tenant improvement project';
+  if (niche.includes('real estate') || niche.includes('broker')) return 'commercial, investor, or listing-prep property';
   if (niche.includes('school')) return 'education facility';
-  if (niche.includes('salon') || niche.includes('spa')) return 'salon, spa, or showroom space';
-  if (niche.includes('garage') || niche.includes('auto')) return 'garage, shop, or showroom';
-  if (niche.includes('clinic') || niche.includes('vet')) return 'clinic or care facility';
+  if (niche.includes('property')) return 'managed property, HOA, multifamily, or commercial asset';
   return audit.prospect.niche || 'commercial property';
 }

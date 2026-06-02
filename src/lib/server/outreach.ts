@@ -733,7 +733,7 @@ function selectPrimaryArtifactUrl({
   flooringAuditUrl: string;
 }) {
   if (isResinateCampaign || usesFlooringAuditLink) {
-    return { label: 'Flooring Brief URL', url: flooringAuditUrl };
+    return { label: 'Commercial Surface Brief URL', url: flooringAuditUrl };
   }
 
   if (usesSocialAuditLink) {
@@ -772,6 +772,8 @@ function replaceOutreachReferences(body: string, mockupUrl: string, socialAuditU
     .replace(/\[mockup link\]/gi, mockupUrl)
     .replace(/\[social audit link\]/gi, socialAuditUrl)
     .replace(/\[flooring audit link\]/gi, flooringAuditUrl)
+    .replace(/\[flooring brief link\]/gi, flooringAuditUrl)
+    .replace(/\[commercial surface brief link\]/gi, flooringAuditUrl)
     .replace(/https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/mockups\/[^\s)]+/gi, mockupUrl)
     .replace(/https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/social-audits\/[^\s)]+/gi, socialAuditUrl)
     .replace(/https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/flooring-audits\/[^\s)]+/gi, flooringAuditUrl);
@@ -786,7 +788,12 @@ function containsSocialAuditReference(body: string) {
 }
 
 function containsFlooringAuditReference(body: string) {
-  return /\[flooring audit link\]/i.test(body) || /\/flooring-audits\//i.test(body);
+  return (
+    /\[flooring audit link\]/i.test(body) ||
+    /\[flooring brief link\]/i.test(body) ||
+    /\[commercial surface brief link\]/i.test(body) ||
+    /\/flooring-audits\//i.test(body)
+  );
 }
 
 function hasIntentionalLink(body: string) {
@@ -794,6 +801,8 @@ function hasIntentionalLink(body: string) {
     /\[mockup link\]/i.test(body) ||
     /\[social audit link\]/i.test(body) ||
     /\[flooring audit link\]/i.test(body) ||
+    /\[flooring brief link\]/i.test(body) ||
+    /\[commercial surface brief link\]/i.test(body) ||
     /\/mockups\//i.test(body) ||
     /\/social-audits\//i.test(body) ||
     /\/flooring-audits\//i.test(body)
@@ -836,7 +845,7 @@ function getEmailQualityWarnings({
   }
 
   if (!usesMockupLink && !usesSocialAuditLink && !usesFlooringAuditLink) {
-    warnings.push('Draft does not include [Social Audit Link], [Mockup Link], or [Flooring Audit Link].');
+    warnings.push('Draft does not include an approved public artifact placeholder.');
   }
 
   if (!mentionsSpecificObservation(lower)) {

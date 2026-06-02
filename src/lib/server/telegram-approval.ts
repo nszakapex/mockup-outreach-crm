@@ -129,7 +129,7 @@ export async function sendApprovalCard(prospectId: string, origin: string) {
   }
 
   if (resinateCampaign && isPublicHttpsUrl(flooringAuditUrl)) {
-    inlineKeyboard.push([{ text: 'Open Flooring Audit', url: flooringAuditUrl }]);
+    inlineKeyboard.push([{ text: 'Open Surface Brief', url: flooringAuditUrl }]);
   }
 
   const message = buildApprovalMessage(prospect, emailDraft, mockupUrl, resinateCampaign ? flooring : null, flooringAuditUrl);

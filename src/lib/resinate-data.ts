@@ -268,7 +268,14 @@ export function getMissingResinateImportFields(
   const body = cleanString(emailBody) || '';
 
   if (!body) missing.push('email_body');
-  if (body && !/\[flooring audit link\]/i.test(body)) missing.push('[Flooring Audit Link]');
+  if (
+    body &&
+    !/\[flooring audit link\]/i.test(body) &&
+    !/\[flooring brief link\]/i.test(body) &&
+    !/\[commercial surface brief link\]/i.test(body)
+  ) {
+    missing.push('[Flooring Brief Link]');
+  }
 
   return missing;
 }
@@ -324,7 +331,15 @@ function asRecord(value: unknown) {
   return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
 }
 
-function cleanString(value: unknown) {
+function cleanString(value: unknown): string | null {
+  if (Array.isArray(value)) {
+    const joined = value
+      .map((item) => cleanString(item))
+      .filter((item): item is string => Boolean(item))
+      .join(', ');
+    return joined.length > 0 ? joined : null;
+  }
+
   if (typeof value === 'string') {
     const trimmed = value.trim();
     return trimmed.length > 0 ? trimmed : null;
