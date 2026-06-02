@@ -39,6 +39,7 @@ type SendQueueItem = {
   campaignLabel: string;
   resinateDeliveryMode: 'public_brief' | 'inline_brief' | 'link_plus_summary' | null;
   resinateDeliveryModeLabel: string;
+  publicArtifactRequired: boolean;
   selectedPrimaryArtifactUrl: string;
   selectedPrimaryArtifactLabel: string;
   hasMockupLink: boolean;
@@ -267,7 +268,7 @@ export default function SendQueuePage() {
           <EmptyState
             icon={<Inbox size={24} />}
             title="No sends ready"
-            description="Approved prospects appear here after they have an approved email draft, a mockup link, and no previous successful send."
+            description="Approved prospects appear here after they have an approved email draft, a sendable artifact, and no previous successful send."
             action={
               <Link
                 href="/approval"
@@ -385,6 +386,7 @@ export default function SendQueuePage() {
                       {item.senderProfileKey === 'resinate' && (
                         <>
                           <PreviewField label="Has Inline Brief" value={yesNo(item.hasInlineFlooringBrief)} />
+                          <PreviewField label="Public artifact required" value={yesNo(item.publicArtifactRequired)} />
                           <PreviewField label="Public brief link included" value={yesNo(item.publicBriefLinkIncluded)} />
                           <PreviewField label="Inline brief included" value={yesNo(item.inlineBriefIncluded)} />
                         </>
@@ -394,7 +396,7 @@ export default function SendQueuePage() {
                       <PreviewField label="Opt-out included" value={yesNo(item.optOutIncluded)} />
                       <PreviewField
                         label={item.selectedPrimaryArtifactLabel}
-                        value={item.selectedPrimaryArtifactUrl}
+                        value={item.selectedPrimaryArtifactUrl || 'No public URL required'}
                         className="sm:col-span-2"
                       />
                       {item.usesMockupLink && (
@@ -459,16 +461,22 @@ export default function SendQueuePage() {
                     <div className="text-xs font-medium mb-1.5" style={{ color: 'var(--color-ink-3)' }}>
                       {item.selectedPrimaryArtifactLabel}
                     </div>
-                    <a
-                      href={item.selectedPrimaryArtifactUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex max-w-full items-center gap-1.5 truncate text-sm font-medium hover:underline"
-                      style={{ color: 'var(--color-accent)' }}
-                    >
-                      <span className="truncate">{item.selectedPrimaryArtifactUrl}</span>
-                      <ExternalLink size={13} className="shrink-0" />
-                    </a>
+                    {item.selectedPrimaryArtifactUrl ? (
+                      <a
+                        href={item.selectedPrimaryArtifactUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex max-w-full items-center gap-1.5 truncate text-sm font-medium hover:underline"
+                        style={{ color: 'var(--color-accent)' }}
+                      >
+                        <span className="truncate">{item.selectedPrimaryArtifactUrl}</span>
+                        <ExternalLink size={13} className="shrink-0" />
+                      </a>
+                    ) : (
+                      <div className="text-sm" style={{ color: 'var(--color-ink-2)' }}>
+                        No public URL required for inline brief delivery.
+                      </div>
+                    )}
                     {item.usesSocialAuditLink && (
                       <>
                         <div className="text-xs font-medium mb-1.5 mt-4" style={{ color: 'var(--color-ink-3)' }}>

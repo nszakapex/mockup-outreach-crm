@@ -32,6 +32,7 @@ import {
   buildInlineFlooringBrief,
   getResinateDeliveryMode,
   getResinateDeliveryModeLabel,
+  getResinatePublicArtifactRequired,
   isResinateCampaign,
   parseResinateConceptNotes,
   type ResinateFlooringData,
@@ -121,6 +122,9 @@ export default function ProspectDetailPage({
   const resinateStrategy = mockup ? parseResinateConceptNotes(mockup.concept_notes) : {};
   const isResinate = isResinateCampaign(resinateStrategy);
   const resinateDeliveryMode = isResinate ? getResinateDeliveryMode(resinateStrategy, emailDraft?.body) : null;
+  const resinatePublicArtifactRequired = isResinate
+    ? getResinatePublicArtifactRequired(resinateStrategy, emailDraft?.body)
+    : false;
   const inlineFlooringBriefPreview = isResinate ? buildInlineFlooringBrief(resinateStrategy) : '';
 
   return (
@@ -409,13 +413,16 @@ export default function ProspectDetailPage({
           </Card>
 
           {isResinate && (
-            <Card title="Resinate Flooring Campaign" action={flooringAuditPublicUrl ? (
+            <Card title="Resinate Flooring Campaign" action={resinatePublicArtifactRequired && flooringAuditPublicUrl ? (
               <a href={flooringAuditPublicUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-medium hover:underline flex items-center gap-1" style={{ color: 'var(--color-accent)' }}>
                 Open Commercial Surface Brief <ExternalLink size={10} />
               </a>
             ) : undefined}>
               <div className="space-y-3">
-                {flooringAuditPublicUrl && (
+                {resinateDeliveryMode && (
+                  <FieldBlock label="Delivery Mode" value={getResinateDeliveryModeLabel(resinateDeliveryMode)} />
+                )}
+                {resinatePublicArtifactRequired && flooringAuditPublicUrl ? (
                   <div>
                     <span className="text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>Public Commercial Surface Brief URL</span>
                     <div
@@ -449,9 +456,17 @@ export default function ProspectDetailPage({
                       </a>
                     </div>
                   </div>
-                )}
-                {resinateDeliveryMode && (
-                  <FieldBlock label="Delivery Mode" value={getResinateDeliveryModeLabel(resinateDeliveryMode)} />
+                ) : (
+                  <div
+                    className="rounded-lg p-3 text-xs"
+                    style={{
+                      background: 'var(--color-paper-3)',
+                      border: '1px solid var(--color-divider)',
+                      color: 'var(--color-ink-2)',
+                    }}
+                  >
+                    Public commercial surface brief is not required for inline brief delivery.
+                  </div>
                 )}
                 {inlineFlooringBriefPreview && (
                   <div>

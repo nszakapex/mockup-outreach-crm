@@ -45,6 +45,8 @@ export type ResinateImportRequiredField = (typeof RESINATE_IMPORT_REQUIRED_FIELD
 export type ResinateFlooringData = {
   campaign_type?: ResinateCampaignType | null;
   resinate_delivery_mode?: ResinateDeliveryMode | null;
+  artifact_delivery_mode?: ResinateDeliveryMode | null;
+  public_artifact_required?: boolean | null;
 } & Partial<Record<ResinateTextField, string | null>>;
 
 export type FlooringSystemKey =
@@ -75,6 +77,7 @@ export type ResinateImportSummary = {
   nextSalesAction: string | null;
   flooringAuditAvailable: boolean;
   deliveryMode: ResinateDeliveryMode;
+  publicArtifactRequired: boolean;
 };
 
 type StoredConceptNotes = {
@@ -217,17 +220,25 @@ export function normalizeResinateFlooringData(
   const source = mergeNestedResinateSource(input);
   const data: ResinateFlooringData = {};
   const campaignType = cleanString(source.campaign_type)?.toLowerCase();
-  const deliveryMode = normalizeResinateDeliveryMode(source.resinate_delivery_mode);
+  const deliveryMode =
+    normalizeResinateDeliveryMode(source.resinate_delivery_mode) ||
+    normalizeResinateDeliveryMode(source.artifact_delivery_mode);
+  const publicArtifactRequired = cleanBoolean(source.public_artifact_required);
 
   for (const field of RESINATE_TEXT_FIELDS) {
     const value = cleanString(source[field]);
     if (value) data[field] = value;
   }
 
-  if (deliveryMode) data.resinate_delivery_mode = deliveryMode;
+  if (deliveryMode) {
+    data.resinate_delivery_mode = deliveryMode;
+    data.artifact_delivery_mode = deliveryMode;
+  }
 
   if (campaignType === RESINATE_CAMPAIGN_TYPE || getResinateSignalCount(data) > 0) {
     data.campaign_type = RESINATE_CAMPAIGN_TYPE;
+    data.public_artifact_required =
+      publicArtifactRequired ?? getResinatePublicArtifactRequired(data, null);
   }
 
   return data;
@@ -299,8 +310,9 @@ export function getResinateImportSummary(
     recommendedSystem: data.recommended_flooring_system || null,
     bestOffer: data.best_resinate_offer || data.walkthrough_offer || data.vendor_packet_angle || null,
     nextSalesAction: data.next_sales_action || null,
-    flooringAuditAvailable: Boolean(data.campaign_type === RESINATE_CAMPAIGN_TYPE),
+    flooringAuditAvailable: getResinatePublicArtifactRequired(data, emailBody),
     deliveryMode: getResinateDeliveryMode(data, emailBody),
+    publicArtifactRequired: getResinatePublicArtifactRequired(data, emailBody),
   };
 }
 
@@ -354,7 +366,17 @@ export function getResinateDeliveryMode(
   if (hasInlineBrief) return 'inline_brief';
   if (hasPublicBrief) return 'public_brief';
 
-  return data?.resinate_delivery_mode || 'public_brief';
+  return data?.resinate_delivery_mode || data?.artifact_delivery_mode || 'public_brief';
+}
+
+export function getResinatePublicArtifactRequired(
+  data: ResinateFlooringData | null | undefined,
+  emailBody?: string | null
+) {
+  const mode = getResinateDeliveryMode(data, emailBody);
+  if (mode === 'inline_brief') return false;
+  if (typeof data?.public_artifact_required === 'boolean') return data.public_artifact_required;
+  return mode === 'public_brief' || mode === 'link_plus_summary';
 }
 
 export function getResinateDeliveryModeLabel(mode: ResinateDeliveryMode | null | undefined) {
@@ -436,6 +458,15 @@ function cleanString(value: unknown): string | null {
   }
 
   if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  return null;
+}
+
+function cleanBoolean(value: unknown): boolean | null {
+  if (typeof value === 'boolean') return value;
+  const normalized = cleanString(value)?.toLowerCase();
+  if (!normalized) return null;
+  if (['true', 'yes', '1'].includes(normalized)) return true;
+  if (['false', 'no', '0'].includes(normalized)) return false;
   return null;
 }
 

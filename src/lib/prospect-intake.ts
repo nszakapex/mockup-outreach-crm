@@ -211,6 +211,18 @@ function normalizeEmailForInput(value: unknown) {
   return sanitized.ok ? sanitized.value : clean(value);
 }
 
+function inferResinateDeliveryMode(record: Record<string, unknown>, resinateRecord: Record<string, unknown>) {
+  const explicit = clean(resinateRecord.resinate_delivery_mode);
+  if (explicit) return explicit;
+  const body = clean(record.email_body) || '';
+  const hasInlineBrief = /\[inline flooring brief\]/i.test(body);
+  const hasPublicBrief = /\[(flooring audit link|flooring brief link|commercial surface brief link)\]/i.test(body);
+  if (hasInlineBrief && hasPublicBrief) return 'link_plus_summary';
+  if (hasInlineBrief) return 'inline_brief';
+  if (hasPublicBrief) return 'public_brief';
+  return null;
+}
+
 export function formatSupabaseError(action: string, error: SupabaseErrorLike) {
   const details = [
     error.message,
@@ -546,7 +558,7 @@ export function normalizeHermesJsonRecord(value: unknown): ProspectIntakeInput |
     first_email_angle: clean(record.first_email_angle),
     call_follow_up_angle: cleanRecord(record.call_follow_up_angle) as CallFollowUpAngle | null,
     campaign_type: clean(resinateRecord.campaign_type),
-    resinate_delivery_mode: clean(resinateRecord.resinate_delivery_mode),
+    resinate_delivery_mode: inferResinateDeliveryMode(record, resinateRecord),
     buyer_type: clean(resinateRecord.buyer_type),
     property_type: clean(resinateRecord.property_type),
     portfolio_or_property_context: clean(resinateRecord.portfolio_or_property_context),

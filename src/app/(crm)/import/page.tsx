@@ -356,7 +356,7 @@ function CampaignCell({ item }: { item: HermesImportPreview }) {
         {resinate.bestOffer && <div>Offer: {resinate.bestOffer}</div>}
         {resinate.nextSalesAction && <div>Next: {resinate.nextSalesAction}</div>}
         <div>Delivery: {formatResinateDeliveryMode(resinate.deliveryMode)}</div>
-        {resinate.flooringAuditAvailable && <div>Commercial Surface Brief available</div>}
+        <div>Public artifact: {resinate.publicArtifactRequired ? 'Commercial Surface Brief available' : 'Not required'}</div>
       </div>
     </div>
   );

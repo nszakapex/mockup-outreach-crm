@@ -1,7 +1,15 @@
 import 'server-only';
 
 import { buildPublicFlooringAuditUrl, buildPublicMockupUrl } from '@/lib/mockup-templates';
-import { isResinateCampaign, parseResinateConceptNotes, type ResinateFlooringData } from '@/lib/resinate-data';
+import {
+  buildInlineFlooringBrief,
+  getResinateDeliveryMode,
+  getResinateDeliveryModeLabel,
+  getResinatePublicArtifactRequired,
+  isResinateCampaign,
+  parseResinateConceptNotes,
+  type ResinateFlooringData,
+} from '@/lib/resinate-data';
 import { getServerSupabase } from './supabase';
 
 const TELEGRAM_TIMEOUT_MS = 10000;
@@ -115,7 +123,10 @@ export async function sendApprovalCard(prospectId: string, origin: string) {
   const mockupUrl = buildPublicMockupUrl(mockup.slug, origin);
   const flooring = parseResinateConceptNotes(mockup.concept_notes);
   const resinateCampaign = isResinateCampaign(flooring);
-  const flooringAuditUrl = buildPublicFlooringAuditUrl(mockup.slug, origin);
+  const publicFlooringBriefRequired = resinateCampaign
+    ? getResinatePublicArtifactRequired(flooring, emailDraft.body)
+    : false;
+  const flooringAuditUrl = publicFlooringBriefRequired ? buildPublicFlooringAuditUrl(mockup.slug, origin) : '';
   const inlineKeyboard: TelegramInlineKeyboardButton[][] = [
     [
       { text: 'Approve', callback_data: buildCallbackData('approve', prospect.id) },
@@ -124,11 +135,11 @@ export async function sendApprovalCard(prospectId: string, origin: string) {
     ],
   ];
 
-  if (isPublicHttpsUrl(mockupUrl)) {
+  if (!resinateCampaign && isPublicHttpsUrl(mockupUrl)) {
     inlineKeyboard.push([{ text: 'Open Mockup', url: mockupUrl }]);
   }
 
-  if (resinateCampaign && isPublicHttpsUrl(flooringAuditUrl)) {
+  if (resinateCampaign && publicFlooringBriefRequired && isPublicHttpsUrl(flooringAuditUrl)) {
     inlineKeyboard.push([{ text: 'Open Surface Brief', url: flooringAuditUrl }]);
   }
 
@@ -339,15 +350,29 @@ function buildApprovalMessage(
 ) {
   const location = [prospect.city, prospect.state].filter(Boolean).join(', ');
   const notes = prospect.notes ? `\n\n<b>Notes</b>\n${escapeHtml(prospect.notes)}` : '';
+  const flooringDeliveryMode = flooring ? getResinateDeliveryMode(flooring, emailDraft.body) : null;
+  const mockupBlock = flooring
+    ? []
+    : [
+        '',
+        '<b>Mockup</b>',
+        escapeHtml(mockupUrl),
+      ];
   const flooringBlock = flooring
     ? [
         '',
         '<b>Campaign</b>: Resinate Flooring',
+        flooringDeliveryMode
+          ? `<b>Delivery mode</b>: ${escapeHtml(getResinateDeliveryModeLabel(flooringDeliveryMode))}`
+          : null,
         flooring.recommended_flooring_system
           ? `<b>Recommended system</b>: ${escapeHtml(flooring.recommended_flooring_system)}`
           : null,
         flooring.next_sales_action ? `<b>Next action</b>: ${escapeHtml(flooring.next_sales_action)}` : null,
-        `<b>Flooring audit</b>: ${escapeHtml(flooringAuditUrl)}`,
+        flooringAuditUrl ? `<b>Surface brief</b>: ${escapeHtml(flooringAuditUrl)}` : null,
+        flooringDeliveryMode === 'inline_brief'
+          ? `<b>Inline note</b>\n${escapeHtml(buildInlineFlooringBrief(flooring))}`
+          : null,
       ].filter(Boolean)
     : [];
 
@@ -364,9 +389,7 @@ function buildApprovalMessage(
     '',
     `<b>Email body</b>`,
     escapeHtml(truncate(emailDraft.body, 1400)),
-    '',
-    `<b>Mockup</b>`,
-    escapeHtml(mockupUrl),
+    ...mockupBlock,
     ...flooringBlock,
     notes,
   ].join('\n');

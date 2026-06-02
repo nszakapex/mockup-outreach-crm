@@ -13,6 +13,7 @@ import {
   containsPublicFlooringBriefReference,
   getResinateDeliveryMode,
   getResinateDeliveryModeLabel,
+  getResinatePublicArtifactRequired,
   parseResinateConceptNotes,
   type ResinateDeliveryMode,
 } from '@/lib/resinate-data';
@@ -95,6 +96,7 @@ export type SendQueueItem = {
   campaignLabel: string;
   resinateDeliveryMode: ResinateDeliveryMode | null;
   resinateDeliveryModeLabel: string;
+  publicArtifactRequired: boolean;
   selectedPrimaryArtifactUrl: string;
   selectedPrimaryArtifactLabel: string;
   hasMockupLink: boolean;
@@ -618,27 +620,35 @@ function buildQueueItem(
   }
 
   const mockup = pickMockup(prospect.mockups);
-  if (!mockup?.slug && !mockup?.mockup_url) {
-    blockedReasons.push('Prospect is missing a mockup link.');
+  const isResinateCampaign = campaignTypeDetected === 'resinate_flooring';
+  const resinateFlooring = mockup ? parseResinateConceptNotes(mockup.concept_notes) : {};
+  const draftBody = emailDraft?.body || '';
+  const resinateDeliveryMode = isResinateCampaign
+    ? getResinateDeliveryMode(resinateFlooring, draftBody)
+    : null;
+  const publicArtifactRequired = isResinateCampaign
+    ? getResinatePublicArtifactRequired(resinateFlooring, draftBody)
+    : true;
+
+  if (!mockup) {
+    blockedReasons.push('Prospect is missing internal campaign content.');
+  } else if (publicArtifactRequired && !mockup.slug && !mockup.mockup_url) {
+    blockedReasons.push('Prospect is missing a public artifact slug or URL.');
   }
 
   if (!emailDraft || !prospect.public_email || !mockup) return null;
 
   const mockupUrl = buildMockupUrl(mockup, origin);
   const socialAuditUrl = buildPublicSocialAuditUrl(mockup.slug, origin);
-  const flooringAuditUrl = buildPublicFlooringAuditUrl(mockup.slug, origin);
-  const resinateFlooring = parseResinateConceptNotes(mockup.concept_notes);
+  const flooringAuditUrl = publicArtifactRequired ? buildPublicFlooringAuditUrl(mockup.slug, origin) : '';
   const inlineFlooringBrief = buildInlineFlooringBrief(resinateFlooring);
   const usesMockupLink = containsMockupReference(emailDraft.body);
   const usesSocialAuditLink = containsSocialAuditReference(emailDraft.body);
   const usesFlooringAuditLink = containsPublicFlooringBriefReference(emailDraft.body);
   const usesInlineFlooringBrief = containsInlineFlooringBriefReference(emailDraft.body);
-  const isResinateCampaign = campaignTypeDetected === 'resinate_flooring';
-  const resinateDeliveryMode = isResinateCampaign
-    ? getResinateDeliveryMode(resinateFlooring, emailDraft.body)
-    : null;
   const selectedArtifact = selectPrimaryArtifactUrl({
     isResinateCampaign,
+    resinateDeliveryMode,
     usesMockupLink,
     usesSocialAuditLink,
     usesFlooringAuditLink,
@@ -680,6 +690,7 @@ function buildQueueItem(
     campaignLabel: getCampaignLabel(campaignTypeDetected),
     resinateDeliveryMode,
     resinateDeliveryModeLabel: resinateDeliveryMode ? getResinateDeliveryModeLabel(resinateDeliveryMode) : 'Standard',
+    publicArtifactRequired,
     selectedPrimaryArtifactUrl: selectedArtifact.url,
     selectedPrimaryArtifactLabel: selectedArtifact.label,
     hasMockupLink: usesMockupLink,
@@ -690,7 +701,7 @@ function buildQueueItem(
     usesSocialAuditLink,
     usesFlooringAuditLink,
     usesInlineFlooringBrief,
-    publicBriefLinkIncluded: usesFlooringAuditLink,
+    publicBriefLinkIncluded: usesFlooringAuditLink && Boolean(flooringAuditUrl),
     inlineBriefIncluded: usesInlineFlooringBrief,
     senderProfileKey: senderProfile.key,
     senderLabel: senderProfile.senderLabel,
@@ -753,6 +764,7 @@ function getCampaignLabel(campaignType: string) {
 
 function selectPrimaryArtifactUrl({
   isResinateCampaign,
+  resinateDeliveryMode,
   usesMockupLink,
   usesSocialAuditLink,
   usesFlooringAuditLink,
@@ -761,6 +773,7 @@ function selectPrimaryArtifactUrl({
   flooringAuditUrl,
 }: {
   isResinateCampaign: boolean;
+  resinateDeliveryMode: ResinateDeliveryMode | null;
   usesMockupLink: boolean;
   usesSocialAuditLink: boolean;
   usesFlooringAuditLink: boolean;
@@ -768,7 +781,11 @@ function selectPrimaryArtifactUrl({
   socialAuditUrl: string;
   flooringAuditUrl: string;
 }) {
-  if (isResinateCampaign || usesFlooringAuditLink) {
+  if (isResinateCampaign && resinateDeliveryMode === 'inline_brief') {
+    return { label: 'Inline commercial surface note', url: '' };
+  }
+
+  if ((isResinateCampaign || usesFlooringAuditLink) && flooringAuditUrl) {
     return { label: 'Commercial Surface Brief URL', url: flooringAuditUrl };
   }
 
@@ -792,7 +809,7 @@ function buildFinalEmailBody({
   fallbackUrl: string;
   intentionalLinkPresent: boolean;
 }) {
-  const fallbackLinkAppended = !intentionalLinkPresent && !hasIntentionalLink(body);
+  const fallbackLinkAppended = Boolean(fallbackUrl) && !intentionalLinkPresent && !hasIntentionalLink(body);
   const withFallback = fallbackLinkAppended ? `${body.trim()}\n\nReference link: ${fallbackUrl}` : body.trim();
   const withOptOut = appendOptOutOnce(withFallback);
 

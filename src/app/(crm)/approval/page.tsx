@@ -18,6 +18,12 @@ import StatusBadge from '@/components/StatusBadge';
 import EmptyState from '@/components/EmptyState';
 import ErrorBanner from '@/components/ErrorBanner';
 import { useApprovalQueue } from '@/lib/hooks';
+import {
+  getResinateDeliveryMode,
+  getResinatePublicArtifactRequired,
+  isResinateCampaign,
+  parseResinateConceptNotes,
+} from '@/lib/resinate-data';
 
 export default function ApprovalPage() {
   const { prospects, loading, error, refetch, approve } = useApprovalQueue();
@@ -119,6 +125,12 @@ export default function ApprovalPage() {
           {prospects.map((prospect) => {
             const email = prospect.email_drafts?.[0];
             const mockup = prospect.mockups?.[0];
+            const resinateStrategy = mockup ? parseResinateConceptNotes(mockup.concept_notes) : {};
+            const isResinate = isResinateCampaign(resinateStrategy);
+            const resinateDeliveryMode = isResinate ? getResinateDeliveryMode(resinateStrategy, email?.body) : null;
+            const publicArtifactRequired = isResinate
+              ? getResinatePublicArtifactRequired(resinateStrategy, email?.body)
+              : true;
             const isApproved = prospect.status === 'approved_to_send';
             const isBusy = acting?.endsWith(`:${prospect.id}`) ?? false;
             const isTelegramBusy = acting === `telegram:${prospect.id}`;
@@ -128,7 +140,8 @@ export default function ApprovalPage() {
               Boolean(email) &&
               Boolean(email?.subject) &&
               Boolean(email?.body) &&
-              Boolean(mockup?.slug);
+              Boolean(mockup) &&
+              (!publicArtifactRequired || Boolean(mockup?.slug));
 
             return (
               <Card key={prospect.id}>
@@ -146,12 +159,21 @@ export default function ApprovalPage() {
                   </div>
                 </div>
 
-                {mockup?.slug && (
+                {mockup?.slug && publicArtifactRequired && (
                   <div className="flex items-center gap-2 mb-4 p-3 rounded-lg" style={{ background: 'var(--color-accent-subtle)' }}>
                     <span className="text-xs font-medium" style={{ color: 'var(--color-accent)' }}>Mockup:</span>
                     <Link href={`/mockups/${mockup.slug}`} target="_blank" className="text-sm font-medium hover:underline flex items-center gap-1" style={{ color: 'var(--color-accent)' }}>
                       {mockup.title} <ExternalLink size={12} />
                     </Link>
+                  </div>
+                )}
+
+                {isResinate && resinateDeliveryMode === 'inline_brief' && (
+                  <div className="flex items-center gap-2 mb-4 p-3 rounded-lg" style={{ background: 'var(--color-accent-subtle)' }}>
+                    <span className="text-xs font-medium" style={{ color: 'var(--color-accent)' }}>Resinate:</span>
+                    <span className="text-sm font-medium" style={{ color: 'var(--color-accent)' }}>
+                      Inline commercial surface note. Public brief not required.
+                    </span>
                   </div>
                 )}
 
@@ -185,9 +207,9 @@ export default function ApprovalPage() {
                   </div>
                 )}
 
-                {!mockup?.slug && (
+                {publicArtifactRequired && !mockup?.slug && (
                   <div className="mb-4 rounded-lg p-3 text-xs" style={{ background: 'oklch(75% 0.16 85 / 0.08)', border: '1px solid oklch(75% 0.16 85 / 0.2)', color: 'var(--color-warning)' }}>
-                    Missing mockup link. Add a mockup before sending this prospect to Telegram.
+                    Missing public artifact link. Add a slug before sending this prospect to Telegram.
                   </div>
                 )}
 
