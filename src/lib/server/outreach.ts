@@ -701,6 +701,7 @@ function buildQueueItem(
     audit,
     rich: mockupStrategy.rich,
     social: socialAuditStrategy,
+    apex: apexDelivery,
   });
   const usesMockupLink = containsMockupReference(emailDraft.body);
   const usesSocialAuditLink = containsSocialAuditReference(emailDraft.body);
@@ -711,6 +712,7 @@ function buildQueueItem(
     ...audit,
     ...mockupStrategy.rich,
     ...socialAuditStrategy,
+    ...apexDelivery,
     business_name: prospect.business_name,
     city: prospect.city,
   });
@@ -880,7 +882,7 @@ function selectPrimaryArtifactUrl({
   }
 
   if (!isResinateCampaign && apexDeliveryMode === 'inline_apex_brief') {
-    return { label: 'Inline content + ads note', url: '', type: 'inline_apex_brief' };
+    return { label: 'Inline first impression direction', url: '', type: 'inline_apex_brief' };
   }
 
   if ((isResinateCampaign || usesFlooringAuditLink) && flooringAuditUrl) {
@@ -900,7 +902,7 @@ function selectPrimaryArtifactUrl({
   }
 
   if (usesInlineApexBrief) {
-    return { label: 'Inline content + ads note', url: '', type: 'inline_apex_brief' };
+    return { label: 'Inline first impression direction', url: '', type: 'inline_apex_brief' };
   }
 
   return { label: 'Fallback Reference URL', url: mockupUrl, type: 'fallback_url' };
@@ -1008,6 +1010,7 @@ function getEmailQualityWarnings({
 }) {
   const warnings: string[] = [];
   const lower = rawBody.toLowerCase();
+  const isApexDraft = Boolean(apexDeliveryMode || usesInlineApexBrief || usesMockupLink || usesSocialAuditLink);
 
   if (/^\s*i hope this email finds you well\b/i.test(rawBody)) {
     warnings.push('Opening sounds generic: remove "I hope this email finds you well."');
@@ -1024,18 +1027,30 @@ function getEmailQualityWarnings({
   }
 
   if (apexDeliveryMode === 'inline_apex_brief' && !apexContentDirectionPresent) {
-    warnings.push('Apex inline brief needs more specific content, website/social, or Meta ads direction fields.');
+    warnings.push('Apex inline brief needs first-impression, trust, proof, lead-path, or Meta angle fields.');
   }
 
   if (!mentionsSpecificObservation(lower)) {
-    warnings.push('Draft may need a more specific social, website, offer, or content observation.');
+    warnings.push('Draft may need one specific website, social, proof, offer, or lead-path observation.');
   }
 
   if (soundsGeneric(lower, businessName)) {
     warnings.push('Draft may sound generic because it does not mention the business or a concrete content issue.');
   }
 
-  const maxWords = apexDeliveryMode === 'inline_apex_brief' ? 170 : 160;
+  if (isApexDraft && !mentionsFirstImpressionOrLeadPath(lower)) {
+    warnings.push('Apex email should mention first impression, trust, proof, lead path, quote path, booking path, order path, visit path, or inquiry path.');
+  }
+
+  if (isApexDraft && usesGenericMarketingLanguage(lower)) {
+    warnings.push('Apex email uses generic marketing language; make it more diagnostic and proof-oriented.');
+  }
+
+  if (isApexDraft && !hasSoftAsk(lower)) {
+    warnings.push('Apex email should end with a soft ask for a quick walkthrough or call.');
+  }
+
+  const maxWords = isApexDraft ? 150 : 160;
   if (countWords(finalBody) > maxWords) {
     warnings.push(`Final email body is over ${maxWords} words.`);
   }
@@ -1080,7 +1095,24 @@ function mentionsSpecificObservation(value: string) {
     'walkthrough',
     'facility',
     'commercial',
+    'first impression',
+    'trust',
+    'proof',
+    'lead path',
+    'estimate',
   ].some((term) => value.includes(term));
+}
+
+function mentionsFirstImpressionOrLeadPath(value: string) {
+  return /(first impression|trust|proof|lead path|quote path|booking path|order path|visit path|inquiry path|estimate path|request an estimate|book|call|reach out|inquir)/i.test(value);
+}
+
+function usesGenericMarketingLanguage(value: string) {
+  return /(boost your online presence|optimize engagement|i ran a full audit|comprehensive marketing strategy|take your business to the next level|grow your brand|increase brand awareness)/i.test(value);
+}
+
+function hasSoftAsk(value: string) {
+  return /(would you be open|would it be worth|would it make sense|quick walkthrough|quick call|open to a quick|worth a quick|right person)/i.test(value);
 }
 
 function soundsGeneric(value: string, businessName: string) {

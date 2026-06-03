@@ -9,8 +9,11 @@ import {
 import {
   getApexImportSummary,
   normalizeApexDeliveryData,
+  type ApexFollowUpSequence,
   type ApexDeliveryMode,
   type ApexImportSummary,
+  type FirstImpressionAudit,
+  type WebsiteAuditSnapshot,
 } from './apex-delivery-data';
 import {
   getSocialAuditRichness,
@@ -90,6 +93,15 @@ export type ProspectIntakeInput = {
   first_email_angle?: string | null;
   call_follow_up_angle?: CallFollowUpAngle | null;
   apex_delivery_mode?: ApexDeliveryMode | string | null;
+  first_impression_audit?: FirstImpressionAudit | null;
+  website_audit?: WebsiteAuditSnapshot | null;
+  trigger_reason?: string | null;
+  personalized_observation?: string | null;
+  business_implication?: string | null;
+  proof_asset_type?: string | null;
+  what_to_test_first?: string | null;
+  follow_up_sequence?: ApexFollowUpSequence | null;
+  measurement_hypothesis?: string | null;
   campaign_type?: ResinateCampaignType | string | null;
   resinate_delivery_mode?: ResinateDeliveryMode | string | null;
   buyer_type?: string | null;
@@ -582,6 +594,15 @@ export function normalizeHermesJsonRecord(value: unknown): ProspectIntakeInput |
     first_email_angle: clean(record.first_email_angle),
     call_follow_up_angle: cleanRecord(record.call_follow_up_angle) as CallFollowUpAngle | null,
     apex_delivery_mode: inferApexDeliveryMode(record),
+    first_impression_audit: cleanRecord(record.first_impression_audit) as FirstImpressionAudit | null,
+    website_audit: cleanRecord(record.website_audit) as WebsiteAuditSnapshot | null,
+    trigger_reason: clean(record.trigger_reason),
+    personalized_observation: clean(record.personalized_observation),
+    business_implication: clean(record.business_implication),
+    proof_asset_type: clean(record.proof_asset_type),
+    what_to_test_first: clean(record.what_to_test_first),
+    follow_up_sequence: cleanRecord(record.follow_up_sequence) as ApexFollowUpSequence | null,
+    measurement_hypothesis: clean(record.measurement_hypothesis),
     campaign_type: clean(resinateRecord.campaign_type),
     resinate_delivery_mode: inferResinateDeliveryMode(record, resinateRecord),
     buyer_type: clean(resinateRecord.buyer_type),

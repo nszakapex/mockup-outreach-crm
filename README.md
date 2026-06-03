@@ -270,6 +270,58 @@ Recommended fields:
 
 Use `[Social Audit Link]` in an email draft to insert the public social audit URL. `[Mockup Link]` still inserts the public mockup URL. If the social audit placeholder is not present, the sender does not append that link automatically.
 
+## Apex First Impression JSON Fields
+
+Code X/Apex prospecting batches can use inline first-impression briefs without requiring a public mockup or social audit page:
+
+```json
+{
+  "campaign_type": "apex_social_content",
+  "apex_delivery_mode": "inline_apex_brief",
+  "first_impression_audit": {
+    "homepage_clarity": "The homepage shows services, but the first screen does not quickly prove why a stranger should trust the business.",
+    "offer_clarity": "The main offer is useful but not packaged around a clear next step.",
+    "primary_cta": "Request an estimate",
+    "trust_signals": "Reviews and project proof exist but are not prominent before the CTA.",
+    "video_or_photo_gap": "Recent proof clips or before-and-after visuals are underused.",
+    "social_proof_gap": "Social posts do not consistently reinforce the website claim.",
+    "mobile_first_impression": "Mobile visitors need a faster proof-to-contact path.",
+    "lead_path_issue": "The quote path is not obvious after someone sees the proof.",
+    "ad_readiness": "Retargeting should point to proof and a clear request path, not generic awareness.",
+    "what_to_fix_first": "Test one proof asset tied directly to the quote CTA."
+  },
+  "trigger_reason": "Recent site/social review showed a visible proof gap.",
+  "personalized_observation": "Project photos are useful, but the first screen does not make the estimate path obvious.",
+  "business_implication": "Strangers may not trust the business fast enough to request a quote.",
+  "proof_asset_type": "One before-and-after proof reel plus a short website proof section.",
+  "what_to_test_first": "Run one proof clip to the local quote path.",
+  "measurement_hypothesis": "More proof before the CTA should improve qualified estimate requests.",
+  "follow_up_sequence": {
+    "touch_1_observation_email": "Short observation plus inline first-impression direction.",
+    "touch_2_custom_video_or_mockup": "Send a quick screen-recorded teardown or simple proof mockup.",
+    "touch_3_social_touch": "Reference a recent project, offer, or service proof gap.",
+    "touch_4_proof_followup": "Share one practical proof asset or ad angle.",
+    "touch_5_permission_breakup": "Ask permission to close the loop.",
+    "call_walkthrough_angle": "Walk through where the first impression leaks trust before the lead path.",
+    "starter_package_recommendation": "First Impression Audit + first proof asset test."
+  },
+  "email_body": "Hi Example team,\n\nI noticed one specific first-impression gap and one proof opportunity.\n\n[Inline Apex Brief]\n\nWould you be open to a quick walkthrough?\n\nBest,\nNate\nApex Marketing Group"
+}
+```
+
+The sender replaces `[Inline Apex Brief]` with:
+
+```text
+First impression direction:
+• Trust leak: ...
+• Lead path: ...
+• Proof asset: ...
+• Meta angle: ...
+• What I would test first: ...
+```
+
+Keep first-touch emails short, specific, and problem-first: one real observation, one business implication, one useful proof asset, and one soft ask. Avoid generic phrases like "boost your online presence", "optimize engagement", or "I ran a full audit."
+
 ## Supabase Migration
 
 The Gmail queue needs the `outreach_sends` table from `supabase/schema.sql`. Run the outreach-sends SQL in Supabase before using `/send-queue` or `/api/outreach/send`.

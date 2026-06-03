@@ -31,6 +31,7 @@ import {
   getApexDeliveryModeLabel,
   getApexPublicArtifactRequired,
   parseApexDeliveryConceptNotes,
+  type ApexDeliveryData,
 } from '@/lib/apex-delivery-data';
 import { parseMockupConceptNotes, type RichMockupData } from '@/lib/mockup-rich-data';
 import { buildPublicFlooringAuditUrl, buildPublicMockupUrl, buildPublicSocialAuditUrl, getMockupTemplateVariant, getMockupVariantLabel } from '@/lib/mockup-templates';
@@ -139,8 +140,10 @@ export default function ProspectDetailPage({
         audit,
         rich: mockupStrategy?.rich || {},
         social: socialAuditStrategy,
+        apex: apexDeliveryStrategy,
       })
     : '';
+  const hasApexFirstImpressionDetails = !isResinate && hasApexDetailData(apexDeliveryStrategy);
   const resinateDeliveryMode = isResinate ? getResinateDeliveryMode(resinateStrategy, emailDraft?.body) : null;
   const resinatePublicArtifactRequired = isResinate
     ? getResinatePublicArtifactRequired(resinateStrategy, emailDraft?.body)
@@ -432,10 +435,10 @@ export default function ProspectDetailPage({
             )}
           </Card>
 
-          {!isResinate && apexDeliveryMode === 'inline_apex_brief' && (
+          {!isResinate && (apexDeliveryMode === 'inline_apex_brief' || hasApexFirstImpressionDetails) && (
             <Card title="Apex Delivery">
               <div className="space-y-3">
-                <FieldBlock label="Delivery Mode" value={getApexDeliveryModeLabel(apexDeliveryMode)} />
+                {apexDeliveryMode && <FieldBlock label="Delivery Mode" value={getApexDeliveryModeLabel(apexDeliveryMode)} />}
                 <div
                   className="rounded-lg p-3 text-xs"
                   style={{
@@ -452,9 +455,10 @@ export default function ProspectDetailPage({
                 {socialAuditPublicUrl && (
                   <FieldBlock label="Secondary Social Audit Link" value={socialAuditPublicUrl} />
                 )}
+                <ApexFirstImpressionPanel apex={apexDeliveryStrategy} />
                 <div>
                   <span className="text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>
-                    Suggested Inline Apex Brief Preview
+                    Suggested First Impression Direction Preview
                   </span>
                   <div
                     className="mt-1.5 rounded-lg p-3 text-xs whitespace-pre-wrap"
@@ -471,6 +475,7 @@ export default function ProspectDetailPage({
                     {copiedField === 'inline-apex-brief' ? 'Copied' : 'Copy Inline Brief'}
                   </Button>
                 </div>
+                <ApexFollowUpPanel apex={apexDeliveryStrategy} />
               </div>
             </Card>
           )}
@@ -690,6 +695,79 @@ function SocialAuditStrategyPanel({ social, audit }: { social: SocialAuditData; 
   );
 }
 
+function ApexFirstImpressionPanel({ apex }: { apex: ApexDeliveryData }) {
+  const audit = apex.first_impression_audit;
+  const website = apex.website_audit;
+  const hasData = hasApexDetailData(apex);
+
+  if (!hasData) {
+    return (
+      <p className="text-xs" style={{ color: 'var(--color-ink-3)' }}>
+        No first-impression fields yet. The inline brief will fall back to audit, social, and content notes.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-3 pt-3" style={{ borderTop: '1px solid var(--color-divider)' }}>
+      <div className="text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>
+        First Impression Strategy
+      </div>
+      {apex.trigger_reason && <FieldBlock label="Trigger Reason" value={apex.trigger_reason} />}
+      {apex.personalized_observation && <FieldBlock label="Personalized Observation" value={apex.personalized_observation} />}
+      {apex.business_implication && <FieldBlock label="Business Implication" value={apex.business_implication} />}
+      {apex.proof_asset_type && <FieldBlock label="Proof Asset Type" value={apex.proof_asset_type} />}
+      {apex.what_to_test_first && <FieldBlock label="What To Test First" value={apex.what_to_test_first} />}
+      {apex.measurement_hypothesis && <FieldBlock label="Measurement Hypothesis" value={apex.measurement_hypothesis} />}
+      {audit?.homepage_clarity && <FieldBlock label="Homepage Clarity" value={audit.homepage_clarity} />}
+      {audit?.offer_clarity && <FieldBlock label="Offer Clarity" value={audit.offer_clarity} />}
+      {audit?.primary_cta && <FieldBlock label="Primary CTA" value={audit.primary_cta} />}
+      {audit?.trust_signals && <FieldBlock label="Trust Signals" value={audit.trust_signals} />}
+      {audit?.video_or_photo_gap && <FieldBlock label="Video Or Photo Gap" value={audit.video_or_photo_gap} />}
+      {audit?.social_proof_gap && <FieldBlock label="Social Proof Gap" value={audit.social_proof_gap} />}
+      {audit?.mobile_first_impression && <FieldBlock label="Mobile First Impression" value={audit.mobile_first_impression} />}
+      {audit?.lead_path_issue && <FieldBlock label="Lead Path Issue" value={audit.lead_path_issue} />}
+      {audit?.ad_readiness && <FieldBlock label="Ad Readiness" value={audit.ad_readiness} />}
+      {audit?.what_to_fix_first && <FieldBlock label="What To Fix First" value={audit.what_to_fix_first} />}
+      {website?.website_status && <FieldBlock label="Website Status" value={website.website_status} />}
+      {website?.primary_conversion_issue && <FieldBlock label="Primary Conversion Issue" value={website.primary_conversion_issue} />}
+      {website?.mobile_or_cta_issue && <FieldBlock label="Mobile Or CTA Issue" value={website.mobile_or_cta_issue} />}
+      {website?.service_page_issue && <FieldBlock label="Service Page Issue" value={website.service_page_issue} />}
+      {website?.proof_or_gallery_issue && <FieldBlock label="Proof Or Gallery Issue" value={website.proof_or_gallery_issue} />}
+      {website?.website_social_connection_issue && <FieldBlock label="Website/Social Connection Issue" value={website.website_social_connection_issue} />}
+      {website?.recommended_website_fix && <FieldBlock label="Recommended Website Fix" value={website.recommended_website_fix} />}
+    </div>
+  );
+}
+
+function ApexFollowUpPanel({ apex }: { apex: ApexDeliveryData }) {
+  const sequence = apex.follow_up_sequence;
+  if (!sequence) return null;
+
+  const rows = [
+    ['Touch 1 Observation Email', sequence.touch_1_observation_email],
+    ['Touch 2 Custom Video Or Mockup', sequence.touch_2_custom_video_or_mockup],
+    ['Touch 3 Social Touch', sequence.touch_3_social_touch],
+    ['Touch 4 Proof Follow-Up', sequence.touch_4_proof_followup],
+    ['Touch 5 Permission Breakup', sequence.touch_5_permission_breakup],
+    ['Call Walkthrough Angle', sequence.call_walkthrough_angle],
+    ['Starter Package Recommendation', sequence.starter_package_recommendation],
+  ].filter((row): row is [string, string] => Boolean(row[1]));
+
+  if (rows.length === 0) return null;
+
+  return (
+    <div className="space-y-3 pt-3" style={{ borderTop: '1px solid var(--color-divider)' }}>
+      <div className="text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>
+        Follow-Up Sequence
+      </div>
+      {rows.map(([label, value]) => (
+        <FieldBlock key={label} label={label} value={value} />
+      ))}
+    </div>
+  );
+}
+
 function ResinateStrategyPanel({ flooring }: { flooring: ResinateFlooringData }) {
   const hasFlooringData = Boolean(
     flooring.buyer_type ||
@@ -732,6 +810,20 @@ function ResinateStrategyPanel({ flooring }: { flooring: ResinateFlooringData })
         </p>
       )}
     </div>
+  );
+}
+
+function hasApexDetailData(apex: ApexDeliveryData) {
+  return Boolean(
+    apex.trigger_reason ||
+      apex.personalized_observation ||
+      apex.business_implication ||
+      apex.proof_asset_type ||
+      apex.what_to_test_first ||
+      apex.measurement_hypothesis ||
+      (apex.first_impression_audit && Object.values(apex.first_impression_audit).some(Boolean)) ||
+      (apex.website_audit && Object.values(apex.website_audit).some(Boolean)) ||
+      (apex.follow_up_sequence && Object.values(apex.follow_up_sequence).some(Boolean))
   );
 }
 

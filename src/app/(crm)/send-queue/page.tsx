@@ -410,7 +410,7 @@ export default function SendQueuePage() {
                           <PreviewField label="Public mockup required" value={yesNo(item.publicMockupRequired)} />
                           <PreviewField label="Public social audit included" value={yesNo(item.publicSocialAuditIncluded)} />
                           <PreviewField label="Public mockup included" value={yesNo(item.publicMockupIncluded)} />
-                          <PreviewField label="Inline Apex brief included" value={yesNo(item.inlineApexBriefIncluded)} />
+                          <PreviewField label="First impression direction included" value={yesNo(item.inlineApexBriefIncluded)} />
                         </>
                       )}
                       {item.senderProfileKey === 'resinate' && (
@@ -566,7 +566,7 @@ export default function SendQueuePage() {
                         }}
                       >
                         <div className="font-medium mb-2" style={{ color: 'var(--color-ink)' }}>
-                          Inline Apex brief included
+                          First impression direction included
                         </div>
                         {item.inlineApexBrief}
                       </div>

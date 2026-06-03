@@ -226,7 +226,8 @@ export default function ImportPage() {
             <Rule label="Source" value="hermes_import" />
             <Rule label="Creates" value="prospect, audit, mockup, and email draft rows" />
             <Rule label="Approval" value="email_ready rows can appear in /approval when email and mockup data exist" />
-            <Rule label="Apex inline" value="apex_delivery_mode inline_apex_brief supports [Inline Apex Brief] without requiring a public mockup or social audit link" />
+            <Rule label="Apex inline" value="apex_delivery_mode inline_apex_brief supports [Inline Apex Brief] as a first-impression direction note without requiring a public mockup or social audit link" />
+            <Rule label="Apex first impression" value="first_impression_audit, trigger_reason, personalized_observation, business_implication, proof_asset_type, what_to_test_first, and follow_up_sequence are stored in concept notes" />
             <Rule label="Resinate" value="campaign_type resinate_flooring creates a commercial surface brief and supports [Flooring Brief Link] or [Inline Flooring Brief]" />
             <p className="rounded-lg p-3 text-xs leading-5" style={{ background: 'var(--color-paper-3)' }}>
               Import never sends Gmail, never scrapes, and never bypasses Telegram approval.
@@ -355,8 +356,14 @@ function CampaignCell({ item }: { item: HermesImportPreview }) {
         <div className="text-xs leading-5" style={{ color: 'var(--color-ink-2)' }}>
           <div>Delivery: {formatDeliveryMode(apex.deliveryMode)}</div>
           <div>Public artifact: {apex.publicArtifactRequired ? 'Required' : 'Not required'}</div>
+          <div>First Impression Data: {apex.firstImpressionData.label.replace(' First Impression Data', '')}</div>
+          <div>Proof Asset: {apex.proofAsset}</div>
+          <div>Email Structure: {apex.emailStructure.label}</div>
           <div>Content/ad data: {apex.contentDataPresent ? 'yes' : 'no'}</div>
           <div>Email has inline brief: {apex.inlineBriefPlaceholderPresent ? 'yes' : 'no'}</div>
+          {apex.emailStructure.missing.length > 0 && (
+            <div>Needs: {apex.emailStructure.missing.join(', ')}</div>
+          )}
         </div>
       </div>
     );
