@@ -3,13 +3,19 @@
 import type { ReactNode } from 'react';
 import {
   ArrowRight,
+  BriefcaseBusiness,
   CalendarDays,
+  Car,
   Coffee,
+  Dumbbell,
+  Hammer,
   HeartHandshake,
+  House,
   MapPin,
   Megaphone,
   Music2,
   Navigation,
+  PawPrint,
   Phone,
   Search,
   ShoppingBag,
@@ -27,7 +33,9 @@ import {
 import type { Audit, Mockup, Prospect } from '@/lib/types';
 import {
   buildPublicMockupUrl,
-  getMockupTemplateVariant,
+  getMockupTemplateSelection,
+  isFoodMockupTemplate,
+  isServiceMockupTemplate,
   type MockupTemplateVariant,
 } from '@/lib/mockup-templates';
 import styles from './PremiumMockupSite.module.css';
@@ -55,7 +63,13 @@ type PhotoRole =
   | 'mission'
   | 'truck'
   | 'service'
-  | 'social';
+  | 'social'
+  | 'project'
+  | 'treatment'
+  | 'vehicle'
+  | 'pet'
+  | 'fitness'
+  | 'office';
 
 type HomepageItem = {
   title: string;
@@ -122,6 +136,7 @@ type SiteContext = {
   issueFixes: IssueFix[];
   visualDirection: string;
   mockupUrl: string;
+  templateReason: string;
 };
 
 export const MOCKUP_VISUAL_RULES = [
@@ -133,6 +148,419 @@ export const MOCKUP_VISUAL_RULES = [
 ] as const;
 
 const VARIANT_CONFIG: Record<MockupTemplateVariant, VariantConfig> = {
+  home_service: {
+    navItems: ['Services', 'Proof', 'Service Area', 'Reviews', 'Request Quote'],
+    primaryCta: 'Request quote',
+    secondaryCta: 'See services',
+    eyebrow: 'Home service website concept',
+    fallbackHeadline: (businessName, city) => `${businessName} can make ${city} service calls easier to start`,
+    fallbackSubheadline: (_businessName, location) =>
+      `A service-first homepage for ${location} customers who need fast service options, proof, service area clarity, and a quote or call path.`,
+    heroPhoto: 'service',
+    heroPhotoLabel: 'Service call and result proof direction',
+    badges: ['Service requests', 'Local proof', 'Reviews', 'Service area', 'Quote path'],
+    offers: [
+      {
+        title: 'Priority service requests',
+        body: 'A direct path for urgent calls, same-day needs, and high-intent quote requests.',
+        label: 'Request',
+        photoRole: 'service',
+      },
+      {
+        title: 'Core service categories',
+        body: 'Service cards organized around what customers are trying to fix or schedule.',
+        label: 'Services',
+        photoRole: 'project',
+      },
+      {
+        title: 'Before and after proof',
+        body: 'Result photos and review snippets placed before the quote decision.',
+        label: 'Proof',
+        photoRole: 'project',
+      },
+      {
+        title: 'Service area clarity',
+        body: 'A practical local coverage section that confirms the customer is in range.',
+        label: 'Areas',
+        photoRole: 'service',
+      },
+    ],
+    storyTitle: (businessName) => `${businessName} leads with the service path, not a generic brochure.`,
+    storyBody: () =>
+      `Services, proof, location coverage, and quote prompts are arranged around the way homeowners decide who to call.`,
+    trustSignals: ['Local service coverage', 'Review proof near the CTA', 'Fast quote or call path'],
+    conversionTitle: 'A fast route from problem to request.',
+    conversionBody: 'Visitors can identify the service, see proof, confirm the service area, then request help without sorting through unrelated content.',
+    conversionSteps: ['Choose service', 'Review proof', 'Confirm area', 'Request quote'],
+    visitTitle: 'Service area and contact details support the quote.',
+    visitBody: 'Coverage, availability, and contact options are treated like conversion content instead of footer details.',
+    contentTitle: 'Service proof becomes repeatable local content.',
+    contentIdeas: ['before and after result', 'seasonal service reminder', 'review highlight', 'service area post'],
+    localSearches: ['home service {city}', 'same day service {city}', 'service quote {city}', 'local repair {city}'],
+    issueFallbacks: [
+      {
+        label: 'Quote path',
+        current: 'Visitors do not get a clear quote or call path early enough.',
+        fix: 'Lead with services, proof, service area, and a repeated quote CTA.',
+        severity: 'high',
+      },
+    ],
+    tone: 'service',
+  },
+  contractor: {
+    navItems: ['Projects', 'Services', 'Process', 'Reviews', 'Get Estimate'],
+    primaryCta: 'Get estimate',
+    secondaryCta: 'View projects',
+    eyebrow: 'Contractor website concept',
+    fallbackHeadline: (businessName, city) => `${businessName} can show ${city} project proof before the estimate ask`,
+    fallbackSubheadline: (_businessName, location) =>
+      `A project-proof contractor homepage for ${location} homeowners comparing scope, past work, reviews, service area, and estimate steps.`,
+    heroPhoto: 'project',
+    heroPhotoLabel: 'Project gallery and before-after direction',
+    badges: ['Project proof', 'Estimate path', 'Scope cards', 'Reviews', 'Service area'],
+    offers: [
+      {
+        title: 'Recent project gallery',
+        body: 'A proof-first section for finished work, before-and-after moments, and scope examples.',
+        label: 'Projects',
+        photoRole: 'project',
+      },
+      {
+        title: 'Services and scope',
+        body: 'Cards that separate project types so homeowners can choose the right estimate path.',
+        label: 'Services',
+        photoRole: 'service',
+      },
+      {
+        title: 'Estimate path',
+        body: 'A short sequence that explains what happens after a homeowner reaches out.',
+        label: 'Quote',
+        photoRole: 'office',
+      },
+      {
+        title: 'Reviews and trust',
+        body: 'Local trust signals placed near the project proof instead of buried near the footer.',
+        label: 'Proof',
+        photoRole: 'project',
+      },
+    ],
+    storyTitle: (businessName) => `${businessName} can let the work sell before the form appears.`,
+    storyBody: () =>
+      `The page opens with visible projects, clear service scope, estimate expectations, and review proof for homeowners making a larger decision.`,
+    trustSignals: ['Project gallery before the form', 'Clear estimate process', 'Local homeowner proof'],
+    conversionTitle: 'Project proof first, estimate second.',
+    conversionBody: 'A contractor lead can see relevant work, understand scope, learn the process, and request an estimate from one focused path.',
+    conversionSteps: ['See projects', 'Choose scope', 'Review process', 'Get estimate'],
+    visitTitle: 'Service area and project fit stay visible.',
+    visitBody: 'The concept confirms location coverage, explains estimate timing, and keeps project types easy to compare.',
+    contentTitle: 'Project proof becomes the local growth engine.',
+    contentIdeas: ['recent project story', 'before and after carousel', 'estimate process post', 'service area proof'],
+    localSearches: ['contractor {city}', 'remodeling contractor {city}', 'get estimate {city}', 'project gallery {city}'],
+    issueFallbacks: [
+      {
+        label: 'Project proof',
+        current: 'Project examples are not strong enough before the estimate request.',
+        fix: 'Move project gallery, scope cards, and reviews into the first decision path.',
+        severity: 'high',
+      },
+    ],
+    tone: 'service',
+  },
+  medical_aesthetics: {
+    navItems: ['Treatments', 'Providers', 'What To Expect', 'Reviews', 'Book Consultation'],
+    primaryCta: 'Book consultation',
+    secondaryCta: 'View treatments',
+    eyebrow: 'Medical aesthetics website concept',
+    fallbackHeadline: (businessName, city) => `${businessName} can make ${city} consultations feel clearer and more trustworthy`,
+    fallbackSubheadline: (_businessName, location) =>
+      `A conservative consultation-first homepage for ${location} clients comparing treatments, provider trust, expectations, reviews, and booking steps.`,
+    heroPhoto: 'treatment',
+    heroPhotoLabel: 'Treatment room and provider trust direction',
+    badges: ['Treatments', 'Provider trust', 'Consultation', 'Reviews', 'Booking'],
+    offers: [
+      {
+        title: 'Treatment overview',
+        body: 'Treatment cards explain options without unsupported claims or overpromising outcomes.',
+        label: 'Treatments',
+        photoRole: 'treatment',
+      },
+      {
+        title: 'Consultation expectations',
+        body: 'A calm section that explains how new clients start and what happens next.',
+        label: 'Consult',
+        photoRole: 'office',
+      },
+      {
+        title: 'Provider trust',
+        body: 'Team, training, and local credibility are surfaced before the booking CTA.',
+        label: 'Trust',
+        photoRole: 'treatment',
+      },
+      {
+        title: 'Reviews and comfort cues',
+        body: 'Testimonials and experience notes support confidence without making medical guarantees.',
+        label: 'Proof',
+        photoRole: 'office',
+      },
+    ],
+    storyTitle: (businessName) => `${businessName} can build trust before asking for the consultation.`,
+    storyBody: () =>
+      `Treatments, provider credibility, what-to-expect content, and a booking CTA are arranged with careful, compliant language.`,
+    trustSignals: ['Provider-first trust section', 'Clear consultation expectations', 'Review proof without unsupported claims'],
+    conversionTitle: 'A clear consultation path.',
+    conversionBody: 'Clients can review treatments, understand what to expect, see provider trust, and book a consultation with less uncertainty.',
+    conversionSteps: ['Explore treatments', 'Meet provider', 'Know what to expect', 'Book consultation'],
+    visitTitle: 'Booking details stay calm and clear.',
+    visitBody: 'Location, consultation expectations, and contact options are presented as reassurance, not pressure.',
+    contentTitle: 'Education content supports consultation intent.',
+    contentIdeas: ['treatment education post', 'provider introduction', 'consultation FAQ', 'review highlight'],
+    localSearches: ['med spa {city}', 'aesthetics {city}', 'facial treatment {city}', 'consultation {city}'],
+    issueFallbacks: [
+      {
+        label: 'Consultation trust',
+        current: 'Treatment interest is not supported by enough provider trust before booking.',
+        fix: 'Lead with treatments, provider credibility, expectations, and a conservative booking CTA.',
+        severity: 'high',
+      },
+    ],
+    tone: 'luxury',
+  },
+  auto_service: {
+    navItems: ['Services', 'Before/After', 'Packages', 'Reviews', 'Book Detail'],
+    primaryCta: 'Book detail',
+    secondaryCta: 'Compare packages',
+    eyebrow: 'Auto service website concept',
+    fallbackHeadline: (businessName, city) => `${businessName} can turn ${city} vehicle transformations into bookings`,
+    fallbackSubheadline: (_businessName, location) =>
+      `A transformation-first homepage for ${location} drivers comparing services, before-and-after proof, packages, reviews, and booking steps.`,
+    heroPhoto: 'vehicle',
+    heroPhotoLabel: 'Vehicle transformation photo direction',
+    badges: ['Before/after', 'Packages', 'Booking', 'Reviews', 'Service area'],
+    offers: [
+      {
+        title: 'Before and after results',
+        body: 'Transformation proof gives visitors a reason to choose the service before comparing price.',
+        label: 'Results',
+        photoRole: 'vehicle',
+      },
+      {
+        title: 'Packages and services',
+        body: 'Package cards help drivers choose the right level of service without confusion.',
+        label: 'Packages',
+        photoRole: 'service',
+      },
+      {
+        title: 'Detailing process',
+        body: 'A simple process section explains drop-off, mobile service, timing, and care steps.',
+        label: 'Process',
+        photoRole: 'vehicle',
+      },
+      {
+        title: 'Reviews and local proof',
+        body: 'Trust signals sit beside the booking path so proof and action stay connected.',
+        label: 'Reviews',
+        photoRole: 'office',
+      },
+    ],
+    storyTitle: (businessName) => `${businessName} can make the result obvious before the booking decision.`,
+    storyBody: () =>
+      `Before-and-after proof, package clarity, process expectations, and reviews work together for drivers choosing a detail or coating.`,
+    trustSignals: ['Transformation proof', 'Package clarity', 'Local booking path'],
+    conversionTitle: 'Show the result, then the package.',
+    conversionBody: 'Visitors see transformations, compare services, understand the process, and book the detail from one focused path.',
+    conversionSteps: ['See results', 'Compare packages', 'Review process', 'Book detail'],
+    visitTitle: 'Booking and service area stay close to the packages.',
+    visitBody: 'Location, availability, and booking cues are placed where drivers are already comparing services.',
+    contentTitle: 'Transformation proof can feed every channel.',
+    contentIdeas: ['before and after reel', 'package explainer', 'ceramic coating FAQ', 'review highlight'],
+    localSearches: ['auto detailing {city}', 'ceramic coating {city}', 'mobile detail {city}', 'car wash {city}'],
+    issueFallbacks: [
+      {
+        label: 'Package clarity',
+        current: 'Service packages are not easy enough to compare before booking.',
+        fix: 'Pair before-and-after proof with package cards and one booking CTA.',
+        severity: 'high',
+      },
+    ],
+    tone: 'mobile',
+  },
+  pet_service: {
+    navItems: ['Services', 'Grooming', 'Reviews', 'Location', 'Book Appointment'],
+    primaryCta: 'Book appointment',
+    secondaryCta: 'View grooming services',
+    eyebrow: 'Pet service website concept',
+    fallbackHeadline: (businessName, city) => `${businessName} can make ${city} grooming appointments feel easy and trusted`,
+    fallbackSubheadline: (_businessName, location) =>
+      `A warm booking-first homepage for ${location} pet owners comparing grooming services, safety cues, happy-pet proof, location, and appointment steps.`,
+    heroPhoto: 'pet',
+    heroPhotoLabel: 'Happy pet grooming proof direction',
+    badges: ['Grooming', 'Safety', 'Reviews', 'Location', 'Appointments'],
+    offers: [
+      {
+        title: 'Grooming services',
+        body: 'Service cards make baths, trims, add-ons, and appointment types easy to choose.',
+        label: 'Grooming',
+        photoRole: 'pet',
+      },
+      {
+        title: 'Trust and safety',
+        body: 'Experience, handling style, and pet comfort cues sit before the booking ask.',
+        label: 'Safety',
+        photoRole: 'office',
+      },
+      {
+        title: 'Happy-pet proof',
+        body: 'Before-and-after or finished-groom photos create confidence for new pet owners.',
+        label: 'Proof',
+        photoRole: 'pet',
+      },
+      {
+        title: 'Location and contact',
+        body: 'Hours, service area, and booking instructions stay simple and visible.',
+        label: 'Book',
+        photoRole: 'service',
+      },
+    ],
+    storyTitle: (businessName) => `${businessName} can make grooming feel safe before asking for the appointment.`,
+    storyBody: () =>
+      `Grooming services, comfort cues, happy-pet proof, location details, and a booking CTA create a warmer decision path for pet owners.`,
+    trustSignals: ['Comfort-focused grooming path', 'Happy-pet proof', 'Clear appointment CTA'],
+    conversionTitle: 'A warmer path from service to appointment.',
+    conversionBody: 'Pet owners can choose the grooming service, see safety and proof cues, confirm location, and book without a restaurant-style flow.',
+    conversionSteps: ['Choose grooming service', 'Review safety cues', 'See proof', 'Book appointment'],
+    visitTitle: 'Location, hours, and booking details stay together.',
+    visitBody: 'The concept keeps practical appointment details close to the services pet owners are considering.',
+    contentTitle: 'Finished grooms become trust-building content.',
+    contentIdeas: ['happy-pet photo', 'grooming package spotlight', 'comfort and safety post', 'appointment reminder'],
+    localSearches: ['pet grooming {city}', 'dog grooming {city}', 'mobile grooming {city}', 'pet groomer {city}'],
+    issueFallbacks: [
+      {
+        label: 'Booking confidence',
+        current: 'The appointment path does not show enough grooming proof and trust before the ask.',
+        fix: 'Lead with grooming services, safety cues, happy-pet proof, and a booking CTA.',
+        severity: 'high',
+      },
+    ],
+    tone: 'mission',
+  },
+  fitness_studio: {
+    navItems: ['Classes', 'Schedule', 'Coaches', 'Community', 'Start Trial'],
+    primaryCta: 'Start trial',
+    secondaryCta: 'View schedule',
+    eyebrow: 'Fitness studio website concept',
+    fallbackHeadline: (businessName, city) => `${businessName} can make ${city} feel ready to try the first class`,
+    fallbackSubheadline: (_businessName, location) =>
+      `A community-first studio homepage for ${location} members comparing classes, schedules, coaches, proof, and an intro offer.`,
+    heroPhoto: 'fitness',
+    heroPhotoLabel: 'Class atmosphere and community direction',
+    badges: ['Classes', 'Schedule', 'Coaches', 'Community', 'Trial'],
+    offers: [
+      {
+        title: 'Classes and programs',
+        body: 'Program cards help new members understand the best first class or training path.',
+        label: 'Classes',
+        photoRole: 'fitness',
+      },
+      {
+        title: 'Schedule and intro offer',
+        body: 'The schedule is paired with a simple trial or booking CTA.',
+        label: 'Schedule',
+        photoRole: 'office',
+      },
+      {
+        title: 'Coach trust',
+        body: 'Trainer experience and member support cues appear before the trial decision.',
+        label: 'Coaches',
+        photoRole: 'fitness',
+      },
+      {
+        title: 'Community proof',
+        body: 'Member stories and atmosphere help the studio feel welcoming.',
+        label: 'Community',
+        photoRole: 'social',
+      },
+    ],
+    storyTitle: (businessName) => `${businessName} can make the first class feel less intimidating.`,
+    storyBody: () =>
+      `Classes, coach trust, schedule clarity, community proof, and a trial CTA are organized around a new member's first decision.`,
+    trustSignals: ['Coach-led program clarity', 'Community proof', 'Intro offer path'],
+    conversionTitle: 'Class fit before trial sign-up.',
+    conversionBody: 'Visitors can understand the programs, see the schedule, trust the coaches, and start a trial without guessing.',
+    conversionSteps: ['Choose class', 'Check schedule', 'Meet coaches', 'Start trial'],
+    visitTitle: 'Schedule and studio details support the first visit.',
+    visitBody: 'Location, intro offer, and schedule cues stay close to the classes people are evaluating.',
+    contentTitle: 'Community content becomes a trial path.',
+    contentIdeas: ['class highlight', 'coach tip', 'member story', 'trial offer reminder'],
+    localSearches: ['fitness studio {city}', 'personal training {city}', 'yoga studio {city}', 'pilates {city}'],
+    issueFallbacks: [
+      {
+        label: 'Trial path',
+        current: 'Classes and schedule are not connected to a clear first-trial CTA.',
+        fix: 'Pair class cards, schedule cues, coach trust, and a Start Trial action.',
+        severity: 'high',
+      },
+    ],
+    tone: 'service',
+  },
+  professional_service: {
+    navItems: ['Services', 'About', 'Proof', 'Process', 'Contact'],
+    primaryCta: 'Request consultation',
+    secondaryCta: 'View services',
+    eyebrow: 'Professional service website concept',
+    fallbackHeadline: (businessName, city) => `${businessName} can make ${city} expertise easier to understand`,
+    fallbackSubheadline: (_businessName, location) =>
+      `An expertise-first homepage for ${location} clients comparing services, credentials, proof, process, and a consultation path.`,
+    heroPhoto: 'office',
+    heroPhotoLabel: 'Professional trust and consultation direction',
+    badges: ['Services', 'Expertise', 'Proof', 'Process', 'Consultation'],
+    offers: [
+      {
+        title: 'Service clarity',
+        body: 'Service cards explain who each offer is for and when to inquire.',
+        label: 'Services',
+        photoRole: 'office',
+      },
+      {
+        title: 'Expertise and trust',
+        body: 'Credentials, team context, and client proof are surfaced before the contact ask.',
+        label: 'Trust',
+        photoRole: 'service',
+      },
+      {
+        title: 'Consultation path',
+        body: 'A simple first-step section explains what happens after someone reaches out.',
+        label: 'Process',
+        photoRole: 'office',
+      },
+      {
+        title: 'Proof and testimonials',
+        body: 'Reviews or outcomes support confidence without cluttering the first screen.',
+        label: 'Proof',
+        photoRole: 'social',
+      },
+    ],
+    storyTitle: (businessName) => `${businessName} can clarify expertise before the contact form.`,
+    storyBody: () =>
+      `Services, credentials, proof, process, and a consultation CTA create a professional path for higher-trust decisions.`,
+    trustSignals: ['Expertise before contact', 'Clear process', 'Proof near consultation CTA'],
+    conversionTitle: 'Clarity before consultation.',
+    conversionBody: 'Prospects can understand services, trust the expertise, review the process, and request a consultation from one path.',
+    conversionSteps: ['Review services', 'Check expertise', 'Understand process', 'Request consultation'],
+    visitTitle: 'Contact details support the consultation path.',
+    visitBody: 'Location, availability, and inquiry details stay connected to services and process expectations.',
+    contentTitle: 'Expertise content supports inquiry quality.',
+    contentIdeas: ['service explainer', 'client question answer', 'process overview', 'testimonial highlight'],
+    localSearches: ['professional service {city}', 'consultant {city}', 'advisor {city}', 'consultation {city}'],
+    issueFallbacks: [
+      {
+        label: 'Service clarity',
+        current: 'Prospects do not get a clear services-and-process path before contacting.',
+        fix: 'Lead with service clarity, expertise proof, process, and a consultation CTA.',
+        severity: 'high',
+      },
+    ],
+    tone: 'service',
+  },
   coffee_shop: {
     navItems: ['Menu', 'Order', 'Visit', 'Community', 'Loyalty'],
     primaryCta: 'See the menu',
@@ -582,7 +1010,13 @@ function buildSiteContext(mockup: Mockup, prospect: PublicProspect | null, audit
   const niche = prospect?.niche || 'local business';
   const city = prospect?.city || 'your area';
   const location = [prospect?.city, prospect?.state].filter(Boolean).join(', ') || 'your area';
-  const variant = getMockupTemplateVariant(niche);
+  const selection = getMockupTemplateSelection({
+    businessName,
+    niche,
+    fields: rich as Record<string, unknown>,
+    text: [audit?.main_problem, audit?.conversion_opportunity, audit?.recommended_offer, audit?.mockup_angle, audit?.audit_notes],
+  });
+  const variant = selection.variant;
   const config = VARIANT_CONFIG[variant];
   const headline = cleanText(mockup.hero_headline) || config.fallbackHeadline(businessName, city);
   const subheadline =
@@ -592,7 +1026,7 @@ function buildSiteContext(mockup: Mockup, prospect: PublicProspect | null, audit
   const primaryCta = cleanText(mockup.primary_cta) || config.primaryCta;
   const navItems = mergeText(rich.proposed_site_nav, config.navItems, [], 6);
   const richOffers = cleanRichList(rich.menu_or_offer_items);
-  const offers = mergeOfferItems(richOffers, config.offers);
+  const offers = mergeOfferItems(richOffers, config.offers, variant);
   const trustSignals = mergeText(rich.trust_signals, deriveTrustSignals(audit), config.trustSignals, 5);
   const conversionSteps = deriveConversionSteps(rich.cta_strategy, config.conversionSteps);
   const contentIdeas = mergeText(cleanRichList(rich.content_strategy_angle), rich.homepage_sections, config.contentIdeas, 5);
@@ -631,6 +1065,7 @@ function buildSiteContext(mockup: Mockup, prospect: PublicProspect | null, audit
     issueFixes,
     visualDirection,
     mockupUrl: buildPublicMockupUrl(mockup.slug),
+    templateReason: selection.reason,
   };
 }
 
@@ -777,7 +1212,7 @@ function MenuOfferSection({ context }: { context: SiteContext }) {
   return (
     <section id="menu" className={styles.menuSection}>
       <div className={styles.menuLead}>
-        <p>{context.variant === 'local_service' ? 'Service highlights' : 'Menu highlights'}</p>
+        <p>{offerSectionEyebrow(context)}</p>
         <h2>{menuTitle(context)}</h2>
         <span>{menuLeadBody(context)}</span>
       </div>
@@ -803,7 +1238,7 @@ function VisitSection({ context }: { context: SiteContext }) {
   return (
     <section id="visit" className={styles.visitSection}>
       <div className={styles.visitCopy}>
-        <p>{context.variant === 'food_truck' ? 'Location schedule' : 'Plan your visit'}</p>
+        <p>{visitSectionEyebrow(context)}</p>
         <h2>{context.config.visitTitle}</h2>
         <span>{context.config.visitBody}</span>
         <div className={styles.visitActions}>
@@ -948,21 +1383,43 @@ function PhotoCard({ item }: { item: HomepageItem }) {
   );
 }
 
-function mergeOfferItems(titles: string[], fallback: HomepageItem[]) {
-  if (titles.length === 0) return fallback;
+function mergeOfferItems(titles: string[], fallback: HomepageItem[], variant: MockupTemplateVariant) {
+  const usableTitles = isFoodMockupTemplate(variant) ? titles : titles.filter((title) => !isFoodOnlyOffer(title));
+  if (usableTitles.length === 0) return fallback;
   const roles = fallback.map((item) => item.photoRole);
   const labels = fallback.map((item) => item.label);
 
-  return titles.slice(0, 6).map((title, index) => ({
+  return usableTitles.slice(0, 6).map((title, index) => ({
     title,
-    body: offerBody(title, fallback[index]?.body),
+    body: offerBody(title, fallback[index]?.body, variant),
     label: labels[index] || 'Featured',
     photoRole: roles[index] || fallback[index % fallback.length]?.photoRole || 'dish',
   }));
 }
 
-function offerBody(title: string, fallback?: string) {
+function offerBody(title: string, fallback: string | undefined, variant: MockupTemplateVariant) {
   const lower = title.toLowerCase();
+  if (isServiceMockupTemplate(variant)) {
+    if (/project|gallery|before|after|result|portfolio/.test(lower)) {
+      return 'A proof card that shows real outcomes before asking for the next step.';
+    }
+    if (/treatment|facial|skin|botox|filler|laser|inject/.test(lower)) {
+      return 'A treatment card framed around education, expectations, and booking clarity.';
+    }
+    if (/groom|bath|trim|pet|dog/.test(lower)) {
+      return 'A grooming card that helps pet owners choose an appointment type with confidence.';
+    }
+    if (/package|detail|coating|wash|vehicle|car/.test(lower)) {
+      return 'A package card that pairs transformation proof with an easy booking path.';
+    }
+    if (/class|training|coach|schedule|trial/.test(lower)) {
+      return 'A program card that connects class fit, schedule, and first-step CTA.';
+    }
+    if (/service|quote|repair|estimate|consult|appointment|book/.test(lower)) {
+      return 'A service card that routes high-intent visitors toward the right request path.';
+    }
+    return fallback || 'A service-business section that helps visitors choose the next step faster.';
+  }
   if (/espresso|latte|coffee|cold brew|drink/.test(lower)) {
     return 'A visual menu card that makes the first order feel obvious.';
   }
@@ -982,6 +1439,12 @@ function offerBody(title: string, fallback?: string) {
     return 'A service card that routes high-intent visitors toward a quote request.';
   }
   return fallback || 'A homepage-ready feature that helps visitors choose faster.';
+}
+
+function isFoodOnlyOffer(title: string) {
+  return /\b(menu|dish|dishes|order|reservation|reserve|happy hour|catering|gift card|appetizer|lunch|dinner|drink|beer|wine|cocktail)\b/i.test(
+    title
+  );
 }
 
 function deriveTrustSignals(audit?: PublicAudit | null) {
@@ -1123,6 +1586,13 @@ function cleanText(value: string | null | undefined) {
 }
 
 function statusTitle(context: SiteContext) {
+  if (context.variant === 'contractor') return 'Project proof visible';
+  if (context.variant === 'home_service') return 'Service request path ready';
+  if (context.variant === 'medical_aesthetics') return 'Consultation trust path';
+  if (context.variant === 'auto_service') return 'Transformation proof visible';
+  if (context.variant === 'pet_service') return 'Grooming booking path';
+  if (context.variant === 'fitness_studio') return 'Trial path visible';
+  if (context.variant === 'professional_service') return 'Expertise path clear';
   if (context.variant === 'food_truck') return 'Route-first homepage';
   if (context.variant === 'local_service') return 'Quote path visible';
   if (context.variant === 'premium_dining') return 'Reservation path ready';
@@ -1132,6 +1602,13 @@ function statusTitle(context: SiteContext) {
 }
 
 function statusBody(context: SiteContext) {
+  if (context.variant === 'contractor') return 'Projects, services, process, reviews, and estimate CTA stay connected.';
+  if (context.variant === 'home_service') return 'Services, proof, service area, reviews, and quote CTA stay connected.';
+  if (context.variant === 'medical_aesthetics') return 'Treatments, provider trust, expectations, and consultation booking stay connected.';
+  if (context.variant === 'auto_service') return 'Before-and-after proof, packages, process, and booking stay connected.';
+  if (context.variant === 'pet_service') return 'Grooming services, safety cues, proof, location, and booking stay connected.';
+  if (context.variant === 'fitness_studio') return 'Classes, schedule, coaches, community, and intro offer stay connected.';
+  if (context.variant === 'professional_service') return 'Services, expertise, proof, process, and contact path stay connected.';
   if (context.variant === 'food_truck') return 'Location, schedule, catering, and events stay together.';
   if (context.variant === 'local_service') return 'Services, proof, areas, and quote CTA stay connected.';
   if (context.variant === 'premium_dining') return 'Menu, occasion, and booking path stay above the fold.';
@@ -1141,6 +1618,13 @@ function statusBody(context: SiteContext) {
 }
 
 function statusDetail(context: SiteContext) {
+  if (context.variant === 'contractor') return `Project fit and estimate path for ${context.city}`;
+  if (context.variant === 'home_service') return `Service area and quote path for ${context.city}`;
+  if (context.variant === 'medical_aesthetics') return `Treatments and consultation path for ${context.city}`;
+  if (context.variant === 'auto_service') return `Packages and booking for ${context.city}`;
+  if (context.variant === 'pet_service') return `Grooming appointments for ${context.city}`;
+  if (context.variant === 'fitness_studio') return `Classes and trial path for ${context.city}`;
+  if (context.variant === 'professional_service') return `Consultation path for ${context.city}`;
   if (context.variant === 'food_truck') return `Next stop and catering for ${context.city}`;
   if (context.variant === 'local_service') return `Service area: ${context.city} and nearby`;
   if (context.variant === 'premium_dining') return `Private dining, gifts, and reservations`;
@@ -1150,6 +1634,13 @@ function statusDetail(context: SiteContext) {
 }
 
 function primaryPathLabel(context: SiteContext) {
+  if (context.variant === 'contractor') return 'Estimate path';
+  if (context.variant === 'home_service') return 'Service request path';
+  if (context.variant === 'medical_aesthetics') return 'Consultation path';
+  if (context.variant === 'auto_service') return 'Booking path';
+  if (context.variant === 'pet_service') return 'Appointment path';
+  if (context.variant === 'fitness_studio') return 'Trial path';
+  if (context.variant === 'professional_service') return 'Inquiry path';
   if (context.variant === 'food_truck') return 'Plan the stop';
   if (context.variant === 'local_service') return 'Book the work';
   if (context.variant === 'premium_dining') return 'Reserve the occasion';
@@ -1159,6 +1650,13 @@ function primaryPathLabel(context: SiteContext) {
 }
 
 function storyLabel(context: SiteContext) {
+  if (context.variant === 'contractor') return 'Projects and trust';
+  if (context.variant === 'home_service') return 'Service proof';
+  if (context.variant === 'medical_aesthetics') return 'Provider trust';
+  if (context.variant === 'auto_service') return 'Results and process';
+  if (context.variant === 'pet_service') return 'Safety and comfort';
+  if (context.variant === 'fitness_studio') return 'Coaches and community';
+  if (context.variant === 'professional_service') return 'Expertise and process';
   if (context.variant === 'local_service') return 'Proof and promise';
   if (context.variant === 'nonprofit_cafe') return 'Mission and welcome';
   if (context.variant === 'food_truck') return 'Route and flavor';
@@ -1187,6 +1685,13 @@ function positiveVisualDirection(value: string | null | undefined) {
 }
 
 function experienceEyebrow(context: SiteContext) {
+  if (context.variant === 'contractor') return 'Project proof';
+  if (context.variant === 'home_service') return 'Service paths';
+  if (context.variant === 'medical_aesthetics') return 'Treatments and trust';
+  if (context.variant === 'auto_service') return 'Before and after';
+  if (context.variant === 'pet_service') return 'Grooming path';
+  if (context.variant === 'fitness_studio') return 'Classes and community';
+  if (context.variant === 'professional_service') return 'Service clarity';
   if (context.variant === 'local_service') return 'Service paths';
   if (context.variant === 'food_truck') return 'Route and booking';
   if (context.variant === 'nonprofit_cafe') return 'Ways to participate';
@@ -1194,6 +1699,13 @@ function experienceEyebrow(context: SiteContext) {
 }
 
 function experienceTitle(context: SiteContext) {
+  if (context.variant === 'contractor') return 'Projects, scope, and proof arranged for estimate intent.';
+  if (context.variant === 'home_service') return 'Service choices organized around the reason someone is calling.';
+  if (context.variant === 'medical_aesthetics') return 'Treatments framed with trust and consultation clarity.';
+  if (context.variant === 'auto_service') return 'Results and packages that make booking easier.';
+  if (context.variant === 'pet_service') return 'Grooming services with comfort and proof up front.';
+  if (context.variant === 'fitness_studio') return 'Classes, schedule, and coaches built for the first trial.';
+  if (context.variant === 'professional_service') return 'Services and expertise made easy to compare.';
   if (context.variant === 'coffee_shop') return `A few reasons ${context.city} comes in for coffee.`;
   if (context.variant === 'premium_dining') return 'Occasions worth reserving for.';
   if (context.variant === 'bar_grill') return 'What makes tonight feel worth the trip.';
@@ -1203,7 +1715,26 @@ function experienceTitle(context: SiteContext) {
   return 'The homepage starts with what guests actually choose.';
 }
 
+function offerSectionEyebrow(context: SiteContext) {
+  if (context.variant === 'contractor') return 'Services and project types';
+  if (context.variant === 'home_service') return 'Service cards';
+  if (context.variant === 'medical_aesthetics') return 'Treatment cards';
+  if (context.variant === 'auto_service') return 'Packages and services';
+  if (context.variant === 'pet_service') return 'Grooming services';
+  if (context.variant === 'fitness_studio') return 'Classes and programs';
+  if (context.variant === 'professional_service') return 'Service clarity';
+  if (context.variant === 'local_service') return 'Service highlights';
+  return 'Menu highlights';
+}
+
 function menuTitle(context: SiteContext) {
+  if (context.variant === 'contractor') return 'Project types and service scope, not a generic list.';
+  if (context.variant === 'home_service') return 'Services presented around the quote or call decision.';
+  if (context.variant === 'medical_aesthetics') return 'Treatment options explained with trust and restraint.';
+  if (context.variant === 'auto_service') return 'Packages paired with transformation proof.';
+  if (context.variant === 'pet_service') return 'Grooming options and booking cues in one place.';
+  if (context.variant === 'fitness_studio') return 'Classes and intro paths built for new members.';
+  if (context.variant === 'professional_service') return 'Services, proof, and inquiry fit made clear.';
   if (context.variant === 'local_service') return 'Services presented like decisions, not a list.';
   if (context.variant === 'food_truck') return 'Menu highlights for the next stop.';
   if (context.variant === 'premium_dining') return 'Signature dishes and occasion paths.';
@@ -1219,6 +1750,9 @@ function menuLeadBody(context: SiteContext) {
     .map((offer) => offer.title)
     .join(', ');
 
+  if (isServiceMockupTemplate(context.variant)) {
+    return `Core options like ${titles} are framed as service, appointment, proof, or estimate decisions instead of generic cards.`;
+  }
   if (context.variant === 'local_service') {
     return `Core services like ${titles} are arranged around the quote decision instead of a long utility list.`;
   }
@@ -1231,13 +1765,40 @@ function menuLeadBody(context: SiteContext) {
   return `The page leads with ${titles} so guests see real choices before they decide to order, reserve, or visit.`;
 }
 
+function visitSectionEyebrow(context: SiteContext) {
+  if (context.variant === 'contractor') return 'Service area and estimate';
+  if (context.variant === 'home_service') return 'Service area and contact';
+  if (context.variant === 'medical_aesthetics') return 'Location and consultation';
+  if (context.variant === 'auto_service') return 'Booking and service area';
+  if (context.variant === 'pet_service') return 'Location and appointments';
+  if (context.variant === 'fitness_studio') return 'Schedule and first visit';
+  if (context.variant === 'professional_service') return 'Contact and consultation';
+  if (context.variant === 'local_service') return 'Service area';
+  if (context.variant === 'food_truck') return 'Location schedule';
+  return 'Plan your visit';
+}
+
 function visitHint(context: SiteContext) {
+  if (context.variant === 'contractor') return 'Confirm fit before asking for project details.';
+  if (context.variant === 'home_service') return 'Confirm coverage before the quote request.';
+  if (context.variant === 'medical_aesthetics') return 'Make consultation location and booking feel clear.';
+  if (context.variant === 'auto_service') return 'Show service area before package comparison gets long.';
+  if (context.variant === 'pet_service') return 'Keep appointment details close to grooming services.';
+  if (context.variant === 'fitness_studio') return 'Make the first visit easy to picture.';
+  if (context.variant === 'professional_service') return 'Clarify how to start the inquiry.';
   if (context.variant === 'food_truck') return 'Show the next stop before the menu gets long.';
   if (context.variant === 'local_service') return 'Confirm service area before asking for the quote.';
   return 'Address, hours, and next step stay out of the footer maze.';
 }
 
 function bestTimeLabel(context: SiteContext) {
+  if (context.variant === 'contractor') return 'Estimate timing';
+  if (context.variant === 'home_service') return 'Next available window';
+  if (context.variant === 'medical_aesthetics') return 'Consultation timing';
+  if (context.variant === 'auto_service') return 'Booking window';
+  if (context.variant === 'pet_service') return 'Appointment availability';
+  if (context.variant === 'fitness_studio') return 'First class or intro';
+  if (context.variant === 'professional_service') return 'Consultation availability';
   if (context.variant === 'bar_grill') return 'Tonight or this weekend';
   if (context.variant === 'coffee_shop') return 'Morning, lunch, or afternoon';
   if (context.variant === 'premium_dining') return 'Date night or private dining';
@@ -1247,6 +1808,13 @@ function bestTimeLabel(context: SiteContext) {
 }
 
 function bestTimeBody(context: SiteContext) {
+  if (context.variant === 'contractor') return 'Explain what happens after the estimate request.';
+  if (context.variant === 'home_service') return 'Pair availability with proof and a simple quote CTA.';
+  if (context.variant === 'medical_aesthetics') return 'Keep expectations calm before the booking step.';
+  if (context.variant === 'auto_service') return 'Connect package choice to an easy booking action.';
+  if (context.variant === 'pet_service') return 'Make grooming availability and contact details easy to find.';
+  if (context.variant === 'fitness_studio') return 'Connect the schedule to the lowest-friction first visit.';
+  if (context.variant === 'professional_service') return 'Explain the inquiry step before asking for contact.';
   if (context.variant === 'bar_grill') return 'Give happy hour and events the same visibility as the menu.';
   if (context.variant === 'coffee_shop') return 'Help visitors choose the drink, the pickup, or the place to sit.';
   if (context.variant === 'premium_dining') return 'Route guests by occasion before they compare alternatives.';
@@ -1256,6 +1824,13 @@ function bestTimeBody(context: SiteContext) {
 }
 
 function contactLabel(context: SiteContext) {
+  if (context.variant === 'contractor') return 'Estimate request';
+  if (context.variant === 'home_service') return 'Quote or call';
+  if (context.variant === 'medical_aesthetics') return 'Book consultation';
+  if (context.variant === 'auto_service') return 'Book detail';
+  if (context.variant === 'pet_service') return 'Book appointment';
+  if (context.variant === 'fitness_studio') return 'Start trial';
+  if (context.variant === 'professional_service') return 'Request consultation';
   if (context.variant === 'local_service') return 'Quote request';
   if (context.variant === 'food_truck') return 'Catering inquiry';
   if (context.variant === 'nonprofit_cafe') return 'Support path';
@@ -1270,10 +1845,12 @@ function growthBody(context: SiteContext, idea: string, index: number) {
 }
 
 function navHref(item: string) {
-  if (/menu|service/i.test(item)) return '#menu';
-  if (/visit|location|hour|area|contact/i.test(item)) return '#visit';
-  if (/event|happy|order|reserve|donate|volunteer|book|quote|cater/i.test(item)) return '#primary-action';
-  if (/story|community|mission|review|award|result|loyal/i.test(item)) return '#content';
+  if (/menu|service|treatment|class|project|package|grooming/i.test(item)) return '#menu';
+  if (/visit|location|hour|area|contact|schedule/i.test(item)) return '#visit';
+  if (/event|happy|order|reserve|donate|volunteer|book|quote|estimate|consultation|trial|cater/i.test(item)) {
+    return '#primary-action';
+  }
+  if (/story|community|mission|review|award|result|loyal|proof|provider|coach|about|process/i.test(item)) return '#content';
   return '#menu';
 }
 
@@ -1297,6 +1874,12 @@ function photoLabel(role: PhotoRole) {
     truck: 'Location schedule photo',
     service: 'Project proof photo',
     social: 'Social content preview',
+    project: 'Project and before-after proof',
+    treatment: 'Treatment and provider trust photo',
+    vehicle: 'Vehicle transformation photo',
+    pet: 'Happy pet grooming photo',
+    fitness: 'Class and community photo',
+    office: 'Consultation and process photo',
   };
   return labels[role];
 }
@@ -1312,13 +1895,20 @@ function businessInitials(name: string) {
 
 function IconByVariant({ variant }: { variant: MockupTemplateVariant }) {
   const icons: Record<MockupTemplateVariant, ReactNode> = {
+    home_service: <House size={18} />,
+    contractor: <Hammer size={18} />,
+    medical_aesthetics: <Sparkles size={18} />,
+    auto_service: <Car size={18} />,
+    pet_service: <PawPrint size={18} />,
+    fitness_studio: <Dumbbell size={18} />,
+    professional_service: <BriefcaseBusiness size={18} />,
+    local_service: <Wrench size={18} />,
     coffee_shop: <Coffee size={18} />,
     restaurant: <Utensils size={18} />,
     bar_grill: <Music2 size={18} />,
     premium_dining: <Sparkles size={18} />,
     nonprofit_cafe: <HeartHandshake size={18} />,
     food_truck: <Navigation size={18} />,
-    local_service: <Wrench size={18} />,
   };
   return icons[variant];
 }

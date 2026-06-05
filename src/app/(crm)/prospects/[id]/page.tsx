@@ -34,7 +34,13 @@ import {
   type ApexDeliveryData,
 } from '@/lib/apex-delivery-data';
 import { parseMockupConceptNotes, type RichMockupData } from '@/lib/mockup-rich-data';
-import { buildPublicFlooringAuditUrl, buildPublicMockupUrl, buildPublicSocialAuditUrl, getMockupTemplateVariant, getMockupVariantLabel } from '@/lib/mockup-templates';
+import {
+  buildPublicFlooringAuditUrl,
+  buildPublicMockupUrl,
+  buildPublicSocialAuditUrl,
+  getMockupTemplateSelection,
+  getMockupVariantLabel,
+} from '@/lib/mockup-templates';
 import { slugifyBusinessName } from '@/lib/prospect-intake';
 import {
   buildInlineFlooringBrief,
@@ -124,8 +130,14 @@ export default function ProspectDetailPage({
   const mockupPublicUrl = mockup?.slug ? buildPublicMockupUrl(mockup.slug) : mockup?.mockup_url || null;
   const socialAuditPublicUrl = mockup?.slug ? buildPublicSocialAuditUrl(mockup.slug) : null;
   const flooringAuditPublicUrl = mockup?.slug ? buildPublicFlooringAuditUrl(mockup.slug) : null;
-  const mockupVariant = getMockupTemplateVariant(prospect.niche);
   const mockupStrategy = mockup ? parseMockupConceptNotes(mockup.concept_notes) : null;
+  const mockupTemplateSelection = getMockupTemplateSelection({
+    businessName: prospect.business_name,
+    niche: prospect.niche,
+    fields: mockupStrategy?.rich as Record<string, unknown> | undefined,
+    text: [audit?.main_problem, audit?.conversion_opportunity, audit?.recommended_offer, audit?.mockup_angle, audit?.audit_notes],
+  });
+  const mockupVariant = mockupTemplateSelection.variant;
   const socialAuditStrategy = mockup ? parseSocialAuditConceptNotes(mockup.concept_notes) : {};
   const apexDeliveryStrategy = mockup ? parseApexDeliveryConceptNotes(mockup.concept_notes) : {};
   const resinateStrategy = mockup ? parseResinateConceptNotes(mockup.concept_notes) : {};
@@ -319,6 +331,21 @@ export default function ProspectDetailPage({
                 <div>
                   <span className="text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>Template Variant</span>
                   <div className="text-sm mt-0.5" style={{ color: 'var(--color-ink)' }}>{getMockupVariantLabel(mockupVariant)}</div>
+                  <div className="text-xs mt-1 leading-5" style={{ color: 'var(--color-ink-3)' }}>
+                    {mockupTemplateSelection.reason}
+                  </div>
+                  {mockupTemplateSelection.mismatchWarning && (
+                    <div
+                      className="mt-2 rounded-lg p-2 text-xs leading-5"
+                      style={{
+                        background: 'oklch(75% 0.16 85 / 0.08)',
+                        border: '1px solid oklch(75% 0.16 85 / 0.2)',
+                        color: 'var(--color-warning)',
+                      }}
+                    >
+                      {mockupTemplateSelection.mismatchWarning}
+                    </div>
+                  )}
                 </div>
                 {mockup.hero_headline && (
                   <div>

@@ -24,6 +24,10 @@ import {
   type SocialContentPlan,
 } from './social-audit-data';
 import {
+  getMockupTemplateSelection,
+  type MockupTemplateSelection,
+} from './mockup-templates';
+import {
   getResinateImportSummary,
   hasResinateFlooringData,
   normalizeResinateFlooringData,
@@ -156,6 +160,7 @@ export type HermesImportPreview = {
   errors: string[];
   warnings: string[];
   mockupRichness: MockupRichness;
+  mockupTemplate: MockupTemplateSelection;
   socialAuditRichness: SocialAuditRichness;
   apexDelivery: ApexImportSummary | null;
   resinateFlooring: ResinateImportSummary | null;
@@ -686,6 +691,13 @@ export async function previewHermesImport(records: ProspectIntakeInput[]) {
     const duplicate = duplicateIndexes.has(index);
     const resinateFlooring = getResinateImportSummary(record as Record<string, unknown>, record.email_body);
     const apexDelivery = getApexImportSummary(record as Record<string, unknown>, record.email_body);
+    const mockupTemplate = getMockupTemplateSelection({
+      businessName: record.business_name,
+      niche: record.niche,
+      campaignType: record.campaign_type,
+      fields: record as Record<string, unknown>,
+      text: [record.main_problem, record.conversion_opportunity, record.recommended_offer, record.mockup_angle, record.audit_notes],
+    });
     const resinateWarnings =
       resinateFlooring?.missingFields.map((field) => `Resinate missing ${field}.`) ?? [];
     return {
@@ -701,6 +713,7 @@ export async function previewHermesImport(records: ProspectIntakeInput[]) {
       errors: duplicate ? [...validation.errors, 'Duplicate website_url or public_email detected.'] : validation.errors,
       warnings: [...validation.warnings, ...resinateWarnings],
       mockupRichness: getMockupRichness(record as Record<string, unknown>, hasMockupData(record)),
+      mockupTemplate,
       socialAuditRichness: getSocialAuditRichness(record as Record<string, unknown>),
       apexDelivery,
       resinateFlooring,

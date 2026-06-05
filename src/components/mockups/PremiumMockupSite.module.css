@@ -900,12 +900,28 @@
   grid-template-columns: minmax(0, 1.1fr) repeat(2, minmax(0, 0.85fr));
 }
 
+.variant_contractor .experienceGrid,
+.variant_auto_service .experienceGrid {
+  grid-template-columns: minmax(0, 1.18fr) repeat(2, minmax(0, 0.9fr));
+}
+
+.variant_medical_aesthetics .story,
+.variant_professional_service .story {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.92fr);
+}
+
+.variant_pet_service .menuGrid,
+.variant_fitness_studio .menuGrid {
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+}
+
 .variant_coffee_shop .menuGrid .menuCard:nth-child(even),
 .variant_restaurant .experienceGrid .photoCard:nth-child(2) {
   transform: translateY(24px);
 }
 
 .variant_food_truck .visitPanel,
+.variant_home_service .visitPanel,
 .variant_local_service .visitPanel {
   grid-template-columns: 1fr;
 }
@@ -969,6 +985,36 @@
   --site-photo-b: oklch(70% 0.15 330);
 }
 
+.photo_project {
+  --site-photo-a: oklch(26% 0.06 225);
+  --site-photo-b: oklch(68% 0.13 165);
+}
+
+.photo_treatment {
+  --site-photo-a: oklch(24% 0.04 250);
+  --site-photo-b: oklch(78% 0.1 330);
+}
+
+.photo_vehicle {
+  --site-photo-a: oklch(18% 0.05 245);
+  --site-photo-b: oklch(72% 0.13 210);
+}
+
+.photo_pet {
+  --site-photo-a: oklch(32% 0.06 145);
+  --site-photo-b: oklch(78% 0.13 98);
+}
+
+.photo_fitness {
+  --site-photo-a: oklch(22% 0.07 260);
+  --site-photo-b: oklch(70% 0.16 150);
+}
+
+.photo_office {
+  --site-photo-a: oklch(28% 0.04 225);
+  --site-photo-b: oklch(74% 0.08 210);
+}
+
 @media (max-width: 1020px) {
   .conceptNotice {
     justify-content: flex-start;
@@ -1021,7 +1067,10 @@
   }
 
   .variant_bar_grill .experienceGrid,
+  .variant_contractor .experienceGrid,
+  .variant_auto_service .experienceGrid,
   .variant_food_truck .visitPanel,
+  .variant_home_service .visitPanel,
   .variant_local_service .visitPanel {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1149,7 +1198,10 @@
   .menuGrid,
   .snapshotGrid,
   .variant_bar_grill .experienceGrid,
+  .variant_contractor .experienceGrid,
+  .variant_auto_service .experienceGrid,
   .variant_food_truck .visitPanel,
+  .variant_home_service .visitPanel,
   .variant_local_service .visitPanel {
     grid-template-columns: 1fr;
   }

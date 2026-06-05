@@ -254,6 +254,7 @@ export default function ImportPage() {
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Record</th>
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Status</th>
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Mockup data</th>
+                  <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Template</th>
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Social audit</th>
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Campaign</th>
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Mockup slug</th>
@@ -273,6 +274,7 @@ export default function ImportPage() {
                     </td>
                     <td className="px-3 py-3"><StatusBadge status={item.status} /></td>
                     <td className="px-3 py-3"><RichnessBadge level={item.mockupRichness.level} label={item.mockupRichness.label} /></td>
+                    <td className="px-3 py-3"><TemplateCell item={item} /></td>
                     <td className="px-3 py-3"><RichnessBadge level={item.socialAuditRichness.level} label={item.socialAuditRichness.label} /></td>
                     <td className="px-3 py-3"><CampaignCell item={item} /></td>
                     <td className="px-3 py-3 font-mono text-xs" style={{ color: 'var(--color-ink-2)' }}>{item.slug}</td>
@@ -386,6 +388,32 @@ function CampaignCell({ item }: { item: HermesImportPreview }) {
         <div>Delivery: {formatDeliveryMode(resinate.deliveryMode)}</div>
         <div>Public artifact: {resinate.publicArtifactRequired ? 'Commercial Surface Brief available' : 'Not required'}</div>
       </div>
+    </div>
+  );
+}
+
+function TemplateCell({ item }: { item: HermesImportPreview }) {
+  const selection = item.mockupTemplate;
+
+  return (
+    <div className="min-w-52 space-y-1">
+      <span
+        className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap"
+        style={{
+          color: selection.mismatchWarning ? 'var(--color-warning)' : 'var(--color-accent)',
+          background: selection.mismatchWarning ? 'oklch(75% 0.16 85 / 0.12)' : 'var(--color-accent-subtle)',
+        }}
+      >
+        {selection.label}
+      </span>
+      <div className="text-xs leading-5" style={{ color: 'var(--color-ink-2)' }}>
+        {selection.reason}
+      </div>
+      {selection.mismatchWarning && (
+        <div className="text-xs leading-5" style={{ color: 'var(--color-warning)' }}>
+          {selection.mismatchWarning}
+        </div>
+      )}
     </div>
   );
 }
