@@ -8,6 +8,10 @@ import {
 } from './mockup-templates';
 
 export type MockupV2Diagnostics = {
+  designFamily: MockupDesignFamily;
+  designFamilyLabel: string;
+  designFamilyInferred: boolean;
+  designFamilyReason: string;
   layoutSignature: MockupLayoutSignature;
   layoutLabel: string;
   layoutRendererName: MockupLayoutRendererName;
@@ -24,6 +28,28 @@ export type MockupV2Diagnostics = {
   imageSourceTypes: string[];
   mobileRiskWarnings: string[];
   warnings: string[];
+};
+
+export const MOCKUP_DESIGN_FAMILIES = [
+  'editorial_photo_story',
+  'modern_service_stack',
+  'premium_dark_showcase',
+  'clean_conversion_clinic',
+  'project_board_contractor',
+  'cozy_local_brand',
+  'transformation_gallery',
+  'hospitality_experience',
+  'minimalist_luxury_service',
+  'bold_action_local_service',
+] as const;
+
+export type MockupDesignFamily = (typeof MOCKUP_DESIGN_FAMILIES)[number];
+
+export type MockupDesignFamilySelection = {
+  family: MockupDesignFamily;
+  label: string;
+  reason: string;
+  inferred: boolean;
 };
 
 export type MockupLayoutRendererName =
@@ -69,6 +95,36 @@ const GENERIC_NAV_TERMS = ['home', 'about', 'services', 'gallery', 'contact'];
 const GENERIC_OFFER_TERMS = ['services', 'service', 'quality service', 'free estimate', 'contact us', 'about us'];
 const GENERIC_SECTION_TERMS = ['hero', 'services', 'about', 'reviews', 'contact', 'gallery'];
 
+const DESIGN_FAMILY_LABELS: Record<MockupDesignFamily, string> = {
+  editorial_photo_story: 'Editorial Photo Story',
+  modern_service_stack: 'Modern Service Stack',
+  premium_dark_showcase: 'Premium Dark Showcase',
+  clean_conversion_clinic: 'Clean Conversion Clinic',
+  project_board_contractor: 'Project Board Contractor',
+  cozy_local_brand: 'Cozy Local Brand',
+  transformation_gallery: 'Transformation Gallery',
+  hospitality_experience: 'Hospitality Experience',
+  minimalist_luxury_service: 'Minimalist Luxury Service',
+  bold_action_local_service: 'Bold Action Local Service',
+};
+
+const FAMILY_OPTIONS_BY_VARIANT: Record<MockupTemplateVariant, readonly MockupDesignFamily[]> = {
+  home_service: ['modern_service_stack', 'bold_action_local_service', 'cozy_local_brand'],
+  contractor: ['project_board_contractor', 'modern_service_stack', 'bold_action_local_service'],
+  medical_aesthetics: ['clean_conversion_clinic', 'minimalist_luxury_service', 'editorial_photo_story'],
+  auto_service: ['premium_dark_showcase', 'transformation_gallery', 'bold_action_local_service'],
+  pet_service: ['cozy_local_brand', 'modern_service_stack', 'editorial_photo_story'],
+  fitness_studio: ['bold_action_local_service', 'transformation_gallery', 'premium_dark_showcase'],
+  professional_service: ['minimalist_luxury_service', 'clean_conversion_clinic', 'modern_service_stack'],
+  local_service: ['modern_service_stack', 'cozy_local_brand', 'bold_action_local_service'],
+  coffee_shop: ['hospitality_experience', 'cozy_local_brand', 'editorial_photo_story'],
+  restaurant: ['hospitality_experience', 'editorial_photo_story', 'minimalist_luxury_service'],
+  bar_grill: ['hospitality_experience', 'premium_dark_showcase', 'bold_action_local_service'],
+  premium_dining: ['minimalist_luxury_service', 'hospitality_experience', 'editorial_photo_story'],
+  nonprofit_cafe: ['cozy_local_brand', 'editorial_photo_story', 'hospitality_experience'],
+  food_truck: ['bold_action_local_service', 'hospitality_experience', 'modern_service_stack'],
+};
+
 export function getAllMockupMediaAssets(rich: RichMockupData) {
   return dedupeMediaAssets([...(rich.media_assets || []), ...(rich.proof_assets || []), ...(rich.gallery_assets || [])]);
 }
@@ -87,12 +143,104 @@ export function selectHeroMediaAsset(assets: MockupMediaAsset[]) {
   );
 }
 
+export function getMockupDesignFamilyLabel(family: MockupDesignFamily) {
+  return DESIGN_FAMILY_LABELS[family];
+}
+
+export function getMockupDesignFamilySelection({
+  rich,
+  template,
+  niche,
+  businessName,
+}: {
+  rich: RichMockupData;
+  template: MockupTemplateSelection;
+  niche?: string | null;
+  businessName?: string | null;
+}): MockupDesignFamilySelection {
+  const explicit = normalizeDesignFamily(rich.design_family || rich.visual_profile?.design_family);
+  if (explicit) {
+    return {
+      family: explicit,
+      label: getMockupDesignFamilyLabel(explicit),
+      reason: `Explicit design_family "${explicit}" supplied in mockup data.`,
+      inferred: false,
+    };
+  }
+
+  const text = [
+    rich.visual_direction,
+    rich.brand_tone,
+    rich.design_style_key,
+    rich.hero_mode,
+    rich.image_treatment,
+    rich.cta_style,
+    rich.proof_style,
+    rich.palette_direction,
+    rich.typography_direction,
+    rich.photo_strategy,
+    rich.visual_profile?.brand_mood,
+    rich.visual_profile?.brand_tone,
+    rich.visual_profile?.design_style_key,
+    rich.visual_profile?.hero_mode,
+    rich.visual_profile?.image_treatment,
+    rich.visual_profile?.proof_style,
+    rich.visual_profile?.palette_direction,
+    rich.visual_profile?.typography_direction,
+    rich.visual_profile?.photo_strategy,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  const textMatch = inferDesignFamilyFromDirection(text, template.variant);
+  if (textMatch) {
+    return {
+      family: textMatch,
+      label: getMockupDesignFamilyLabel(textMatch),
+      reason: 'Inferred from visual direction, tone, hero mode, image treatment, CTA style, or proof style.',
+      inferred: true,
+    };
+  }
+
+  const options = FAMILY_OPTIONS_BY_VARIANT[template.variant];
+  const seed = [businessName, niche, template.variant, rich.layout_signature, rich.template_variant]
+    .filter(Boolean)
+    .join('|');
+  const family = options[hashString(seed) % options.length] || options[0];
+
+  return {
+    family,
+    label: getMockupDesignFamilyLabel(family),
+    reason: `Inferred from ${template.label} niche using family rotation.`,
+    inferred: true,
+  };
+}
+
 export function getMockupLayoutRendererName(
   signature: MockupLayoutSignature,
-  variant: MockupTemplateVariant
+  variant: MockupTemplateVariant,
+  designFamily?: MockupDesignFamily | null
 ): MockupLayoutRendererName {
-  if (isFoodMockupTemplate(variant)) {
-    return 'RestaurantExperienceLayout';
+  if (designFamily) {
+    if (designFamily === 'hospitality_experience') return 'RestaurantExperienceLayout';
+    if (designFamily === 'editorial_photo_story') {
+      return isFoodMockupTemplate(variant) ? 'ImmersivePhotoHeroLayout' : 'WarmLocalStoryLayout';
+    }
+    if (designFamily === 'modern_service_stack') return 'EditorialServiceGridLayout';
+    if (designFamily === 'premium_dark_showcase') return 'DarkPremiumTransformLayout';
+    if (designFamily === 'clean_conversion_clinic') return 'CleanClinicTrustLayout';
+    if (designFamily === 'project_board_contractor') return 'ContractorProjectBoardLayout';
+    if (designFamily === 'cozy_local_brand') return variant === 'pet_service' ? 'PetCareBookingLayout' : 'WarmLocalStoryLayout';
+    if (designFamily === 'transformation_gallery') {
+      if (variant === 'fitness_studio') return 'FitnessEnergyLandingLayout';
+      return 'AutoDetailShowcaseLayout';
+    }
+    if (designFamily === 'minimalist_luxury_service') return 'LuxuryServicePageLayout';
+    if (designFamily === 'bold_action_local_service') {
+      if (variant === 'fitness_studio') return 'FitnessEnergyLandingLayout';
+      return 'SplitProofHeroLayout';
+    }
   }
 
   if (signature === 'pet_care_booking') return 'PetCareBookingLayout';
@@ -108,21 +256,27 @@ export function getMockupLayoutRendererName(
   if (signature === 'editorial_service_grid') return 'EditorialServiceGridLayout';
   if (signature === 'immersive_photo_hero') return 'ImmersivePhotoHeroLayout';
 
+  if (isFoodMockupTemplate(variant)) {
+    return 'RestaurantExperienceLayout';
+  }
+
   return 'LocalServiceFallbackLayout';
 }
 
 export function getMockupLayoutSectionPlan({
   signature,
   variant,
+  designFamily,
   hasGallery,
   hasSnapshot,
 }: {
   signature: MockupLayoutSignature;
   variant: MockupTemplateVariant;
+  designFamily?: MockupDesignFamily | null;
   hasGallery: boolean;
   hasSnapshot: boolean;
 }) {
-  const rendererName = getMockupLayoutRendererName(signature, variant);
+  const rendererName = getMockupLayoutRendererName(signature, variant, designFamily);
   const plans: Record<MockupLayoutRendererName, string[]> = {
     PetCareBookingLayout: ['pet hero', 'booking strip', 'grooming services', 'trust and safety', 'happy-pet proof', 'location', 'appointment CTA'],
     RestaurantExperienceLayout: ['atmosphere hero', 'occasion story', 'menu highlights', 'visit or reservation', 'social proof', 'reserve CTA'],
@@ -154,10 +308,21 @@ export function getMockupV2Diagnostics(input: DiagnosticsInput): MockupV2Diagnos
   const heroAsset = selectHeroMediaAsset(usableMediaAssets);
   const sourceTypes = [...new Set(usableMediaAssets.map((asset) => asset.source_type))];
   const hasVisualProfile = hasUsefulVisualProfile(input.rich.visual_profile);
-  const layoutRendererName = getMockupLayoutRendererName(input.template.layoutSignature, input.template.variant);
+  const designFamilySelection = getMockupDesignFamilySelection({
+    rich: input.rich,
+    template: input.template,
+    niche: input.niche,
+    businessName: input.businessName,
+  });
+  const layoutRendererName = getMockupLayoutRendererName(
+    input.template.layoutSignature,
+    input.template.variant,
+    designFamilySelection.family
+  );
   const sectionPlan = getMockupLayoutSectionPlan({
     signature: input.template.layoutSignature,
     variant: input.template.variant,
+    designFamily: designFamilySelection.family,
     hasGallery: usableMediaAssets.length > 1,
     hasSnapshot: Boolean(input.rich.current_site_snapshot),
   });
@@ -176,6 +341,10 @@ export function getMockupV2Diagnostics(input: DiagnosticsInput): MockupV2Diagnos
   if (input.template.layoutInferred) {
     warnings.push('No explicit layout_signature; renderer will use an inferred layout.');
     mobileRiskWarnings.push('Layout is inferred; confirm the mobile renderer matches the prospect category.');
+  }
+
+  if (designFamilySelection.inferred) {
+    warnings.push('No explicit design_family; renderer selected a family from niche and art-direction signals.');
   }
 
   if (layoutRendererName === 'LocalServiceFallbackLayout' && input.rich.layout_signature) {
@@ -212,6 +381,9 @@ export function getMockupV2Diagnostics(input: DiagnosticsInput): MockupV2Diagnos
   if (!input.rich.visual_direction && !input.rich.visual_profile?.brand_mood) {
     warnings.push('visual_direction is empty; mockup may read as templated.');
   }
+  if (!input.rich.hero_mode && !input.rich.image_treatment && !input.rich.cta_style && !input.rich.proof_style) {
+    warnings.push('No hero_mode, image_treatment, cta_style, or proof_style; design differentiation depends mostly on inferred family.');
+  }
 
   if (!isFoodMockupTemplate(input.template.variant)) {
     const foodHits = findFoodTerms(input.rich);
@@ -224,6 +396,9 @@ export function getMockupV2Diagnostics(input: DiagnosticsInput): MockupV2Diagnos
     if (!input.rich.layout_signature && !input.rich.visual_profile?.layout_signature) {
       warnings.push('Apex public mockup record should include layout_signature.');
     }
+    if (!input.rich.design_family && !input.rich.visual_profile?.design_family) {
+      warnings.push('Apex public mockup record should include design_family for better batch variety.');
+    }
     if (!input.rich.visual_profile) warnings.push('Apex public mockup record should include visual_profile.');
     if (mediaAssets.length === 0) warnings.push('Apex public mockup record should include media_assets.');
     if (usableMediaAssets.length < 2) {
@@ -232,6 +407,10 @@ export function getMockupV2Diagnostics(input: DiagnosticsInput): MockupV2Diagnos
   }
 
   return {
+    designFamily: designFamilySelection.family,
+    designFamilyLabel: designFamilySelection.label,
+    designFamilyInferred: designFamilySelection.inferred,
+    designFamilyReason: designFamilySelection.reason,
     layoutSignature: input.template.layoutSignature,
     layoutLabel: getMockupLayoutSignatureLabel(input.template.layoutSignature),
     layoutRendererName,
@@ -251,12 +430,50 @@ export function getMockupV2Diagnostics(input: DiagnosticsInput): MockupV2Diagnos
   };
 }
 
+function normalizeDesignFamily(value: unknown): MockupDesignFamily | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim().toLowerCase().replace(/[\s-]+/g, '_');
+  return (MOCKUP_DESIGN_FAMILIES as readonly string[]).includes(normalized)
+    ? (normalized as MockupDesignFamily)
+    : null;
+}
+
+function inferDesignFamilyFromDirection(text: string, variant: MockupTemplateVariant): MockupDesignFamily | null {
+  if (!text) return null;
+  if (/project|estimate|proof board|portfolio|worksite|hard edge|scope/.test(text)) return 'project_board_contractor';
+  if (/dark|gloss|showroom|high contrast|black|premium dark/.test(text)) return 'premium_dark_showcase';
+  if (/transform|before|after|result|gallery|reveal/.test(text)) return 'transformation_gallery';
+  if (/clinic|clinical|consultation|treatment|provider|calm|compliant/.test(text)) return 'clean_conversion_clinic';
+  if (/warm|friendly|cozy|local|comfort|soft|neighborhood/.test(text)) return 'cozy_local_brand';
+  if (/hospitality|reservation|occasion|atmosphere|dining|chef|menu|private dining/.test(text)) return 'hospitality_experience';
+  if (/minimal|luxury|elegant|quiet|refined|premium service/.test(text)) return 'minimalist_luxury_service';
+  if (/bold|kinetic|energy|urgent|action|call now|fast|high energy/.test(text)) return 'bold_action_local_service';
+  if (/editorial|story|photo story|narrative|magazine/.test(text)) return 'editorial_photo_story';
+  if (/stack|service grid|service index|practical|utility/.test(text)) return 'modern_service_stack';
+  if (variant === 'restaurant' || variant === 'premium_dining') return 'hospitality_experience';
+  return null;
+}
+
+function hashString(value: string) {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash << 5) - hash + value.charCodeAt(index);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
 export function summarizeVisualProfile(profile: MockupVisualProfile | null | undefined, variant: MockupTemplateVariant) {
   if (!profile) return `Inferred ${variant.replace(/_/g, ' ')} visual profile`;
   const parts = [
     profile.brand_mood,
+    profile.brand_tone,
+    profile.design_family,
     profile.design_style_key,
     profile.typography_mood,
+    profile.hero_mode,
+    profile.image_treatment,
+    profile.proof_style,
     profile.photo_strategy,
     profile.ui_personality,
     profile.trust_style,
@@ -283,9 +500,16 @@ function hasUsefulVisualProfile(profile: MockupVisualProfile | null | undefined)
   if (!profile) return false;
   return Boolean(
     profile.brand_mood ||
+      profile.brand_tone ||
+      profile.design_family ||
       profile.design_style_key ||
       profile.typography_mood ||
       profile.layout_signature ||
+      profile.hero_mode ||
+      profile.image_treatment ||
+      profile.proof_style ||
+      profile.palette_direction ||
+      profile.typography_direction ||
       profile.photo_strategy ||
       profile.ui_personality ||
       profile.trust_style ||
@@ -298,8 +522,15 @@ function isGenericVisualProfile(profile: MockupVisualProfile | null | undefined)
   if (!profile) return false;
   const text = [
     profile.brand_mood,
+    profile.brand_tone,
+    profile.design_family,
     profile.design_style_key,
     profile.typography_mood,
+    profile.hero_mode,
+    profile.image_treatment,
+    profile.proof_style,
+    profile.palette_direction,
+    profile.typography_direction,
     profile.photo_strategy,
     profile.ui_personality,
     profile.trust_style,

@@ -193,11 +193,22 @@ Recommended fields:
     "Social/content: strong photos need a better website destination"
   ],
   "visual_direction": "Dark premium steakhouse feel with reservation-first hierarchy.",
+  "brand_tone": "editorial, hospitality-driven, immersive, atmospheric",
+  "design_family": "hospitality_experience",
   "layout_signature": "luxury_service_page",
+  "hero_mode": "full_bleed_atmosphere",
   "design_style_key": "premium_hospitality_editorial",
+  "image_treatment": "full-bleed atmosphere hero with proof cards",
+  "cta_style": "single reservation or inquiry path repeated after proof",
+  "proof_style": "reviews, private dining, and atmosphere near the CTA",
+  "palette_direction": "warm charcoal, copper, cream",
+  "typography_direction": "large hospitality serif",
+  "section_priority": ["atmosphere hero", "occasion story", "menu highlights", "visit path", "reservation CTA"],
   "photo_strategy": "Use public website food/interior photos as the hero and proof cards. If no reliable public photos exist, use clearly conceptual hospitality visuals and do not imply they are actual menu items.",
   "visual_profile": {
     "brand_mood": "dark, warm, polished, reservation-led",
+    "brand_tone": "editorial, hospitality-driven, immersive, atmospheric",
+    "design_family": "hospitality_experience",
     "design_style_key": "premium_hospitality_editorial",
     "color_palette": {
       "primary": "oklch(18% 0.04 38)",
@@ -208,6 +219,11 @@ Recommended fields:
     },
     "typography_mood": "editorial serif with confident service copy",
     "layout_signature": "luxury_service_page",
+    "hero_mode": "full_bleed_atmosphere",
+    "image_treatment": "full-bleed atmosphere hero with proof cards",
+    "proof_style": "reviews, private dining, and atmosphere near the CTA",
+    "palette_direction": "warm charcoal, copper, cream",
+    "typography_direction": "large hospitality serif",
     "photo_strategy": "Hero image plus 3 to 6 proof/gallery cards from public business photos when available.",
     "ui_personality": "layered photo cards, quiet proof badges, reservation-focused hierarchy",
     "trust_style": "reviews, awards, private dining, and real atmosphere near the CTA",
@@ -263,6 +279,8 @@ For `campaign_type: "apex_social_content"` with `apex_delivery_mode: "public_moc
 
 - `visual_profile`: brand mood, design style key, palette, typography mood, layout signature, photo strategy, UI personality, trust style, and CTA style.
 - `template_variant`: explicit renderer category such as `pet_service`, `contractor`, `medical_aesthetics`, `auto_service`, `fitness_studio`, `professional_service`, or `restaurant`.
+- `design_family`: explicit art direction such as `editorial_photo_story`, `modern_service_stack`, `premium_dark_showcase`, `clean_conversion_clinic`, `project_board_contractor`, `cozy_local_brand`, `transformation_gallery`, `hospitality_experience`, `minimalist_luxury_service`, or `bold_action_local_service`.
+- Art-direction fields: `brand_tone`, `hero_mode`, `section_priority`, `image_treatment`, `cta_style`, `proof_style`, `palette_direction`, and `typography_direction`.
 - `layout_signature`: one of `immersive_photo_hero`, `split_proof_hero`, `editorial_service_grid`, `dark_premium_transform`, `clean_clinic_trust`, `warm_local_story`, `contractor_project_board`, `auto_detail_showcase`, `pet_care_booking`, `fitness_energy_landing`, `professional_trust_page`, or `luxury_service_page`.
 - `media_assets`: public website/social/profile images only when reliable, with `image_url`, `source_url`, `source_type`, `alt`, `usage_note`, and `confidence`.
 - `proof_assets` and `gallery_assets`: optional additional image arrays using the same shape as `media_assets`.
@@ -277,6 +295,7 @@ Rules for future Code X prospecting:
 - Avoid generic nav like `Home, About, Services, Contact`; use the prospect's actual lead path.
 - Non-food prospects must not use food labels such as Menu, Order, Reservations, Happy Hour, Catering, Gift Cards, or Best Time to Visit.
 - Vary `layout_signature` across a batch; repeated section order is flagged in import preview.
+- Vary `design_family` across a batch; import preview warns when one family dominates a public mockup paste.
 - Public mockups now choose a layout renderer such as `PetCareBookingLayout`, `ContractorProjectBoardLayout`, `DarkPremiumTransformLayout`, `CleanClinicTrustLayout`, `FitnessEnergyLandingLayout`, `ProfessionalTrustPageLayout`, or `RestaurantExperienceLayout`. The DOM/header/hero/section plan should differ by renderer.
 
 ## Social Audit JSON Fields

@@ -42,10 +42,12 @@ import {
   type MockupTemplateVariant,
 } from '@/lib/mockup-templates';
 import {
+  getMockupDesignFamilySelection,
   getMockupLayoutRendererName,
   getMockupLayoutSectionPlan,
   getUsableMockupMediaAssets,
   selectHeroMediaAsset,
+  type MockupDesignFamily,
   type MockupLayoutRendererName,
 } from '@/lib/mockup-v2';
 import styles from './PremiumMockupSite.module.css';
@@ -132,6 +134,10 @@ type SiteContext = {
   rich: RichMockupData;
   audit?: PublicAudit | null;
   conceptNotes: string | null;
+  designFamily: MockupDesignFamily;
+  designFamilyLabel: string;
+  designFamilyReason: string;
+  designFamilyInferred: boolean;
   layoutSignature: MockupLayoutSignature;
   designStyleKey: string | null;
   photoStrategy: string | null;
@@ -1010,6 +1016,7 @@ export function PremiumMockupSite({ mockup, prospect, audit }: PremiumMockupSite
       className={`${styles.site} ${styles[`variant_${context.variant}`]} ${styles[`tone_${context.config.tone}`]} ${styles[`layout_${context.layoutSignature}`]}`}
       style={context.themeStyle}
       data-layout-renderer={context.layoutRendererName}
+      data-design-family={context.designFamily}
     >
       <LayoutRenderer context={context} />
     </main>
@@ -1032,7 +1039,13 @@ function buildSiteContext(mockup: Mockup, prospect: PublicProspect | null, audit
   const variant = selection.variant;
   const config = VARIANT_CONFIG[variant];
   const layoutSignature = selection.layoutSignature;
-  const layoutRendererName = getMockupLayoutRendererName(layoutSignature, variant);
+  const designFamilySelection = getMockupDesignFamilySelection({
+    rich,
+    template: selection,
+    niche,
+    businessName,
+  });
+  const layoutRendererName = getMockupLayoutRendererName(layoutSignature, variant, designFamilySelection.family);
   const visualProfile = rich.visual_profile || inferVisualProfile(variant, layoutSignature, rich, config);
   const mediaAssets = getUsableMockupMediaAssets(rich);
   const heroAsset = selectHeroMediaAsset(mediaAssets);
@@ -1064,6 +1077,7 @@ function buildSiteContext(mockup: Mockup, prospect: PublicProspect | null, audit
   const sectionPlan = getMockupLayoutSectionPlan({
     signature: layoutSignature,
     variant,
+    designFamily: designFamilySelection.family,
     hasGallery: galleryAssets.length > 0,
     hasSnapshot: Boolean(rich.current_site_snapshot),
   });
@@ -1079,6 +1093,10 @@ function buildSiteContext(mockup: Mockup, prospect: PublicProspect | null, audit
     rich,
     audit,
     conceptNotes: parsed.notes,
+    designFamily: designFamilySelection.family,
+    designFamilyLabel: designFamilySelection.label,
+    designFamilyReason: designFamilySelection.reason,
+    designFamilyInferred: designFamilySelection.inferred,
     layoutSignature,
     layoutRendererName,
     designStyleKey,
@@ -1837,7 +1855,9 @@ function WebsiteHero({ context }: { context: SiteContext }) {
     <section id="home" className={styles.hero}>
       <div className={`${styles.heroImage} ${styles[`photo_${context.config.heroPhoto}`]}`}>
         {context.heroAsset && <SafeImage asset={context.heroAsset} className={styles.realImage} priority />}
-        <span>{context.heroAsset?.usage_note || context.heroAsset?.alt || context.config.heroPhotoLabel}</span>
+        {publicMediaCaption(context.heroAsset, context.config.heroPhotoLabel) && (
+          <span>{publicMediaCaption(context.heroAsset, context.config.heroPhotoLabel)}</span>
+        )}
       </div>
       <div className={styles.heroVeil} />
       <div className={styles.heroContent}>
@@ -2248,10 +2268,19 @@ function inferVisualProfile(
 
   return {
     brand_mood: positiveVisualDirection(rich.visual_direction) || moodByVariant[variant],
+    brand_tone: cleanText(rich.brand_tone) || positiveVisualDirection(rich.visual_direction) || moodByVariant[variant],
+    design_family: cleanText(rich.design_family),
     design_style_key: cleanText(rich.design_style_key) || layoutSignature,
     color_palette: null,
-    typography_mood: config.tone === 'luxury' ? 'editorial serif with calm service copy' : 'confident display type with readable service copy',
+    typography_mood:
+      cleanText(rich.typography_direction) ||
+      (config.tone === 'luxury' ? 'editorial serif with calm service copy' : 'confident display type with readable service copy'),
     layout_signature: layoutSignature,
+    hero_mode: cleanText(rich.hero_mode),
+    image_treatment: cleanText(rich.image_treatment),
+    proof_style: cleanText(rich.proof_style),
+    palette_direction: cleanText(rich.palette_direction),
+    typography_direction: cleanText(rich.typography_direction),
     photo_strategy: cleanText(rich.photo_strategy) || buildFallbackPhotoStrategy(variant, null),
     ui_personality: layoutSignature.replace(/_/g, ' '),
     trust_style: isServiceMockupTemplate(variant) ? 'proof before CTA' : 'atmosphere and proof near the action',

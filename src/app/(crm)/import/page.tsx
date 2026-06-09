@@ -20,6 +20,7 @@ const SAMPLE_JSON = `[
     "business_name": "Example Detail Studio",
     "niche": "auto detailing",
     "template_variant": "auto_service",
+    "design_family": "premium_dark_showcase",
     "website_url": "https://example-detail-studio.com",
     "public_email": "hello@example-detail-studio.com",
     "city": "Denver",
@@ -33,11 +34,20 @@ const SAMPLE_JSON = `[
     "current_site_snapshot": "Service packages exist, but mobile visitors have to compare too much before asking for a quote.",
     "online_presence_status": ["Website UX: packages are hard to compare", "CTA clarity: quote request is buried"],
     "visual_direction": "Premium studio feel with dark surfaces, crisp package cards, and a booking-first hero.",
+    "brand_tone": "dark, glossy, transformation-focused",
     "layout_signature": "auto_detail_showcase",
+    "hero_mode": "dark_showcase_panel",
     "design_style_key": "dark_premium_transform",
+    "image_treatment": "large glossy vehicle panel with tight proof cards",
+    "cta_style": "single high-contrast booking path",
+    "proof_style": "transformation proof before package comparison",
+    "palette_direction": "black, graphite, amber",
+    "typography_direction": "technical uppercase display with clear package copy",
     "photo_strategy": "Use a shine-forward hero image, tight before/after proof cards, and package visuals that make the result obvious before the quote ask.",
     "visual_profile": {
       "brand_mood": "dark, precise, high-gloss detail studio",
+      "brand_tone": "dark, glossy, transformation-focused",
+      "design_family": "premium_dark_showcase",
       "design_style_key": "dark_premium_transform",
       "color_palette": {
         "primary": "oklch(16% 0.05 245)",
@@ -48,6 +58,11 @@ const SAMPLE_JSON = `[
       },
       "typography_mood": "wide, confident, technical",
       "layout_signature": "auto_detail_showcase",
+      "hero_mode": "dark_showcase_panel",
+      "image_treatment": "large glossy vehicle panel with tight proof cards",
+      "proof_style": "transformation proof before package comparison",
+      "palette_direction": "black, graphite, amber",
+      "typography_direction": "technical uppercase display with clear package copy",
       "photo_strategy": "Hero image plus proof cards from public service or gallery photos when available.",
       "ui_personality": "sharp dark panels, comparison cards, transformation-first proof",
       "trust_style": "review proof near packages and booking CTA",
@@ -473,6 +488,11 @@ function MockupV2Cell({ item }: { item: HermesImportPreview }) {
 
   return (
     <div className="min-w-64 space-y-1 text-xs leading-5" style={{ color: 'var(--color-ink-2)' }}>
+      <div>
+        <strong style={{ color: 'var(--color-ink)' }}>{v2.designFamilyLabel}</strong>
+        {v2.designFamilyInferred && <span style={{ color: 'var(--color-warning)' }}> inferred</span>}
+      </div>
+      <div>{v2.designFamilyReason}</div>
       <div>
         <strong style={{ color: 'var(--color-ink)' }}>{v2.layoutLabel}</strong>
         {v2.layoutInferred && <span style={{ color: 'var(--color-warning)' }}> inferred</span>}

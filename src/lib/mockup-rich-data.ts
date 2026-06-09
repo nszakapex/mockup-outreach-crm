@@ -3,10 +3,18 @@ import { hasNormalizedResinateFlooringData, type ResinateFlooringData } from './
 
 export const RICH_MOCKUP_TEXT_FIELDS = [
   'template_variant',
+  'design_family',
   'brand_style_notes',
   'visual_direction',
+  'brand_tone',
   'layout_signature',
+  'hero_mode',
   'design_style_key',
+  'image_treatment',
+  'cta_style',
+  'proof_style',
+  'palette_direction',
+  'typography_direction',
   'photo_strategy',
   'cta_strategy',
   'local_seo_angle',
@@ -27,13 +35,22 @@ export const RICH_MOCKUP_LIST_FIELDS = [
   'online_presence_status',
   'proposed_site_nav',
   'homepage_sections',
+  'section_priority',
 ] as const;
 
 export const RICH_MOCKUP_SIGNAL_FIELDS = [
   'visual_direction',
   'template_variant',
+  'design_family',
+  'brand_tone',
   'layout_signature',
+  'hero_mode',
   'design_style_key',
+  'image_treatment',
+  'cta_style',
+  'proof_style',
+  'palette_direction',
+  'typography_direction',
   'photo_strategy',
   'menu_or_offer_items',
   'trust_signals',
@@ -45,6 +62,7 @@ export const RICH_MOCKUP_SIGNAL_FIELDS = [
   'online_presence_status',
   'proposed_site_nav',
   'homepage_sections',
+  'section_priority',
 ] as const;
 
 export type RichMockupTextField = (typeof RICH_MOCKUP_TEXT_FIELDS)[number];
@@ -53,6 +71,8 @@ export type RichMockupSignalField = (typeof RICH_MOCKUP_SIGNAL_FIELDS)[number];
 
 export type MockupVisualProfile = {
   brand_mood?: string | null;
+  brand_tone?: string | null;
+  design_family?: string | null;
   design_style_key?: string | null;
   color_palette?: {
     primary?: string | null;
@@ -63,6 +83,11 @@ export type MockupVisualProfile = {
   } | null;
   typography_mood?: string | null;
   layout_signature?: string | null;
+  hero_mode?: string | null;
+  image_treatment?: string | null;
+  proof_style?: string | null;
+  palette_direction?: string | null;
+  typography_direction?: string | null;
   photo_strategy?: string | null;
   ui_personality?: string | null;
   trust_style?: string | null;
@@ -128,8 +153,15 @@ export function normalizeRichMockupData(input: Record<string, unknown> | null | 
   const visualProfile = normalizeVisualProfile(input?.visual_profile ?? input?.visualProfile);
   if (visualProfile) {
     rich.visual_profile = visualProfile;
+    if (!rich.design_family && visualProfile.design_family) rich.design_family = visualProfile.design_family;
+    if (!rich.brand_tone && visualProfile.brand_tone) rich.brand_tone = visualProfile.brand_tone;
     if (!rich.design_style_key && visualProfile.design_style_key) rich.design_style_key = visualProfile.design_style_key;
     if (!rich.layout_signature && visualProfile.layout_signature) rich.layout_signature = visualProfile.layout_signature;
+    if (!rich.hero_mode && visualProfile.hero_mode) rich.hero_mode = visualProfile.hero_mode;
+    if (!rich.image_treatment && visualProfile.image_treatment) rich.image_treatment = visualProfile.image_treatment;
+    if (!rich.proof_style && visualProfile.proof_style) rich.proof_style = visualProfile.proof_style;
+    if (!rich.palette_direction && visualProfile.palette_direction) rich.palette_direction = visualProfile.palette_direction;
+    if (!rich.typography_direction && visualProfile.typography_direction) rich.typography_direction = visualProfile.typography_direction;
     if (!rich.photo_strategy && visualProfile.photo_strategy) rich.photo_strategy = visualProfile.photo_strategy;
   }
 
@@ -282,10 +314,17 @@ function normalizeVisualProfile(value: unknown): MockupVisualProfile | null {
 
   const profile: MockupVisualProfile = {
     brand_mood: cleanString(record.brand_mood ?? record.brandMood),
+    brand_tone: cleanString(record.brand_tone ?? record.brandTone),
+    design_family: cleanString(record.design_family ?? record.designFamily),
     design_style_key: cleanString(record.design_style_key ?? record.designStyleKey),
     color_palette: colorPalette && Object.values(colorPalette).some(Boolean) ? colorPalette : null,
     typography_mood: cleanString(record.typography_mood ?? record.typographyMood),
     layout_signature: cleanString(record.layout_signature ?? record.layoutSignature),
+    hero_mode: cleanString(record.hero_mode ?? record.heroMode),
+    image_treatment: cleanString(record.image_treatment ?? record.imageTreatment),
+    proof_style: cleanString(record.proof_style ?? record.proofStyle),
+    palette_direction: cleanString(record.palette_direction ?? record.paletteDirection),
+    typography_direction: cleanString(record.typography_direction ?? record.typographyDirection),
     photo_strategy: cleanString(record.photo_strategy ?? record.photoStrategy),
     ui_personality: cleanString(record.ui_personality ?? record.uiPersonality),
     trust_style: cleanString(record.trust_style ?? record.trustStyle),
@@ -298,6 +337,8 @@ function normalizeVisualProfile(value: unknown): MockupVisualProfile | null {
 function flattenVisualProfile(profile: MockupVisualProfile) {
   return {
     brand_mood: profile.brand_mood,
+    brand_tone: profile.brand_tone,
+    design_family: profile.design_family,
     design_style_key: profile.design_style_key,
     primary: profile.color_palette?.primary,
     secondary: profile.color_palette?.secondary,
@@ -306,6 +347,11 @@ function flattenVisualProfile(profile: MockupVisualProfile) {
     text: profile.color_palette?.text,
     typography_mood: profile.typography_mood,
     layout_signature: profile.layout_signature,
+    hero_mode: profile.hero_mode,
+    image_treatment: profile.image_treatment,
+    proof_style: profile.proof_style,
+    palette_direction: profile.palette_direction,
+    typography_direction: profile.typography_direction,
     photo_strategy: profile.photo_strategy,
     ui_personality: profile.ui_personality,
     trust_style: profile.trust_style,

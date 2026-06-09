@@ -76,10 +76,18 @@ export type ProspectIntakeInput = {
   features_included?: string | string[] | null;
   concept_notes?: string | null;
   template_variant?: string | null;
+  design_family?: string | null;
   brand_style_notes?: string | null;
   visual_direction?: string | null;
+  brand_tone?: string | null;
   layout_signature?: string | null;
+  hero_mode?: string | null;
   design_style_key?: string | null;
+  image_treatment?: string | null;
+  cta_style?: string | null;
+  proof_style?: string | null;
+  palette_direction?: string | null;
+  typography_direction?: string | null;
   photo_strategy?: string | null;
   visual_profile?: MockupVisualProfile | null;
   media_assets?: MockupMediaAsset[] | null;
@@ -99,6 +107,7 @@ export type ProspectIntakeInput = {
   inspiration_notes?: string | null;
   current_site_snapshot?: string | null;
   online_presence_status?: string | string[] | null;
+  section_priority?: string | string[] | null;
   proposed_site_nav?: string | string[] | null;
   homepage_sections?: string | string[] | null;
   social_audit?: SocialAuditScorecard | null;
@@ -575,10 +584,18 @@ export function normalizeHermesJsonRecord(value: unknown): ProspectIntakeInput |
       : clean(record.features_included),
     concept_notes: clean(record.concept_notes),
     template_variant: clean(record.template_variant),
+    design_family: clean(record.design_family),
     brand_style_notes: clean(record.brand_style_notes),
     visual_direction: clean(record.visual_direction),
+    brand_tone: clean(record.brand_tone),
     layout_signature: clean(record.layout_signature),
+    hero_mode: clean(record.hero_mode),
     design_style_key: clean(record.design_style_key),
+    image_treatment: clean(record.image_treatment),
+    cta_style: clean(record.cta_style),
+    proof_style: clean(record.proof_style),
+    palette_direction: clean(record.palette_direction),
+    typography_direction: clean(record.typography_direction),
     photo_strategy: clean(record.photo_strategy),
     visual_profile: cleanRecord(record.visual_profile) as MockupVisualProfile | null,
     media_assets: Array.isArray(record.media_assets) ? (record.media_assets as MockupMediaAsset[]) : null,
@@ -610,6 +627,9 @@ export function normalizeHermesJsonRecord(value: unknown): ProspectIntakeInput |
     online_presence_status: Array.isArray(record.online_presence_status)
       ? record.online_presence_status.map((item) => String(item))
       : clean(record.online_presence_status),
+    section_priority: Array.isArray(record.section_priority)
+      ? record.section_priority.map((item) => String(item))
+      : clean(record.section_priority),
     proposed_site_nav: Array.isArray(record.proposed_site_nav)
       ? record.proposed_site_nav.map((item) => String(item))
       : clean(record.proposed_site_nav),
@@ -762,6 +782,22 @@ export async function previewHermesImport(records: ProspectIntakeInput[]) {
   if (publicApexPreviews.length > 1 && explicitLayoutSet.size === 1) {
     for (const item of publicApexPreviews) {
       item.warnings.push('All Apex public mockups in this paste use the same layout signature; vary layout_signature to avoid repeated section order.');
+    }
+  }
+  const familyCounts = new Map<string, number>();
+  for (const item of publicApexPreviews) {
+    familyCounts.set(item.mockupV2.designFamily, (familyCounts.get(item.mockupV2.designFamily) ?? 0) + 1);
+  }
+  const topFamily = [...familyCounts.entries()].sort((a, b) => b[1] - a[1])[0];
+  if (publicApexPreviews.length > 1 && familyCounts.size === 1) {
+    for (const item of publicApexPreviews) {
+      item.warnings.push('All Apex public mockups in this paste use the same design family; vary design_family to prevent repeated art direction.');
+    }
+  } else if (topFamily && publicApexPreviews.length >= 5 && topFamily[1] / publicApexPreviews.length >= 0.6) {
+    for (const item of publicApexPreviews) {
+      if (item.mockupV2.designFamily === topFamily[0]) {
+        item.warnings.push(`Design family "${item.mockupV2.designFamilyLabel}" is overused in this paste; rebalance design_family across the batch.`);
+      }
     }
   }
   const rendererSet = new Set(publicApexPreviews.map((item) => item.mockupV2.layoutRendererName));

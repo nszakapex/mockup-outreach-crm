@@ -651,6 +651,7 @@ function MockupV2DiagnosticsPanel({ diagnostics }: { diagnostics: MockupV2Diagno
       </div>
       <div className="space-y-3 text-xs leading-5" style={{ color: 'var(--color-ink-2)' }}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <MiniDiagnostic label="Design Family" value={`${diagnostics.designFamilyLabel}${diagnostics.designFamilyInferred ? ' (inferred)' : ''}`} />
           <MiniDiagnostic label="Layout Signature" value={`${diagnostics.layoutLabel}${diagnostics.layoutInferred ? ' (inferred)' : ''}`} />
           <MiniDiagnostic label="Layout Renderer" value={diagnostics.layoutRendererName} />
           <MiniDiagnostic label="Media Assets" value={`${diagnostics.usableMediaAssetCount}/${diagnostics.mediaAssetCount} usable`} />
@@ -658,6 +659,7 @@ function MockupV2DiagnosticsPanel({ diagnostics }: { diagnostics: MockupV2Diagno
           <MiniDiagnostic label="Hero Image" value={diagnostics.heroImageSourceType ? diagnostics.heroImageSourceType.replace(/_/g, ' ') : 'fallback visual'} />
           <MiniDiagnostic label="Image Sources" value={diagnostics.imageSourceTypes.length ? diagnostics.imageSourceTypes.join(', ') : 'none'} />
         </div>
+        <FieldBlock label="Design Family Reason" value={diagnostics.designFamilyReason} />
         <FieldBlock label="Section Plan" value={diagnostics.sectionPlan.join(' -> ')} />
         {diagnostics.mobileRiskWarnings.length > 0 && (
           <FieldBlock label="Mobile QA Risks" value={diagnostics.mobileRiskWarnings.join(' | ')} />
