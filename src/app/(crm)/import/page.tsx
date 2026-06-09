@@ -483,6 +483,11 @@ function MockupV2Cell({ item }: { item: HermesImportPreview }) {
         Media: {v2.usableMediaAssetCount}/{v2.mediaAssetCount} usable
         {v2.heroImageSourceType ? ` | hero from ${v2.heroImageSourceType.replace(/_/g, ' ')}` : ''}
       </div>
+      <div>
+        Fallback media: {v2.fallbackMediaCount}
+        {v2.usesFallbackMedia ? ' | public labels hidden' : ''}
+      </div>
+      {v2.mobileRiskWarnings.length > 0 && <div>Mobile QA: {v2.mobileRiskWarnings.join(' | ')}</div>}
       <div>{v2.visualProfileSummary}</div>
       {v2.imageSourceTypes.length > 0 && <div>Sources: {v2.imageSourceTypes.join(', ')}</div>}
       {warningCount > 0 && (

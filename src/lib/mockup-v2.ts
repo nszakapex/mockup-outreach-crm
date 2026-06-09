@@ -17,9 +17,12 @@ export type MockupV2Diagnostics = {
   hasVisualProfile: boolean;
   mediaAssetCount: number;
   usableMediaAssetCount: number;
+  fallbackMediaCount: number;
+  usesFallbackMedia: boolean;
   heroImageUrl: string | null;
   heroImageSourceType: string | null;
   imageSourceTypes: string[];
+  mobileRiskWarnings: string[];
   warnings: string[];
 };
 
@@ -147,6 +150,7 @@ export function getMockupLayoutSectionPlan({
 export function getMockupV2Diagnostics(input: DiagnosticsInput): MockupV2Diagnostics {
   const mediaAssets = getAllMockupMediaAssets(input.rich);
   const usableMediaAssets = mediaAssets.filter((asset) => isUsableImageUrl(asset.image_url));
+  const fallbackMediaCount = mediaAssets.filter((asset) => asset.source_type === 'fallback').length;
   const heroAsset = selectHeroMediaAsset(usableMediaAssets);
   const sourceTypes = [...new Set(usableMediaAssets.map((asset) => asset.source_type))];
   const hasVisualProfile = hasUsefulVisualProfile(input.rich.visual_profile);
@@ -161,6 +165,7 @@ export function getMockupV2Diagnostics(input: DiagnosticsInput): MockupV2Diagnos
     input.campaignType === 'apex_social_content' &&
     (input.apexDeliveryMode === 'public_mockup' || input.apexDeliveryMode === 'link_plus_summary');
   const warnings: string[] = [];
+  const mobileRiskWarnings: string[] = [];
 
   for (const asset of mediaAssets) {
     if (!isUsableImageUrl(asset.image_url)) {
@@ -170,6 +175,7 @@ export function getMockupV2Diagnostics(input: DiagnosticsInput): MockupV2Diagnos
 
   if (input.template.layoutInferred) {
     warnings.push('No explicit layout_signature; renderer will use an inferred layout.');
+    mobileRiskWarnings.push('Layout is inferred; confirm the mobile renderer matches the prospect category.');
   }
 
   if (layoutRendererName === 'LocalServiceFallbackLayout' && input.rich.layout_signature) {
@@ -178,13 +184,20 @@ export function getMockupV2Diagnostics(input: DiagnosticsInput): MockupV2Diagnos
 
   if (!hasVisualProfile) {
     warnings.push('No visual_profile; renderer will infer a niche-based visual profile.');
+    mobileRiskWarnings.push('No visual_profile; mobile page may feel less tailored.');
   } else if (isGenericVisualProfile(input.rich.visual_profile)) {
     warnings.push('Visual profile is generic; add mood, style, trust, CTA, and photo direction.');
+    mobileRiskWarnings.push('Generic visual_profile; mobile hero and CTA may feel templated.');
   }
 
   if (mediaAssets.length === 0) warnings.push('No media_assets supplied; mockup will use concept visuals.');
   if (usableMediaAssets.length > 0 && usableMediaAssets.length < 2) {
     warnings.push('Fewer than 2 usable images; public mockup may still feel thin.');
+    mobileRiskWarnings.push('Fewer than 2 usable images; mobile visual rhythm may feel thin.');
+  }
+  if (mediaAssets.length === 0) mobileRiskWarnings.push('No media assets; mobile page will rely on designed image surfaces.');
+  if (fallbackMediaCount > 0) {
+    mobileRiskWarnings.push('Fallback media is present; public labels are hidden, but real public photos would improve mobile polish.');
   }
 
   if (isGenericList(input.rich.homepage_sections, GENERIC_SECTION_TERMS)) {
@@ -228,9 +241,12 @@ export function getMockupV2Diagnostics(input: DiagnosticsInput): MockupV2Diagnos
     hasVisualProfile,
     mediaAssetCount: mediaAssets.length,
     usableMediaAssetCount: usableMediaAssets.length,
+    fallbackMediaCount,
+    usesFallbackMedia: fallbackMediaCount > 0,
     heroImageUrl: heroAsset?.image_url || null,
     heroImageSourceType: heroAsset?.source_type || null,
     imageSourceTypes: sourceTypes,
+    mobileRiskWarnings: [...new Set(mobileRiskWarnings)],
     warnings: [...new Set(warnings)],
   };
 }

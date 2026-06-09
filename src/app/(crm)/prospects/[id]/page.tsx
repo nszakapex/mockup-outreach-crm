@@ -654,10 +654,14 @@ function MockupV2DiagnosticsPanel({ diagnostics }: { diagnostics: MockupV2Diagno
           <MiniDiagnostic label="Layout Signature" value={`${diagnostics.layoutLabel}${diagnostics.layoutInferred ? ' (inferred)' : ''}`} />
           <MiniDiagnostic label="Layout Renderer" value={diagnostics.layoutRendererName} />
           <MiniDiagnostic label="Media Assets" value={`${diagnostics.usableMediaAssetCount}/${diagnostics.mediaAssetCount} usable`} />
+          <MiniDiagnostic label="Fallback Media" value={`${diagnostics.fallbackMediaCount} used`} />
           <MiniDiagnostic label="Hero Image" value={diagnostics.heroImageSourceType ? diagnostics.heroImageSourceType.replace(/_/g, ' ') : 'fallback visual'} />
           <MiniDiagnostic label="Image Sources" value={diagnostics.imageSourceTypes.length ? diagnostics.imageSourceTypes.join(', ') : 'none'} />
         </div>
         <FieldBlock label="Section Plan" value={diagnostics.sectionPlan.join(' -> ')} />
+        {diagnostics.mobileRiskWarnings.length > 0 && (
+          <FieldBlock label="Mobile QA Risks" value={diagnostics.mobileRiskWarnings.join(' | ')} />
+        )}
         <FieldBlock label="Visual Profile" value={diagnostics.visualProfileSummary} />
         {diagnostics.heroImageUrl && (
           <div>

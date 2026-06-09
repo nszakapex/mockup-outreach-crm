@@ -162,14 +162,14 @@
 
 .layoutNotice {
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
-  gap: 14px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
   align-items: center;
   border-bottom: 1px solid var(--site-line);
   background: var(--site-paper);
   color: var(--site-ink);
-  padding: 10px max(20px, calc((100vw - 1240px) / 2));
-  font-size: 0.78rem;
+  padding: 8px max(20px, calc((100vw - 1240px) / 2));
+  font-size: 0.72rem;
 }
 
 .layoutNotice strong,
@@ -182,7 +182,7 @@
 
 .layoutNotice strong {
   color: var(--site-olive);
-  font-weight: 950;
+  font-weight: 900;
   text-transform: uppercase;
 }
 
@@ -651,10 +651,12 @@
   bottom: 14px;
   z-index: 1;
   max-width: calc(100% - 28px);
-  background: color-mix(in oklch, var(--site-charcoal) 74%, transparent);
+  border: 1px solid color-mix(in oklch, var(--site-cream) 22%, transparent);
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--site-charcoal) 52%, transparent);
   color: var(--site-cream);
-  padding: 8px 10px;
-  font-size: 0.72rem;
+  padding: 6px 9px;
+  font-size: 0.68rem;
   font-weight: 850;
 }
 
@@ -2142,10 +2144,10 @@
   max-width: calc(100% - 32px);
   border: 1px solid var(--site-line-dark);
   border-radius: 999px;
-  background: oklch(0% 0 0 / 0.32);
+  background: oklch(0% 0 0 / 0.24);
   color: oklch(98% 0.01 82);
-  padding: 8px 11px;
-  font-size: 0.74rem;
+  padding: 6px 9px;
+  font-size: 0.68rem;
   font-weight: 850;
 }
 
@@ -2759,13 +2761,19 @@
   }
 
   .layoutNotice {
-    grid-template-columns: 1fr;
-    gap: 4px;
-    padding: 10px 16px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 6px 16px;
+    font-size: 0.66rem;
+  }
+
+  .layoutNotice span {
+    display: none;
   }
 
   .layoutNotice small {
-    justify-self: start;
+    justify-self: end;
+    font-size: 0.66rem;
   }
 
   .petHeader,
@@ -2780,7 +2788,16 @@
   .serviceIndexHeader,
   .immersiveHeader {
     gap: 12px;
-    padding: 14px 16px;
+    padding: 10px 16px;
+  }
+
+  .petHeader,
+  .restaurantHeader,
+  .autoHeader,
+  .clinicHeader,
+  .splitProofHeader,
+  .serviceIndexHeader {
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .petHeader nav,
@@ -2803,8 +2820,42 @@
   .fitnessHeader > a:last-child,
   .splitProofHeader > a:last-child,
   .serviceIndexHeader div a {
-    width: 100%;
+    width: auto;
     text-align: center;
+  }
+
+  .petHeaderCta,
+  .restaurantHeader > a,
+  .autoHeader > a:last-child,
+  .clinicHeader > a:last-child,
+  .fitnessHeader > a:last-child,
+  .splitProofHeader > a:last-child,
+  .serviceIndexHeader div a {
+    justify-self: end;
+    padding: 9px 11px;
+    font-size: 0.76rem;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .petBrand .logoMark,
+  .contractorHeader > a span {
+    width: 34px;
+    height: 34px;
+    font-size: 0.64rem;
+  }
+
+  .petBrand strong,
+  .autoHeader strong,
+  .serviceIndexHeader > a,
+  .fitnessHeader > a:first-child {
+    font-size: 0.98rem;
+  }
+
+  .restaurantHeader div > a {
+    margin-top: 2px;
+    font-size: 1rem;
+    line-height: 1.05;
   }
 
   .petHero,
@@ -2819,12 +2870,95 @@
   .splitHero,
   .editorialGridHero,
   .serviceFirstHero {
-    padding: 48px 16px;
+    padding: 42px 16px;
+  }
+
+  .petHero {
+    gap: 18px;
+    padding: 26px 16px 38px;
+    padding-bottom: max(38px, calc(30px + env(safe-area-inset-bottom)));
+  }
+
+  .petHeroCopy {
+    order: 1;
+  }
+
+  .petHeroCopy p {
+    font-size: 0.72rem;
+  }
+
+  .petHeroCopy span {
+    margin-top: 12px;
+    font-size: 0.96rem;
+    line-height: 1.56;
+  }
+
+  .petAppointmentCard {
+    order: 2;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    padding: 0;
+    box-shadow: none;
+  }
+
+  .petAppointmentCard small,
+  .petAppointmentCard strong,
+  .petAppointmentCard span {
+    display: none;
+  }
+
+  .petAppointmentCard a {
+    display: inline-flex;
+    width: auto;
+    margin-top: 0;
+    padding: 11px 15px;
+    font-size: 0.88rem;
+  }
+
+  .petPhotoCollage {
+    order: 3;
+    display: block;
+  }
+
+  .petPhotoCollage .layoutMedia:not(:first-child) {
+    display: none;
+  }
+
+  .petPhotoCollage .layoutMedia:first-child {
+    min-height: 198px;
+    border-width: 5px;
+    border-radius: 26px;
   }
 
   .restaurantHero {
-    min-height: 620px;
-    padding: 90px 16px 54px;
+    min-height: 520px;
+    padding: 58px 16px 44px;
+    padding-bottom: max(44px, calc(34px + env(safe-area-inset-bottom)));
+  }
+
+  .restaurantHeroCopy {
+    justify-items: start;
+    text-align: left;
+  }
+
+  .restaurantHeroCopy p {
+    font-size: 0.72rem;
+  }
+
+  .restaurantHeroCopy span {
+    margin-top: 16px;
+    line-height: 1.55;
+  }
+
+  .restaurantHeroCopy div {
+    justify-content: flex-start;
+    margin-top: 22px;
+  }
+
+  .restaurantHeroCopy a {
+    padding: 11px 13px;
+    font-size: 0.84rem;
   }
 
   .petHero h1,
@@ -2839,8 +2973,14 @@
   .restaurantHeroCopy h1,
   .autoHeroCopy h1,
   .fitnessHeroCopy h1 {
-    font-size: 2.3rem;
+    font-size: clamp(2rem, 10.5vw, 2.55rem);
     line-height: 1.04;
+  }
+
+  .restaurantHeroCopy h1,
+  .autoHeroCopy h1,
+  .fitnessHeroCopy h1 {
+    line-height: 0.98;
   }
 
   .petPhotoCollage,
@@ -2850,10 +2990,6 @@
   .clinicTrustPanel,
   .splitHeroProof > div:last-child {
     grid-template-columns: 1fr;
-  }
-
-  .petPhotoCollage {
-    grid-template-rows: none;
   }
 
   .petPhotoCollage .layoutMedia:first-child,
@@ -2878,8 +3014,85 @@
     padding: 0;
   }
 
-  .autoHeroCopy div,
+  .layout_contractor_project_board .projectBoard {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .layout_contractor_project_board .projectBoard article:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .layout_contractor_project_board .projectBoard .layoutMedia {
+    min-height: 142px;
+  }
+
+  .layout_contractor_project_board .projectBoard article:first-child .layoutMedia {
+    min-height: 190px;
+  }
+
+  .layout_auto_detail_showcase .autoHero,
+  .layout_dark_premium_transform .autoHero {
+    gap: 0;
+    padding: 0;
+  }
+
+  .layout_auto_detail_showcase .autoHeroMedia,
+  .layout_dark_premium_transform .autoHeroMedia {
+    padding: 18px 16px 0;
+  }
+
+  .layout_auto_detail_showcase .autoHeroCopy,
+  .layout_dark_premium_transform .autoHeroCopy {
+    padding: 24px 16px 34px;
+    padding-bottom: max(34px, calc(28px + env(safe-area-inset-bottom)));
+  }
+
+  .clinicHero {
+    gap: 20px;
+    padding-top: 36px;
+    padding-bottom: 42px;
+  }
+
+  .clinicTrustCard {
+    border-radius: 14px;
+    padding: 10px;
+  }
+
+  .fitnessHero {
+    gap: 22px;
+    background:
+      linear-gradient(180deg, var(--site-charcoal) 0 58%, var(--site-amber) 58%),
+      var(--site-charcoal);
+    padding-top: 36px;
+    padding-bottom: 32px;
+    padding-bottom: max(32px, calc(26px + env(safe-area-inset-bottom)));
+  }
+
   .fitnessProgramStack article {
+    grid-template-columns: auto minmax(0, 1fr);
+    border-radius: 0;
+  }
+
+  .fitnessProgramStack .layoutMedia {
+    grid-column: 1 / -1;
+    min-height: 118px;
+  }
+
+  .professionalHero {
+    gap: 22px;
+    padding-top: 38px;
+    padding-bottom: 44px;
+    padding-bottom: max(44px, calc(34px + env(safe-area-inset-bottom)));
+  }
+
+  .professionalHero aside {
+    border-left: 0;
+    border-top: 3px solid var(--site-olive);
+    padding: 18px;
+  }
+
+  .autoHeroCopy div {
     grid-template-columns: 1fr;
   }
 
@@ -3010,6 +3223,35 @@
 
   .galleryCard[data-size="large"] .cardPhoto {
     min-height: 260px;
+  }
+
+  .layout_pet_care_booking .petPhotoCollage .layoutMedia:first-child {
+    min-height: 198px;
+  }
+
+  .layout_pet_care_booking .petBookingStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding: 18px 16px;
+  }
+
+  .layout_pet_care_booking .petBookingStrip article {
+    border-radius: 14px;
+    padding: 13px;
+  }
+
+  .layout_pet_care_booking .petBookingStrip strong {
+    margin-top: 10px;
+    font-size: 0.88rem;
+  }
+
+  .layout_fitness_energy_landing .fitnessProgramStack article {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .layout_fitness_energy_landing .fitnessProgramStack .layoutMedia {
+    grid-column: 1 / -1;
+    min-height: 118px;
   }
 
   .walkthrough {
