@@ -316,6 +316,31 @@
   font-weight: 850;
 }
 
+.realImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transform: scale(1.01);
+}
+
+.realImage[data-failed="true"] {
+  display: none;
+}
+
+.hasRealMedia::after,
+.heroImage:has(.realImage:not([data-failed="true"]))::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background:
+    linear-gradient(180deg, transparent 46%, oklch(0% 0 0 / 0.5)),
+    linear-gradient(90deg, oklch(0% 0 0 / 0.18), transparent 64%);
+  pointer-events: none;
+}
+
 .heroVeil {
   background:
     linear-gradient(90deg, color-mix(in oklch, var(--site-charcoal) 92%, black), color-mix(in oklch, var(--site-charcoal) 72%, transparent) 54%, oklch(0% 0 0 / 0.16)),
@@ -455,6 +480,7 @@
 .conversion,
 .story,
 .experiences,
+.gallerySection,
 .menuSection,
 .visitSection,
 .growth,
@@ -590,6 +616,97 @@
   padding-bottom: 80px;
 }
 
+.gallerySection {
+  background:
+    radial-gradient(circle at 12% 0%, color-mix(in oklch, var(--site-amber) 18%, transparent), transparent 34%),
+    var(--site-charcoal);
+  color: var(--site-cream);
+  padding-top: 82px;
+  padding-bottom: 86px;
+}
+
+.galleryHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 0.72fr) minmax(280px, 0.55fr);
+  gap: 32px;
+  align-items: end;
+  margin-bottom: 34px;
+}
+
+.galleryHeader p {
+  margin: 0;
+  color: var(--site-amber);
+  font-size: 0.82rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.galleryHeader h2 {
+  margin: 12px 0 0;
+  color: var(--site-cream);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 3.1rem;
+  font-weight: 600;
+  line-height: 1.04;
+}
+
+.galleryHeader span {
+  color: oklch(96% 0.02 82 / 0.78);
+  line-height: 1.7;
+}
+
+.galleryGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) repeat(2, minmax(0, 0.78fr));
+  gap: 16px;
+}
+
+.galleryCard {
+  overflow: hidden;
+  border: 1px solid var(--site-line-dark);
+  border-radius: 8px;
+  background: oklch(100% 0 0 / 0.08);
+}
+
+.galleryCard[data-size="large"] {
+  grid-row: span 2;
+}
+
+.galleryCard .cardPhoto {
+  min-height: 230px;
+  border: 0;
+  border-radius: 0;
+}
+
+.galleryCard[data-size="large"] .cardPhoto {
+  min-height: 470px;
+}
+
+.galleryCard > div:last-child {
+  padding: 16px 18px 18px;
+}
+
+.galleryCard small,
+.galleryCard strong {
+  display: block;
+}
+
+.galleryCard small {
+  color: var(--site-amber);
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.galleryCard strong {
+  margin-top: 8px;
+  color: var(--site-cream);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.12rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
 .experiences .sectionIntro,
 .menuLead,
 .growthHeader,
@@ -645,6 +762,10 @@
     repeating-linear-gradient(135deg, oklch(100% 0 0 / 0.14) 0 1px, transparent 1px 26px);
 }
 
+.cardPhoto.hasRealMedia {
+  background: var(--site-charcoal);
+}
+
 .cardPhoto::before {
   position: absolute;
   inset: 0;
@@ -667,6 +788,10 @@
   padding: 8px 11px;
   font-size: 0.74rem;
   font-weight: 850;
+}
+
+.cardPhoto.hasRealMedia span {
+  background: oklch(0% 0 0 / 0.48);
 }
 
 .menuSection {
@@ -930,6 +1055,94 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
+.layout_split_proof_hero .heroContent {
+  grid-template-columns: minmax(0, 0.76fr) minmax(360px, 0.7fr);
+}
+
+.layout_split_proof_hero .statusCard {
+  align-self: center;
+  transform: rotate(-1deg);
+}
+
+.layout_editorial_service_grid .menuSection {
+  grid-template-columns: minmax(0, 0.52fr) minmax(0, 1.48fr);
+}
+
+.layout_editorial_service_grid .menuGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.layout_dark_premium_transform {
+  --site-cream: oklch(94% 0.016 245);
+  --site-paper: oklch(98% 0.008 245);
+  --site-charcoal: oklch(12% 0.055 245);
+  --site-hero-a: oklch(11% 0.055 245);
+  --site-hero-b: oklch(25% 0.08 245);
+}
+
+.layout_dark_premium_transform .hero,
+.layout_auto_detail_showcase .hero {
+  min-height: 740px;
+}
+
+.layout_clean_clinic_trust .hero {
+  background: var(--site-paper);
+}
+
+.layout_clean_clinic_trust .heroContent {
+  align-items: center;
+}
+
+.layout_clean_clinic_trust .statusCard {
+  box-shadow: 0 12px 34px oklch(0% 0 0 / 0.08);
+}
+
+.layout_warm_local_story .story {
+  grid-template-columns: minmax(0, 1.06fr) minmax(0, 0.94fr);
+}
+
+.layout_warm_local_story .trustCards {
+  transform: translateY(-18px);
+}
+
+.layout_contractor_project_board .galleryGrid {
+  grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 0.7fr));
+}
+
+.layout_contractor_project_board .conversionSteps article {
+  min-height: 156px;
+}
+
+.layout_auto_detail_showcase .gallerySection,
+.layout_dark_premium_transform .gallerySection {
+  background:
+    linear-gradient(135deg, oklch(10% 0.055 245), oklch(22% 0.075 245)),
+    var(--site-charcoal);
+}
+
+.layout_pet_care_booking .menuSection {
+  background:
+    radial-gradient(circle at 90% 0%, color-mix(in oklch, var(--site-amber) 26%, transparent), transparent 32%),
+    var(--site-cream);
+}
+
+.layout_fitness_energy_landing .heroContent {
+  align-items: center;
+}
+
+.layout_fitness_energy_landing .heroBadges span {
+  transform: skew(-5deg);
+}
+
+.layout_professional_trust_page .heroContent {
+  grid-template-columns: minmax(0, 0.88fr) minmax(320px, 0.48fr);
+}
+
+.layout_luxury_service_page .hero h1 {
+  max-width: 880px;
+  letter-spacing: 0;
+}
+
 .photo_coffee {
   --site-photo-a: oklch(28% 0.06 50);
   --site-photo-b: oklch(76% 0.14 75);
@@ -1032,6 +1245,7 @@
   .heroContent,
   .conversion,
   .story,
+  .galleryHeader,
   .menuSection,
   .visitSection,
   .snapshot,
@@ -1060,6 +1274,7 @@
 
   .conversionSteps,
   .experienceGrid,
+  .galleryGrid,
   .growthGrid,
   .trustCards,
   .visitPanel {
@@ -1069,6 +1284,7 @@
   .variant_bar_grill .experienceGrid,
   .variant_contractor .experienceGrid,
   .variant_auto_service .experienceGrid,
+  .layout_editorial_service_grid .menuGrid,
   .variant_food_truck .visitPanel,
   .variant_home_service .visitPanel,
   .variant_local_service .visitPanel {
@@ -1157,6 +1373,7 @@
   .conversion,
   .story,
   .experiences,
+  .gallerySection,
   .menuSection,
   .visitSection,
   .growth,
@@ -1178,6 +1395,7 @@
   }
 
   .sectionIntro h2,
+  .galleryHeader h2,
   .storyCopy h2,
   .menuLead h2,
   .visitCopy h2,
@@ -1192,6 +1410,7 @@
 
   .conversionSteps,
   .experienceGrid,
+  .galleryGrid,
   .growthGrid,
   .trustCards,
   .visitPanel,
@@ -1200,6 +1419,7 @@
   .variant_bar_grill .experienceGrid,
   .variant_contractor .experienceGrid,
   .variant_auto_service .experienceGrid,
+  .layout_editorial_service_grid .menuGrid,
   .variant_food_truck .visitPanel,
   .variant_home_service .visitPanel,
   .variant_local_service .visitPanel {
@@ -1208,6 +1428,18 @@
 
   .cardPhoto {
     min-height: 220px;
+  }
+
+  .galleryHeader {
+    grid-template-columns: 1fr;
+  }
+
+  .galleryCard[data-size="large"] {
+    grid-row: auto;
+  }
+
+  .galleryCard[data-size="large"] .cardPhoto {
+    min-height: 260px;
   }
 
   .walkthrough {

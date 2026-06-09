@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import {
   ArrowRight,
   BriefcaseBusiness,
@@ -28,6 +28,8 @@ import {
   cleanRichList,
   parseMockupConceptNotes,
   splitStrategyText,
+  type MockupMediaAsset,
+  type MockupVisualProfile,
   type RichMockupData,
 } from '@/lib/mockup-rich-data';
 import type { Audit, Mockup, Prospect } from '@/lib/types';
@@ -36,8 +38,10 @@ import {
   getMockupTemplateSelection,
   isFoodMockupTemplate,
   isServiceMockupTemplate,
+  type MockupLayoutSignature,
   type MockupTemplateVariant,
 } from '@/lib/mockup-templates';
+import { getUsableMockupMediaAssets, selectHeroMediaAsset } from '@/lib/mockup-v2';
 import styles from './PremiumMockupSite.module.css';
 
 type PublicProspect = Pick<Prospect, 'business_name' | 'niche' | 'city' | 'state'>;
@@ -85,6 +89,18 @@ type IssueFix = {
   severity: 'low' | 'medium' | 'high';
 };
 
+type SectionKey =
+  | 'hero'
+  | 'conversion'
+  | 'story'
+  | 'gallery'
+  | 'experiences'
+  | 'offers'
+  | 'visit'
+  | 'growth'
+  | 'snapshot'
+  | 'walkthrough';
+
 type VariantConfig = {
   navItems: string[];
   primaryCta: string;
@@ -122,6 +138,15 @@ type SiteContext = {
   rich: RichMockupData;
   audit?: PublicAudit | null;
   conceptNotes: string | null;
+  layoutSignature: MockupLayoutSignature;
+  designStyleKey: string | null;
+  photoStrategy: string | null;
+  visualProfile: MockupVisualProfile | null;
+  mediaAssets: MockupMediaAsset[];
+  heroAsset: MockupMediaAsset | null;
+  galleryAssets: MockupMediaAsset[];
+  sectionPlan: SectionKey[];
+  themeStyle: CSSProperties;
   headline: string;
   subheadline: string;
   primaryCta: string;
@@ -986,18 +1011,15 @@ export function PremiumMockupSite({ mockup, prospect, audit }: PremiumMockupSite
   const context = buildSiteContext(mockup, prospect, audit);
 
   return (
-    <main className={`${styles.site} ${styles[`variant_${context.variant}`]} ${styles[`tone_${context.config.tone}`]}`}>
+    <main
+      className={`${styles.site} ${styles[`variant_${context.variant}`]} ${styles[`tone_${context.config.tone}`]} ${styles[`layout_${context.layoutSignature}`]}`}
+      style={context.themeStyle}
+    >
       <ConceptNotice context={context} />
       <WebsiteHeader context={context} />
-      <WebsiteHero context={context} />
-      <PrimaryConversion context={context} />
-      <BrandStory context={context} />
-      <ExperienceSection context={context} />
-      <MenuOfferSection context={context} />
-      <VisitSection context={context} />
-      <GrowthSection context={context} />
-      <OnlinePresenceSnapshot context={context} />
-      <FinalWalkthrough context={context} />
+      {context.sectionPlan.map((section) => (
+        <MockupSection key={section} section={section} context={context} />
+      ))}
       <WebsiteFooter context={context} />
     </main>
   );
@@ -1018,13 +1040,21 @@ function buildSiteContext(mockup: Mockup, prospect: PublicProspect | null, audit
   });
   const variant = selection.variant;
   const config = VARIANT_CONFIG[variant];
+  const layoutSignature = selection.layoutSignature;
+  const visualProfile = rich.visual_profile || inferVisualProfile(variant, layoutSignature, rich, config);
+  const mediaAssets = getUsableMockupMediaAssets(rich);
+  const heroAsset = selectHeroMediaAsset(mediaAssets);
+  const galleryAssets = prioritizeGalleryAssets(mediaAssets, heroAsset);
+  const designStyleKey = cleanText(rich.design_style_key) || cleanText(visualProfile?.design_style_key) || layoutSignature;
+  const photoStrategy =
+    cleanText(rich.photo_strategy) || cleanText(visualProfile?.photo_strategy) || buildFallbackPhotoStrategy(variant, heroAsset);
   const headline = cleanText(mockup.hero_headline) || config.fallbackHeadline(businessName, city);
   const subheadline =
     cleanText(mockup.hero_subheadline) ||
     cleanText(audit?.conversion_opportunity) ||
     config.fallbackSubheadline(businessName, location);
   const primaryCta = cleanText(mockup.primary_cta) || config.primaryCta;
-  const navItems = mergeText(rich.proposed_site_nav, config.navItems, [], 6);
+  const navItems = filterNavItemsForVariant(mergeText(rich.proposed_site_nav, config.navItems, [], 6), variant);
   const richOffers = cleanRichList(rich.menu_or_offer_items);
   const offers = mergeOfferItems(richOffers, config.offers, variant);
   const trustSignals = mergeText(rich.trust_signals, deriveTrustSignals(audit), config.trustSignals, 5);
@@ -1039,6 +1069,7 @@ function buildSiteContext(mockup: Mockup, prospect: PublicProspect | null, audit
     cleanText(rich.inspiration_notes) ||
     cleanText(parsed.notes) ||
     config.heroPhotoLabel;
+  const sectionPlan = buildSectionPlan(layoutSignature, variant, galleryAssets.length > 0, Boolean(rich.current_site_snapshot));
 
   return {
     mockup,
@@ -1051,6 +1082,15 @@ function buildSiteContext(mockup: Mockup, prospect: PublicProspect | null, audit
     rich,
     audit,
     conceptNotes: parsed.notes,
+    layoutSignature,
+    designStyleKey,
+    photoStrategy,
+    visualProfile,
+    mediaAssets,
+    heroAsset,
+    galleryAssets,
+    sectionPlan,
+    themeStyle: buildThemeStyle(visualProfile),
     headline,
     subheadline,
     primaryCta,
@@ -1067,6 +1107,19 @@ function buildSiteContext(mockup: Mockup, prospect: PublicProspect | null, audit
     mockupUrl: buildPublicMockupUrl(mockup.slug),
     templateReason: selection.reason,
   };
+}
+
+function MockupSection({ section, context }: { section: SectionKey; context: SiteContext }) {
+  if (section === 'hero') return <WebsiteHero context={context} />;
+  if (section === 'conversion') return <PrimaryConversion context={context} />;
+  if (section === 'story') return <BrandStory context={context} />;
+  if (section === 'gallery') return <ProjectGallerySection context={context} />;
+  if (section === 'experiences') return <ExperienceSection context={context} />;
+  if (section === 'offers') return <MenuOfferSection context={context} />;
+  if (section === 'visit') return <VisitSection context={context} />;
+  if (section === 'growth') return <GrowthSection context={context} />;
+  if (section === 'snapshot') return <OnlinePresenceSnapshot context={context} />;
+  return <FinalWalkthrough context={context} />;
 }
 
 function ConceptNotice({ context }: { context: SiteContext }) {
@@ -1109,12 +1162,13 @@ function WebsiteHero({ context }: { context: SiteContext }) {
   return (
     <section id="home" className={styles.hero}>
       <div className={`${styles.heroImage} ${styles[`photo_${context.config.heroPhoto}`]}`}>
-        <span>{context.config.heroPhotoLabel}</span>
+        {context.heroAsset && <SafeImage asset={context.heroAsset} className={styles.realImage} priority />}
+        <span>{context.heroAsset?.usage_note || context.heroAsset?.alt || context.config.heroPhotoLabel}</span>
       </div>
       <div className={styles.heroVeil} />
       <div className={styles.heroContent}>
         <div className={styles.heroCopy}>
-          <p className={styles.eyebrow}>{context.config.eyebrow}</p>
+          <p className={styles.eyebrow}>{context.visualProfile?.brand_mood || context.config.eyebrow}</p>
           <h1>{context.headline}</h1>
           <p className={styles.heroLead}>{context.subheadline}</p>
           <div className={styles.heroBadges}>
@@ -1192,6 +1246,7 @@ function BrandStory({ context }: { context: SiteContext }) {
 
 function ExperienceSection({ context }: { context: SiteContext }) {
   const cards = context.offers.slice(0, 3);
+  const assets = context.galleryAssets.slice(0, 3);
 
   return (
     <section className={styles.experiences}>
@@ -1200,8 +1255,34 @@ function ExperienceSection({ context }: { context: SiteContext }) {
         <h2>{experienceTitle(context)}</h2>
       </div>
       <div className={styles.experienceGrid}>
-        {cards.map((item) => (
-          <PhotoCard key={item.title} item={item} />
+        {cards.map((item, index) => (
+          <PhotoCard key={item.title} item={item} asset={assets[index]} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ProjectGallerySection({ context }: { context: SiteContext }) {
+  const assets = context.galleryAssets.slice(0, 6);
+  if (assets.length === 0) return null;
+
+  return (
+    <section className={styles.gallerySection}>
+      <div className={styles.galleryHeader}>
+        <p>{galleryEyebrow(context)}</p>
+        <h2>{galleryTitle(context)}</h2>
+        <span>{context.photoStrategy}</span>
+      </div>
+      <div className={styles.galleryGrid}>
+        {assets.map((asset, index) => (
+          <article key={asset.image_url} className={styles.galleryCard} data-size={index === 0 ? 'large' : 'standard'}>
+            <MediaFrame asset={asset} fallbackRole={context.config.heroPhoto} label={asset.usage_note || asset.alt || photoLabel(context.config.heroPhoto)} />
+            <div>
+              <small>{asset.source_type.replace(/_/g, ' ')}</small>
+              <strong>{asset.usage_note || asset.alt || galleryCardFallback(context)}</strong>
+            </div>
+          </article>
         ))}
       </div>
     </section>
@@ -1209,6 +1290,8 @@ function ExperienceSection({ context }: { context: SiteContext }) {
 }
 
 function MenuOfferSection({ context }: { context: SiteContext }) {
+  const assets = context.galleryAssets.slice(2, 6);
+
   return (
     <section id="menu" className={styles.menuSection}>
       <div className={styles.menuLead}>
@@ -1217,11 +1300,9 @@ function MenuOfferSection({ context }: { context: SiteContext }) {
         <span>{menuLeadBody(context)}</span>
       </div>
       <div className={styles.menuGrid}>
-        {context.offers.slice(0, 4).map((item) => (
+        {context.offers.slice(0, 4).map((item, index) => (
           <article key={item.title} className={styles.menuCard}>
-            <div className={`${styles.cardPhoto} ${styles[`photo_${item.photoRole}`]}`}>
-              <span>{item.label || 'Featured'}</span>
-            </div>
+            <MediaFrame asset={assets[index]} fallbackRole={item.photoRole} label={item.label || 'Featured'} />
             <div>
               <small>{item.label || 'Featured'}</small>
               <h3>{item.title}</h3>
@@ -1368,12 +1449,10 @@ function WebsiteFooter({ context }: { context: SiteContext }) {
   );
 }
 
-function PhotoCard({ item }: { item: HomepageItem }) {
+function PhotoCard({ item, asset }: { item: HomepageItem; asset?: MockupMediaAsset }) {
   return (
     <article className={styles.photoCard}>
-      <div className={`${styles.cardPhoto} ${styles[`photo_${item.photoRole}`]}`}>
-        <span>{photoLabel(item.photoRole)}</span>
-      </div>
+      <MediaFrame asset={asset} fallbackRole={item.photoRole} label={asset?.usage_note || photoLabel(item.photoRole)} />
       <div>
         <small>{item.label || 'Featured'}</small>
         <h3>{item.title}</h3>
@@ -1381,6 +1460,214 @@ function PhotoCard({ item }: { item: HomepageItem }) {
       </div>
     </article>
   );
+}
+
+function MediaFrame({
+  asset,
+  fallbackRole,
+  label,
+}: {
+  asset?: MockupMediaAsset | null;
+  fallbackRole: PhotoRole;
+  label: string;
+}) {
+  return (
+    <div className={`${styles.cardPhoto} ${styles[`photo_${fallbackRole}`]} ${asset ? styles.hasRealMedia : ''}`}>
+      {asset && <SafeImage asset={asset} className={styles.realImage} />}
+      <span>{label}</span>
+    </div>
+  );
+}
+
+function SafeImage({
+  asset,
+  className,
+  priority = false,
+}: {
+  asset: MockupMediaAsset;
+  className: string;
+  priority?: boolean;
+}) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={asset.image_url}
+      alt={asset.alt || asset.usage_note || ''}
+      className={className}
+      loading={priority ? 'eager' : 'lazy'}
+      referrerPolicy="no-referrer"
+      onError={(event) => {
+        event.currentTarget.dataset.failed = 'true';
+        event.currentTarget.removeAttribute('src');
+      }}
+    />
+  );
+}
+
+function prioritizeGalleryAssets(assets: MockupMediaAsset[], heroAsset: MockupMediaAsset | null) {
+  const heroUrl = heroAsset?.image_url;
+  const ordered = [
+    ...assets.filter((asset) => asset.type === 'project' || asset.type === 'proof'),
+    ...assets.filter((asset) => asset.type === 'service' || asset.type === 'process'),
+    ...assets.filter((asset) => asset.type === 'team' || asset.type === 'exterior' || asset.type === 'atmosphere'),
+    ...assets.filter((asset) => asset.type === 'gallery' || asset.type === 'hero'),
+  ].filter((asset) => asset.image_url !== heroUrl);
+
+  const seen = new Set<string>();
+  return ordered.filter((asset) => {
+    const key = asset.image_url.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function inferVisualProfile(
+  variant: MockupTemplateVariant,
+  layoutSignature: MockupLayoutSignature,
+  rich: RichMockupData,
+  config: VariantConfig
+): MockupVisualProfile {
+  const moodByVariant: Record<MockupTemplateVariant, string> = {
+    home_service: 'helpful, direct, service-area confident',
+    contractor: 'grounded, durable, proof-heavy local contractor',
+    medical_aesthetics: 'calm, premium, clinical trust',
+    auto_service: 'dark, precise, transformation-forward',
+    pet_service: 'warm, friendly, safety-first pet care',
+    fitness_studio: 'energetic, community-driven, coach-led',
+    professional_service: 'clean, credible, consultation-first',
+    local_service: 'local, practical, appointment-ready',
+    coffee_shop: 'warm, editorial, neighborhood hospitality',
+    restaurant: 'photo-forward, occasion-led hospitality',
+    bar_grill: 'social, energetic, event-forward hospitality',
+    premium_dining: 'refined, atmospheric, reservation-led',
+    nonprofit_cafe: 'warm, community-centered, mission-aware',
+    food_truck: 'mobile, route-first, high-energy food service',
+  };
+
+  return {
+    brand_mood: positiveVisualDirection(rich.visual_direction) || moodByVariant[variant],
+    design_style_key: cleanText(rich.design_style_key) || layoutSignature,
+    color_palette: null,
+    typography_mood: config.tone === 'luxury' ? 'editorial serif with calm service copy' : 'confident display type with readable service copy',
+    layout_signature: layoutSignature,
+    photo_strategy: cleanText(rich.photo_strategy) || buildFallbackPhotoStrategy(variant, null),
+    ui_personality: layoutSignature.replace(/_/g, ' '),
+    trust_style: isServiceMockupTemplate(variant) ? 'proof before CTA' : 'atmosphere and proof near the action',
+    cta_style: config.primaryCta,
+  };
+}
+
+function buildThemeStyle(profile: MockupVisualProfile | null): CSSProperties {
+  const palette = profile?.color_palette;
+  const style: CSSProperties & Record<string, string> = {};
+  if (!palette) return style;
+
+  const tokenMap: Array<[keyof NonNullable<MockupVisualProfile['color_palette']>, string]> = [
+    ['primary', '--site-hero-a'],
+    ['secondary', '--site-hero-b'],
+    ['accent', '--site-amber'],
+    ['background', '--site-cream'],
+    ['text', '--site-ink'],
+  ];
+
+  for (const [key, token] of tokenMap) {
+    const value = palette[key];
+    if (value && isSafeCssColor(value)) style[token] = value;
+  }
+
+  return style;
+}
+
+function isSafeCssColor(value: string) {
+  return /^(#[0-9a-f]{3,8}|oklch\([^)]+\)|hsl\([^)]+\)|hsla\([^)]+\)|rgb\([^)]+\)|rgba\([^)]+\)|[a-z]+)$/i.test(
+    value.trim()
+  );
+}
+
+function buildFallbackPhotoStrategy(variant: MockupTemplateVariant, heroAsset: MockupMediaAsset | null) {
+  if (heroAsset?.source_type && heroAsset.source_type !== 'fallback') {
+    return `Use public ${heroAsset.source_type.replace(/_/g, ' ')} imagery as the visual anchor, then support it with proof and process cards.`;
+  }
+  if (variant === 'contractor') return 'Use recent project photos first; fall back to grounded project-board concept visuals only when no public photos are reliable.';
+  if (variant === 'auto_service') return 'Use transformation photos, shine details, package cards, and before/after proof where public photos are reliable.';
+  if (variant === 'medical_aesthetics') return 'Use calm clinic/provider visuals and avoid implying treatment outcomes that are not public.';
+  if (variant === 'pet_service') return 'Use warm pet and grooming proof photos when public, with friendly concept visuals as fallback.';
+  if (variant === 'fitness_studio') return 'Use class energy, coach, and community photos where public, with program visuals as fallback.';
+  if (isServiceMockupTemplate(variant)) return 'Use real service, project, team, or proof photos where available; keep fallback visuals clearly conceptual.';
+  return 'Use real food, interior, exterior, or atmosphere photos where available; keep fallback visuals clearly conceptual.';
+}
+
+function buildSectionPlan(
+  layoutSignature: MockupLayoutSignature,
+  variant: MockupTemplateVariant,
+  hasGallery: boolean,
+  hasSnapshot: boolean
+): SectionKey[] {
+  const plans: Record<MockupLayoutSignature, SectionKey[]> = {
+    immersive_photo_hero: ['hero', 'conversion', 'gallery', 'offers', 'story', 'visit', 'growth', 'walkthrough'],
+    split_proof_hero: ['hero', 'story', 'offers', 'gallery', 'conversion', 'visit', 'snapshot', 'walkthrough'],
+    editorial_service_grid: ['hero', 'offers', 'conversion', 'story', 'growth', 'visit', 'snapshot', 'walkthrough'],
+    dark_premium_transform: ['hero', 'gallery', 'offers', 'conversion', 'growth', 'visit', 'snapshot', 'walkthrough'],
+    clean_clinic_trust: ['hero', 'story', 'offers', 'conversion', 'visit', 'growth', 'snapshot', 'walkthrough'],
+    warm_local_story: ['hero', 'story', 'offers', 'gallery', 'visit', 'growth', 'conversion', 'walkthrough'],
+    contractor_project_board: ['hero', 'gallery', 'conversion', 'offers', 'story', 'visit', 'snapshot', 'walkthrough'],
+    auto_detail_showcase: ['hero', 'gallery', 'offers', 'conversion', 'growth', 'visit', 'snapshot', 'walkthrough'],
+    pet_care_booking: ['hero', 'offers', 'story', 'gallery', 'visit', 'conversion', 'growth', 'walkthrough'],
+    fitness_energy_landing: ['hero', 'offers', 'gallery', 'story', 'conversion', 'visit', 'growth', 'walkthrough'],
+    professional_trust_page: ['hero', 'story', 'conversion', 'offers', 'visit', 'snapshot', 'growth', 'walkthrough'],
+    luxury_service_page: ['hero', 'story', 'gallery', 'offers', 'conversion', 'visit', 'growth', 'walkthrough'],
+  };
+
+  const fallback: SectionKey[] = ['hero', 'conversion', 'story', 'experiences', 'offers', 'visit', 'growth', 'walkthrough'];
+  const planned = plans[layoutSignature] || fallback;
+  const filtered = planned.filter((section) => {
+    if (section === 'gallery') return hasGallery;
+    if (section === 'snapshot') return hasSnapshot;
+    if (section === 'experiences') return !hasGallery || variant === 'local_service';
+    return true;
+  });
+
+  const minimum = ['hero', 'conversion', 'offers', 'visit', 'walkthrough'] as SectionKey[];
+  for (const section of minimum) {
+    if (!filtered.includes(section)) filtered.push(section);
+  }
+
+  return filtered.slice(0, 8);
+}
+
+function filterNavItemsForVariant(items: string[], variant: MockupTemplateVariant) {
+  if (isFoodMockupTemplate(variant)) return items;
+  return items.filter((item) => !isFoodOnlyOffer(item) && !/reservation|happy hour|catering|gift card|order/i.test(item));
+}
+
+function galleryEyebrow(context: SiteContext) {
+  if (context.variant === 'contractor') return 'Project proof';
+  if (context.variant === 'auto_service') return 'Transformation proof';
+  if (context.variant === 'medical_aesthetics') return 'Experience and trust';
+  if (context.variant === 'pet_service') return 'Grooming proof';
+  if (context.variant === 'fitness_studio') return 'Studio energy';
+  if (isServiceMockupTemplate(context.variant)) return 'Proof gallery';
+  return 'Photo-led first impression';
+}
+
+function galleryTitle(context: SiteContext) {
+  if (context.variant === 'contractor') return 'Let recent work carry the first impression.';
+  if (context.variant === 'auto_service') return 'Show the finish before asking people to book.';
+  if (context.variant === 'medical_aesthetics') return 'Use real clinic cues without overpromising outcomes.';
+  if (context.variant === 'pet_service') return 'Make comfort and care visible before the appointment.';
+  if (context.variant === 'fitness_studio') return 'Make the first class easy to picture.';
+  if (isServiceMockupTemplate(context.variant)) return 'Use real proof where visitors make the call decision.';
+  return 'Use actual atmosphere before the guest compares options.';
+}
+
+function galleryCardFallback(context: SiteContext) {
+  if (context.variant === 'contractor') return 'Recent project proof';
+  if (context.variant === 'auto_service') return 'Result proof';
+  if (context.variant === 'medical_aesthetics') return 'Clinic trust cue';
+  if (context.variant === 'pet_service') return 'Pet care proof';
+  if (context.variant === 'fitness_studio') return 'Class or coach proof';
+  return 'Public visual proof';
 }
 
 function mergeOfferItems(titles: string[], fallback: HomepageItem[], variant: MockupTemplateVariant) {

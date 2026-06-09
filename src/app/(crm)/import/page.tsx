@@ -32,15 +32,55 @@ const SAMPLE_JSON = `[
     "current_site_snapshot": "Service packages exist, but mobile visitors have to compare too much before asking for a quote.",
     "online_presence_status": ["Website UX: packages are hard to compare", "CTA clarity: quote request is buried"],
     "visual_direction": "Premium studio feel with dark surfaces, crisp package cards, and a booking-first hero.",
+    "layout_signature": "auto_detail_showcase",
+    "design_style_key": "dark_premium_transform",
+    "photo_strategy": "Use a shine-forward hero image, tight before/after proof cards, and package visuals that make the result obvious before the quote ask.",
+    "visual_profile": {
+      "brand_mood": "dark, precise, high-gloss detail studio",
+      "design_style_key": "dark_premium_transform",
+      "color_palette": {
+        "primary": "oklch(16% 0.05 245)",
+        "secondary": "oklch(28% 0.07 245)",
+        "accent": "oklch(78% 0.18 90)",
+        "background": "oklch(96% 0.02 245)",
+        "text": "oklch(15% 0.05 245)"
+      },
+      "typography_mood": "wide, confident, technical",
+      "layout_signature": "auto_detail_showcase",
+      "photo_strategy": "Hero image plus proof cards from public service or gallery photos when available.",
+      "ui_personality": "sharp dark panels, comparison cards, transformation-first proof",
+      "trust_style": "review proof near packages and booking CTA",
+      "cta_style": "single Book Detail path repeated after package comparison"
+    },
+    "media_assets": [
+      {
+        "type": "hero",
+        "image_url": "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&w=1600&q=80",
+        "source_url": "https://unsplash.com/",
+        "source_type": "fallback",
+        "alt": "Detailed vehicle finish concept visual",
+        "usage_note": "Category concept visual only; replace with public business photos when available.",
+        "confidence": "low"
+      },
+      {
+        "type": "proof",
+        "image_url": "https://images.unsplash.com/photo-1603386329225-868f9b1ee6c9?auto=format&fit=crop&w=1200&q=80",
+        "source_url": "https://unsplash.com/",
+        "source_type": "fallback",
+        "alt": "Vehicle detail proof concept visual",
+        "usage_note": "Fallback proof card; not actual business work.",
+        "confidence": "low"
+      }
+    ],
     "proposed_site_nav": ["Services", "Results", "Areas", "Reviews", "Quote"],
     "homepage_sections": ["Quote-first hero", "Package comparison", "Before-and-after proof", "Service area CTA"],
-    "menu_or_offer_items": ["Interior refresh", "Full detail", "Ceramic coating", "Gift cards"],
+    "menu_or_offer_items": ["Interior refresh", "Full detail", "Ceramic coating", "Paint protection"],
     "website_issue_examples": ["Booking packages are hard to compare on mobile", "Quote CTA is buried below service copy"],
     "trust_signals": ["Five-star local detail studio", "Paint-safe products", "Weekend appointments"],
     "cta_strategy": "Compare packages -> Choose service -> Request a quote",
     "local_seo_angle": "auto detailing packages in Denver",
     "content_strategy_angle": "weekly before-and-after detail reels",
-    "meta_ads_angle": "gift-card and ceramic-coating inquiry campaigns",
+    "meta_ads_angle": "ceramic-coating and interior-refresh inquiry campaigns",
     "social_audit": {
       "instagram_status": "Visual work is present but posts are inconsistent.",
       "facebook_status": "Mostly service updates without a clear quote path.",
@@ -57,11 +97,11 @@ const SAMPLE_JSON = `[
       "week_1": "Film one interior refresh and one ceramic coating before-and-after.",
       "week_2": "Post package explainers and a quick quote CTA.",
       "week_3": "Feature customer handoff clips and weekend appointment reminders.",
-      "week_4": "Run a ceramic coating FAQ reel and gift-card post.",
+      "week_4": "Run a ceramic coating FAQ reel and interior-refresh post.",
       "recommended_posting_cadence": "2 reels plus 2 posts/stories per week",
       "recommended_reels_per_week": "2",
       "shoot_frequency": "One short content shoot per week",
-      "priority_content_themes": ["before and after", "package explainers", "ceramic coating", "gift cards"]
+      "priority_content_themes": ["before and after", "package explainers", "ceramic coating", "interior refresh"]
     },
     "website_social_gap": "Social proof does not lead into a simple package comparison and quote request.",
     "email_subject": "Quick mockup for Example Detail Studio",
@@ -255,6 +295,7 @@ export default function ImportPage() {
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Status</th>
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Mockup data</th>
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Template</th>
+                  <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>V2 profile</th>
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Social audit</th>
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Campaign</th>
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Mockup slug</th>
@@ -275,6 +316,7 @@ export default function ImportPage() {
                     <td className="px-3 py-3"><StatusBadge status={item.status} /></td>
                     <td className="px-3 py-3"><RichnessBadge level={item.mockupRichness.level} label={item.mockupRichness.label} /></td>
                     <td className="px-3 py-3"><TemplateCell item={item} /></td>
+                    <td className="px-3 py-3"><MockupV2Cell item={item} /></td>
                     <td className="px-3 py-3"><RichnessBadge level={item.socialAuditRichness.level} label={item.socialAuditRichness.label} /></td>
                     <td className="px-3 py-3"><CampaignCell item={item} /></td>
                     <td className="px-3 py-3 font-mono text-xs" style={{ color: 'var(--color-ink-2)' }}>{item.slug}</td>
@@ -409,9 +451,40 @@ function TemplateCell({ item }: { item: HermesImportPreview }) {
       <div className="text-xs leading-5" style={{ color: 'var(--color-ink-2)' }}>
         {selection.reason}
       </div>
+      <div className="text-xs leading-5" style={{ color: 'var(--color-ink-2)' }}>
+        Layout: {selection.layoutLabel}
+      </div>
+      <div className="text-xs leading-5" style={{ color: 'var(--color-ink-3)' }}>
+        {selection.layoutReason}
+      </div>
       {selection.mismatchWarning && (
         <div className="text-xs leading-5" style={{ color: 'var(--color-warning)' }}>
           {selection.mismatchWarning}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MockupV2Cell({ item }: { item: HermesImportPreview }) {
+  const v2 = item.mockupV2;
+  const warningCount = v2.warnings.length;
+
+  return (
+    <div className="min-w-64 space-y-1 text-xs leading-5" style={{ color: 'var(--color-ink-2)' }}>
+      <div>
+        <strong style={{ color: 'var(--color-ink)' }}>{v2.layoutLabel}</strong>
+        {v2.layoutInferred && <span style={{ color: 'var(--color-warning)' }}> inferred</span>}
+      </div>
+      <div>
+        Media: {v2.usableMediaAssetCount}/{v2.mediaAssetCount} usable
+        {v2.heroImageSourceType ? ` · hero from ${v2.heroImageSourceType.replace(/_/g, ' ')}` : ''}
+      </div>
+      <div>{v2.visualProfileSummary}</div>
+      {v2.imageSourceTypes.length > 0 && <div>Sources: {v2.imageSourceTypes.join(', ')}</div>}
+      {warningCount > 0 && (
+        <div style={{ color: 'var(--color-warning)' }}>
+          {warningCount} V2 warning{warningCount === 1 ? '' : 's'}
         </div>
       )}
     </div>

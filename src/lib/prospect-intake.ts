@@ -4,6 +4,8 @@ import {
   getMockupRichness,
   hasRichMockupData,
   normalizeRichMockupData,
+  type MockupMediaAsset,
+  type MockupVisualProfile,
   type MockupRichness,
 } from './mockup-rich-data';
 import {
@@ -27,6 +29,7 @@ import {
   getMockupTemplateSelection,
   type MockupTemplateSelection,
 } from './mockup-templates';
+import { getMockupV2Diagnostics, type MockupV2Diagnostics } from './mockup-v2';
 import {
   getResinateImportSummary,
   hasResinateFlooringData,
@@ -74,6 +77,13 @@ export type ProspectIntakeInput = {
   concept_notes?: string | null;
   brand_style_notes?: string | null;
   visual_direction?: string | null;
+  layout_signature?: string | null;
+  design_style_key?: string | null;
+  photo_strategy?: string | null;
+  visual_profile?: MockupVisualProfile | null;
+  media_assets?: MockupMediaAsset[] | null;
+  proof_assets?: MockupMediaAsset[] | null;
+  gallery_assets?: MockupMediaAsset[] | null;
   primary_colors?: string | string[] | null;
   secondary_colors?: string | string[] | null;
   menu_or_offer_items?: string | string[] | null;
@@ -161,6 +171,7 @@ export type HermesImportPreview = {
   warnings: string[];
   mockupRichness: MockupRichness;
   mockupTemplate: MockupTemplateSelection;
+  mockupV2: MockupV2Diagnostics;
   socialAuditRichness: SocialAuditRichness;
   apexDelivery: ApexImportSummary | null;
   resinateFlooring: ResinateImportSummary | null;
@@ -315,6 +326,10 @@ function hasMockupData(input: ProspectIntakeInput) {
       stringifyFeatureList(input.features_included) ||
       clean(input.concept_notes) ||
       hasRichMockupData(input as Record<string, unknown>) ||
+      Boolean(input.visual_profile) ||
+      Boolean(input.media_assets?.length) ||
+      Boolean(input.proof_assets?.length) ||
+      Boolean(input.gallery_assets?.length) ||
       hasResinateFlooringData(input as Record<string, unknown>)
   );
 }
@@ -560,6 +575,13 @@ export function normalizeHermesJsonRecord(value: unknown): ProspectIntakeInput |
     concept_notes: clean(record.concept_notes),
     brand_style_notes: clean(record.brand_style_notes),
     visual_direction: clean(record.visual_direction),
+    layout_signature: clean(record.layout_signature),
+    design_style_key: clean(record.design_style_key),
+    photo_strategy: clean(record.photo_strategy),
+    visual_profile: cleanRecord(record.visual_profile) as MockupVisualProfile | null,
+    media_assets: Array.isArray(record.media_assets) ? (record.media_assets as MockupMediaAsset[]) : null,
+    proof_assets: Array.isArray(record.proof_assets) ? (record.proof_assets as MockupMediaAsset[]) : null,
+    gallery_assets: Array.isArray(record.gallery_assets) ? (record.gallery_assets as MockupMediaAsset[]) : null,
     primary_colors: Array.isArray(record.primary_colors)
       ? record.primary_colors.map((item) => String(item))
       : clean(record.primary_colors),
@@ -686,17 +708,27 @@ export async function previewHermesImport(records: ProspectIntakeInput[]) {
     }
   }
 
-  return records.map<HermesImportPreview>((record, index) => {
+  const previews = records.map<HermesImportPreview>((record, index) => {
     const validation = validateBaseInput(record, true);
     const duplicate = duplicateIndexes.has(index);
     const resinateFlooring = getResinateImportSummary(record as Record<string, unknown>, record.email_body);
     const apexDelivery = getApexImportSummary(record as Record<string, unknown>, record.email_body);
+    const rich = normalizeRichMockupData(record as Record<string, unknown>);
     const mockupTemplate = getMockupTemplateSelection({
       businessName: record.business_name,
       niche: record.niche,
       campaignType: record.campaign_type,
-      fields: record as Record<string, unknown>,
+      fields: rich as Record<string, unknown>,
       text: [record.main_problem, record.conversion_opportunity, record.recommended_offer, record.mockup_angle, record.audit_notes],
+    });
+    const mockupV2 = getMockupV2Diagnostics({
+      rich,
+      template: mockupTemplate,
+      niche: record.niche,
+      businessName: record.business_name,
+      campaignType: record.campaign_type,
+      apexDeliveryMode: apexDelivery?.deliveryMode,
+      emailBody: record.email_body,
     });
     const resinateWarnings =
       resinateFlooring?.missingFields.map((field) => `Resinate missing ${field}.`) ?? [];
@@ -711,12 +743,25 @@ export async function previewHermesImport(records: ProspectIntakeInput[]) {
       valid: validation.errors.length === 0 && !duplicate,
       duplicate,
       errors: duplicate ? [...validation.errors, 'Duplicate website_url or public_email detected.'] : validation.errors,
-      warnings: [...validation.warnings, ...resinateWarnings],
+      warnings: [...validation.warnings, ...resinateWarnings, ...mockupV2.warnings],
       mockupRichness: getMockupRichness(record as Record<string, unknown>, hasMockupData(record)),
       mockupTemplate,
+      mockupV2,
       socialAuditRichness: getSocialAuditRichness(record as Record<string, unknown>),
       apexDelivery,
       resinateFlooring,
     };
   });
+
+  const publicApexPreviews = previews.filter(
+    (item) => item.apexDelivery?.deliveryMode === 'public_mockup' || item.apexDelivery?.deliveryMode === 'link_plus_summary'
+  );
+  const explicitLayoutSet = new Set(publicApexPreviews.map((item) => item.mockupV2.layoutSignature));
+  if (publicApexPreviews.length > 1 && explicitLayoutSet.size === 1) {
+    for (const item of publicApexPreviews) {
+      item.warnings.push('All Apex public mockups in this paste use the same layout signature; vary layout_signature to avoid repeated section order.');
+    }
+  }
+
+  return previews;
 }

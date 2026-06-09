@@ -193,6 +193,46 @@ Recommended fields:
     "Social/content: strong photos need a better website destination"
   ],
   "visual_direction": "Dark premium steakhouse feel with reservation-first hierarchy.",
+  "layout_signature": "luxury_service_page",
+  "design_style_key": "premium_hospitality_editorial",
+  "photo_strategy": "Use public website food/interior photos as the hero and proof cards. If no reliable public photos exist, use clearly conceptual hospitality visuals and do not imply they are actual menu items.",
+  "visual_profile": {
+    "brand_mood": "dark, warm, polished, reservation-led",
+    "design_style_key": "premium_hospitality_editorial",
+    "color_palette": {
+      "primary": "oklch(18% 0.04 38)",
+      "secondary": "oklch(32% 0.06 45)",
+      "accent": "oklch(72% 0.16 55)",
+      "background": "oklch(96% 0.028 78)",
+      "text": "oklch(19% 0.04 40)"
+    },
+    "typography_mood": "editorial serif with confident service copy",
+    "layout_signature": "luxury_service_page",
+    "photo_strategy": "Hero image plus 3 to 6 proof/gallery cards from public business photos when available.",
+    "ui_personality": "layered photo cards, quiet proof badges, reservation-focused hierarchy",
+    "trust_style": "reviews, awards, private dining, and real atmosphere near the CTA",
+    "cta_style": "single reservation or inquiry path repeated after proof"
+  },
+  "media_assets": [
+    {
+      "type": "hero",
+      "image_url": "https://example.com/public-hero-photo.jpg",
+      "source_url": "https://example.com/gallery",
+      "source_type": "website",
+      "alt": "Public dining room photo from the business website",
+      "usage_note": "Use as hero atmosphere image",
+      "confidence": "high"
+    },
+    {
+      "type": "proof",
+      "image_url": "https://example.com/public-private-dining-photo.jpg",
+      "source_url": "https://example.com/private-dining",
+      "source_type": "website",
+      "alt": "Public private dining photo from the business website",
+      "usage_note": "Use as proof card for private dining",
+      "confidence": "high"
+    }
+  ],
   "proposed_site_nav": ["Menu", "Reservations", "Private Dining", "Gift Cards", "Awards"],
   "homepage_sections": [
     "Reservation-first hero",
@@ -216,6 +256,26 @@ Recommended fields:
 ```
 
 Keep the data practical and business-specific: current site snapshot, online presence issues, proposed nav, homepage section ideas, actual menu/offers, trust signals, CTA path, local search angle, and content/ad strategy. Existing basic fields still work when these are missing.
+
+### Apex V2 Public Mockup Requirements
+
+For `campaign_type: "apex_social_content"` with `apex_delivery_mode: "public_mockup"` or `"link_plus_summary"`, future batches should include enough V2 data for the public concept to feel custom:
+
+- `visual_profile`: brand mood, design style key, palette, typography mood, layout signature, photo strategy, UI personality, trust style, and CTA style.
+- `layout_signature`: one of `immersive_photo_hero`, `split_proof_hero`, `editorial_service_grid`, `dark_premium_transform`, `clean_clinic_trust`, `warm_local_story`, `contractor_project_board`, `auto_detail_showcase`, `pet_care_booking`, `fitness_energy_landing`, `professional_trust_page`, or `luxury_service_page`.
+- `media_assets`: public website/social/profile images only when reliable, with `image_url`, `source_url`, `source_type`, `alt`, `usage_note`, and `confidence`.
+- `proof_assets` and `gallery_assets`: optional additional image arrays using the same shape as `media_assets`.
+- `design_style_key` and `photo_strategy`: short renderer hints that explain what makes this prospect visually different.
+
+Rules for future Code X prospecting:
+
+- Collect real public website photos first when available: homepage, gallery, service, project, provider/team, exterior, or process photos.
+- Do not invent project photos, staff, awards, reviews, treatments, vehicles, pets, or before/after results.
+- If using fallback imagery, set `source_type: "fallback"` and explain that it is category concept imagery in `usage_note`.
+- Use precise niche values so the renderer picks the right template variant.
+- Avoid generic nav like `Home, About, Services, Contact`; use the prospect's actual lead path.
+- Non-food prospects must not use food labels such as Menu, Order, Reservations, Happy Hour, Catering, Gift Cards, or Best Time to Visit.
+- Vary `layout_signature` across a batch; repeated section order is now flagged in import preview.
 
 ## Social Audit JSON Fields
 

@@ -41,6 +41,7 @@ import {
   getMockupTemplateSelection,
   getMockupVariantLabel,
 } from '@/lib/mockup-templates';
+import { getMockupV2Diagnostics, type MockupV2Diagnostics } from '@/lib/mockup-v2';
 import { slugifyBusinessName } from '@/lib/prospect-intake';
 import {
   buildInlineFlooringBrief,
@@ -161,6 +162,17 @@ export default function ProspectDetailPage({
     ? getResinatePublicArtifactRequired(resinateStrategy, emailDraft?.body)
     : false;
   const inlineFlooringBriefPreview = isResinate ? buildInlineFlooringBrief(resinateStrategy) : '';
+  const mockupV2Diagnostics = mockupStrategy
+    ? getMockupV2Diagnostics({
+        rich: mockupStrategy.rich,
+        template: mockupTemplateSelection,
+        niche: prospect.niche,
+        businessName: prospect.business_name,
+        campaignType: resinateStrategy.campaign_type || apexDeliveryStrategy.campaign_type,
+        apexDeliveryMode,
+        emailBody: emailDraft?.body,
+      })
+    : null;
 
   return (
     <div>
@@ -334,6 +346,12 @@ export default function ProspectDetailPage({
                   <div className="text-xs mt-1 leading-5" style={{ color: 'var(--color-ink-3)' }}>
                     {mockupTemplateSelection.reason}
                   </div>
+                  <div className="text-xs mt-1 leading-5" style={{ color: 'var(--color-ink-2)' }}>
+                    Layout: {mockupTemplateSelection.layoutLabel}
+                  </div>
+                  <div className="text-xs mt-1 leading-5" style={{ color: 'var(--color-ink-3)' }}>
+                    {mockupTemplateSelection.layoutReason}
+                  </div>
                   {mockupTemplateSelection.mismatchWarning && (
                     <div
                       className="mt-2 rounded-lg p-2 text-xs leading-5"
@@ -392,6 +410,7 @@ export default function ProspectDetailPage({
                     </div>
                   </div>
                 )}
+                {mockupV2Diagnostics && <MockupV2DiagnosticsPanel diagnostics={mockupV2Diagnostics} />}
                 <MockupStrategyPanel rich={mockupStrategy?.rich || {}} />
               </div>
             ) : (
@@ -619,6 +638,64 @@ export default function ProspectDetailPage({
             </p>
           </Card>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function MockupV2DiagnosticsPanel({ diagnostics }: { diagnostics: MockupV2Diagnostics }) {
+  return (
+    <div className="pt-3" style={{ borderTop: '1px solid var(--color-divider)' }}>
+      <div className="text-xs font-medium mb-2" style={{ color: 'var(--color-ink-3)' }}>
+        V2 Mockup Diagnostics
+      </div>
+      <div className="space-y-3 text-xs leading-5" style={{ color: 'var(--color-ink-2)' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <MiniDiagnostic label="Layout Signature" value={`${diagnostics.layoutLabel}${diagnostics.layoutInferred ? ' (inferred)' : ''}`} />
+          <MiniDiagnostic label="Media Assets" value={`${diagnostics.usableMediaAssetCount}/${diagnostics.mediaAssetCount} usable`} />
+          <MiniDiagnostic label="Hero Image" value={diagnostics.heroImageSourceType ? diagnostics.heroImageSourceType.replace(/_/g, ' ') : 'fallback visual'} />
+          <MiniDiagnostic label="Image Sources" value={diagnostics.imageSourceTypes.length ? diagnostics.imageSourceTypes.join(', ') : 'none'} />
+        </div>
+        <FieldBlock label="Visual Profile" value={diagnostics.visualProfileSummary} />
+        {diagnostics.heroImageUrl && (
+          <div>
+            <span className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>
+              Hero Image Selected
+            </span>
+            <p className="mt-1 break-all" style={{ color: 'var(--color-ink-2)' }}>
+              {diagnostics.heroImageUrl}
+            </p>
+          </div>
+        )}
+        {diagnostics.warnings.length > 0 ? (
+          <div className="space-y-1">
+            {diagnostics.warnings.map((warning) => (
+              <div
+                key={warning}
+                className="flex items-start gap-1.5 rounded-lg p-2"
+                style={{ background: 'oklch(75% 0.16 85 / 0.08)', color: 'var(--color-warning)' }}
+              >
+                <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+                <span>{warning}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p style={{ color: 'var(--color-emerald)' }}>No V2 warnings.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MiniDiagnostic({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg p-2" style={{ background: 'var(--color-paper-3)', border: '1px solid var(--color-divider)' }}>
+      <div className="text-[11px] font-medium uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>
+        {label}
+      </div>
+      <div className="mt-1" style={{ color: 'var(--color-ink)' }}>
+        {value}
       </div>
     </div>
   );

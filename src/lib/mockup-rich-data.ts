@@ -4,6 +4,9 @@ import { hasNormalizedResinateFlooringData, type ResinateFlooringData } from './
 export const RICH_MOCKUP_TEXT_FIELDS = [
   'brand_style_notes',
   'visual_direction',
+  'layout_signature',
+  'design_style_key',
+  'photo_strategy',
   'cta_strategy',
   'local_seo_angle',
   'content_strategy_angle',
@@ -27,6 +30,9 @@ export const RICH_MOCKUP_LIST_FIELDS = [
 
 export const RICH_MOCKUP_SIGNAL_FIELDS = [
   'visual_direction',
+  'layout_signature',
+  'design_style_key',
+  'photo_strategy',
   'menu_or_offer_items',
   'trust_signals',
   'website_issue_examples',
@@ -43,8 +49,50 @@ export type RichMockupTextField = (typeof RICH_MOCKUP_TEXT_FIELDS)[number];
 export type RichMockupListField = (typeof RICH_MOCKUP_LIST_FIELDS)[number];
 export type RichMockupSignalField = (typeof RICH_MOCKUP_SIGNAL_FIELDS)[number];
 
+export type MockupVisualProfile = {
+  brand_mood?: string | null;
+  design_style_key?: string | null;
+  color_palette?: {
+    primary?: string | null;
+    secondary?: string | null;
+    accent?: string | null;
+    background?: string | null;
+    text?: string | null;
+  } | null;
+  typography_mood?: string | null;
+  layout_signature?: string | null;
+  photo_strategy?: string | null;
+  ui_personality?: string | null;
+  trust_style?: string | null;
+  cta_style?: string | null;
+};
+
+export type MockupMediaAsset = {
+  type:
+    | 'hero'
+    | 'proof'
+    | 'gallery'
+    | 'process'
+    | 'team'
+    | 'exterior'
+    | 'project'
+    | 'service'
+    | 'atmosphere';
+  image_url: string;
+  source_url?: string | null;
+  source_type: 'website' | 'google_profile' | 'instagram' | 'facebook' | 'fallback';
+  alt?: string | null;
+  usage_note?: string | null;
+  confidence: 'high' | 'medium' | 'low';
+};
+
 export type RichMockupData = Partial<Record<RichMockupTextField, string | null>> &
-  Partial<Record<RichMockupListField, string[]>>;
+  Partial<Record<RichMockupListField, string[]>> & {
+    visual_profile?: MockupVisualProfile | null;
+    media_assets?: MockupMediaAsset[];
+    proof_assets?: MockupMediaAsset[];
+    gallery_assets?: MockupMediaAsset[];
+  };
 
 export type MockupRichnessLevel = 'rich' | 'basic' | 'missing';
 
@@ -75,6 +123,23 @@ export function normalizeRichMockupData(input: Record<string, unknown> | null | 
     if (value.length > 0) rich[field] = value;
   }
 
+  const visualProfile = normalizeVisualProfile(input?.visual_profile ?? input?.visualProfile);
+  if (visualProfile) {
+    rich.visual_profile = visualProfile;
+    if (!rich.design_style_key && visualProfile.design_style_key) rich.design_style_key = visualProfile.design_style_key;
+    if (!rich.layout_signature && visualProfile.layout_signature) rich.layout_signature = visualProfile.layout_signature;
+    if (!rich.photo_strategy && visualProfile.photo_strategy) rich.photo_strategy = visualProfile.photo_strategy;
+  }
+
+  const mediaAssets = normalizeMediaAssetList(input?.media_assets ?? input?.mediaAssets);
+  if (mediaAssets.length > 0) rich.media_assets = mediaAssets;
+
+  const proofAssets = normalizeMediaAssetList(input?.proof_assets ?? input?.proofAssets);
+  if (proofAssets.length > 0) rich.proof_assets = proofAssets;
+
+  const galleryAssets = normalizeMediaAssetList(input?.gallery_assets ?? input?.galleryAssets);
+  if (galleryAssets.length > 0) rich.gallery_assets = galleryAssets;
+
   return rich;
 }
 
@@ -83,10 +148,19 @@ export function hasRichMockupData(input: Record<string, unknown> | null | undefi
 }
 
 export function getRichMockupSignalCount(rich: RichMockupData) {
-  return RICH_MOCKUP_SIGNAL_FIELDS.filter((field) => {
+  const legacySignals = RICH_MOCKUP_SIGNAL_FIELDS.filter((field) => {
     const value = rich[field as keyof RichMockupData];
     return Array.isArray(value) ? value.length > 0 : Boolean(value);
   }).length;
+
+  const v2Signals = [
+    rich.visual_profile && Object.values(flattenVisualProfile(rich.visual_profile)).some(Boolean),
+    rich.media_assets && rich.media_assets.length > 0,
+    rich.proof_assets && rich.proof_assets.length > 0,
+    rich.gallery_assets && rich.gallery_assets.length > 0,
+  ].filter(Boolean).length;
+
+  return legacySignals + v2Signals;
 }
 
 export function getMockupRichness(input: Record<string, unknown>, hasBasicMockupData: boolean): MockupRichness {
@@ -183,6 +257,143 @@ function cleanString(value: unknown) {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+function cleanRecord(value: unknown) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+function normalizeVisualProfile(value: unknown): MockupVisualProfile | null {
+  const record = cleanRecord(value);
+  if (!record) return null;
+
+  const colorRecord = cleanRecord(record.color_palette) || cleanRecord(record.colorPalette);
+  const colorPalette = colorRecord
+    ? {
+        primary: cleanString(colorRecord.primary),
+        secondary: cleanString(colorRecord.secondary),
+        accent: cleanString(colorRecord.accent),
+        background: cleanString(colorRecord.background),
+        text: cleanString(colorRecord.text),
+      }
+    : null;
+
+  const profile: MockupVisualProfile = {
+    brand_mood: cleanString(record.brand_mood ?? record.brandMood),
+    design_style_key: cleanString(record.design_style_key ?? record.designStyleKey),
+    color_palette: colorPalette && Object.values(colorPalette).some(Boolean) ? colorPalette : null,
+    typography_mood: cleanString(record.typography_mood ?? record.typographyMood),
+    layout_signature: cleanString(record.layout_signature ?? record.layoutSignature),
+    photo_strategy: cleanString(record.photo_strategy ?? record.photoStrategy),
+    ui_personality: cleanString(record.ui_personality ?? record.uiPersonality),
+    trust_style: cleanString(record.trust_style ?? record.trustStyle),
+    cta_style: cleanString(record.cta_style ?? record.ctaStyle),
+  };
+
+  return Object.values(flattenVisualProfile(profile)).some(Boolean) ? profile : null;
+}
+
+function flattenVisualProfile(profile: MockupVisualProfile) {
+  return {
+    brand_mood: profile.brand_mood,
+    design_style_key: profile.design_style_key,
+    primary: profile.color_palette?.primary,
+    secondary: profile.color_palette?.secondary,
+    accent: profile.color_palette?.accent,
+    background: profile.color_palette?.background,
+    text: profile.color_palette?.text,
+    typography_mood: profile.typography_mood,
+    layout_signature: profile.layout_signature,
+    photo_strategy: profile.photo_strategy,
+    ui_personality: profile.ui_personality,
+    trust_style: profile.trust_style,
+    cta_style: profile.cta_style,
+  };
+}
+
+function normalizeMediaAssetList(value: unknown) {
+  const rawItems = Array.isArray(value) ? value : cleanString(value) ? [value] : [];
+  const assets = rawItems
+    .map((item) => normalizeMediaAsset(item))
+    .filter((item): item is MockupMediaAsset => Boolean(item));
+
+  const seen = new Set<string>();
+  return assets.filter((asset) => {
+    const key = asset.image_url.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 18);
+}
+
+function normalizeMediaAsset(value: unknown): MockupMediaAsset | null {
+  if (typeof value === 'string') {
+    const imageUrl = cleanImageUrl(value);
+    return imageUrl
+      ? {
+          type: 'gallery',
+          image_url: imageUrl,
+          source_url: null,
+          source_type: 'fallback',
+          alt: null,
+          usage_note: 'Category concept visual',
+          confidence: 'low',
+        }
+      : null;
+  }
+
+  const record = cleanRecord(value);
+  if (!record) return null;
+
+  const imageUrl = cleanImageUrl(record.image_url ?? record.imageUrl ?? record.url ?? record.src);
+  if (!imageUrl) return null;
+
+  return {
+    type: normalizeMediaType(record.type),
+    image_url: imageUrl,
+    source_url: cleanString(record.source_url ?? record.sourceUrl),
+    source_type: normalizeSourceType(record.source_type ?? record.sourceType),
+    alt: cleanString(record.alt),
+    usage_note: cleanString(record.usage_note ?? record.usageNote),
+    confidence: normalizeConfidence(record.confidence),
+  };
+}
+
+function cleanImageUrl(value: unknown) {
+  const url = cleanString(value);
+  if (!url) return null;
+  if (/^(https?:\/\/|\/)/i.test(url)) return url;
+  return null;
+}
+
+function normalizeMediaType(value: unknown): MockupMediaAsset['type'] {
+  const clean = cleanString(value)?.toLowerCase().replace(/[\s-]+/g, '_');
+  const allowed: MockupMediaAsset['type'][] = [
+    'hero',
+    'proof',
+    'gallery',
+    'process',
+    'team',
+    'exterior',
+    'project',
+    'service',
+    'atmosphere',
+  ];
+  return allowed.includes(clean as MockupMediaAsset['type']) ? (clean as MockupMediaAsset['type']) : 'gallery';
+}
+
+function normalizeSourceType(value: unknown): MockupMediaAsset['source_type'] {
+  const clean = cleanString(value)?.toLowerCase().replace(/[\s-]+/g, '_');
+  const allowed: MockupMediaAsset['source_type'][] = ['website', 'google_profile', 'instagram', 'facebook', 'fallback'];
+  return allowed.includes(clean as MockupMediaAsset['source_type'])
+    ? (clean as MockupMediaAsset['source_type'])
+    : 'fallback';
+}
+
+function normalizeConfidence(value: unknown): MockupMediaAsset['confidence'] {
+  const clean = cleanString(value)?.toLowerCase();
+  if (clean === 'high' || clean === 'medium' || clean === 'low') return clean;
+  return 'medium';
 }
 
 function cleanList(value: unknown) {

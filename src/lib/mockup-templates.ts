@@ -19,6 +19,23 @@ export const MOCKUP_TEMPLATE_VARIANTS = [
 
 export type MockupTemplateVariant = (typeof MOCKUP_TEMPLATE_VARIANTS)[number];
 
+export const MOCKUP_LAYOUT_SIGNATURES = [
+  'immersive_photo_hero',
+  'split_proof_hero',
+  'editorial_service_grid',
+  'dark_premium_transform',
+  'clean_clinic_trust',
+  'warm_local_story',
+  'contractor_project_board',
+  'auto_detail_showcase',
+  'pet_care_booking',
+  'fitness_energy_landing',
+  'professional_trust_page',
+  'luxury_service_page',
+] as const;
+
+export type MockupLayoutSignature = (typeof MOCKUP_LAYOUT_SIGNATURES)[number];
+
 export const FOOD_TEMPLATE_VARIANTS = [
   'coffee_shop',
   'restaurant',
@@ -56,12 +73,51 @@ const VARIANT_LABELS: Record<MockupTemplateVariant, string> = {
   food_truck: 'Food Truck',
 };
 
+const LAYOUT_SIGNATURE_LABELS: Record<MockupLayoutSignature, string> = {
+  immersive_photo_hero: 'Immersive Photo Hero',
+  split_proof_hero: 'Split Proof Hero',
+  editorial_service_grid: 'Editorial Service Grid',
+  dark_premium_transform: 'Dark Premium Transform',
+  clean_clinic_trust: 'Clean Clinic Trust',
+  warm_local_story: 'Warm Local Story',
+  contractor_project_board: 'Contractor Project Board',
+  auto_detail_showcase: 'Auto Detail Showcase',
+  pet_care_booking: 'Pet Care Booking',
+  fitness_energy_landing: 'Fitness Energy Landing',
+  professional_trust_page: 'Professional Trust Page',
+  luxury_service_page: 'Luxury Service Page',
+};
+
+const DEFAULT_LAYOUT_SIGNATURES: Record<MockupTemplateVariant, readonly MockupLayoutSignature[]> = {
+  home_service: ['split_proof_hero', 'editorial_service_grid', 'warm_local_story'],
+  contractor: ['contractor_project_board', 'split_proof_hero', 'immersive_photo_hero'],
+  medical_aesthetics: ['clean_clinic_trust', 'luxury_service_page', 'split_proof_hero'],
+  auto_service: ['dark_premium_transform', 'auto_detail_showcase', 'immersive_photo_hero'],
+  pet_service: ['pet_care_booking', 'warm_local_story', 'split_proof_hero'],
+  fitness_studio: ['fitness_energy_landing', 'immersive_photo_hero', 'editorial_service_grid'],
+  professional_service: ['professional_trust_page', 'clean_clinic_trust', 'split_proof_hero'],
+  local_service: ['editorial_service_grid', 'split_proof_hero', 'warm_local_story'],
+  coffee_shop: ['warm_local_story', 'immersive_photo_hero', 'editorial_service_grid'],
+  restaurant: ['immersive_photo_hero', 'luxury_service_page', 'warm_local_story'],
+  bar_grill: ['dark_premium_transform', 'immersive_photo_hero', 'split_proof_hero'],
+  premium_dining: ['luxury_service_page', 'immersive_photo_hero', 'split_proof_hero'],
+  nonprofit_cafe: ['warm_local_story', 'editorial_service_grid', 'immersive_photo_hero'],
+  food_truck: ['immersive_photo_hero', 'editorial_service_grid', 'warm_local_story'],
+};
+
 export type MockupTemplateSelectionInput = {
   niche?: string | null;
   businessName?: string | null;
   campaignType?: string | null;
   fields?: Record<string, unknown> | null;
   text?: string | Array<string | null | undefined> | null;
+};
+
+export type MockupLayoutSignatureSelection = {
+  signature: MockupLayoutSignature;
+  label: string;
+  reason: string;
+  inferred: boolean;
 };
 
 export type MockupTemplateSelection = {
@@ -72,6 +128,10 @@ export type MockupTemplateSelection = {
   isFoodTemplate: boolean;
   isClearlyNonFood: boolean;
   mismatchWarning: string | null;
+  layoutSignature: MockupLayoutSignature;
+  layoutLabel: string;
+  layoutReason: string;
+  layoutInferred: boolean;
 };
 
 type KeywordGroup = {
@@ -255,6 +315,10 @@ export function getMockupTemplateSelection(input?: string | null | MockupTemplat
   const isFoodTemplate = isFoodMockupTemplate(variant);
   const mismatchWarning =
     isClearlyNonFood && isFoodTemplate ? 'Template mismatch: non-food prospect mapped to food template.' : null;
+  const layoutSelection = getMockupLayoutSignatureSelection({
+    ...normalizedInput,
+    variant,
+  });
 
   return {
     variant,
@@ -266,11 +330,46 @@ export function getMockupTemplateSelection(input?: string | null | MockupTemplat
     isFoodTemplate,
     isClearlyNonFood,
     mismatchWarning,
+    layoutSignature: layoutSelection.signature,
+    layoutLabel: layoutSelection.label,
+    layoutReason: layoutSelection.reason,
+    layoutInferred: layoutSelection.inferred,
   };
 }
 
 export function getMockupVariantLabel(variant: MockupTemplateVariant) {
   return VARIANT_LABELS[variant];
+}
+
+export function getMockupLayoutSignatureLabel(signature: MockupLayoutSignature) {
+  return LAYOUT_SIGNATURE_LABELS[signature];
+}
+
+export function getMockupLayoutSignatureSelection(
+  input: MockupTemplateSelectionInput & { variant: MockupTemplateVariant }
+): MockupLayoutSignatureSelection {
+  const explicit = normalizeLayoutSignature(findLayoutSignatureInput(input.fields) || findLayoutSignatureInput(input));
+  if (explicit) {
+    return {
+      signature: explicit,
+      label: getMockupLayoutSignatureLabel(explicit),
+      reason: `Explicit layout_signature "${explicit}" supplied in mockup data.`,
+      inferred: false,
+    };
+  }
+
+  const options = DEFAULT_LAYOUT_SIGNATURES[input.variant];
+  const seed = [input.businessName, input.niche, input.variant, ...(Array.isArray(input.text) ? input.text : [input.text])]
+    .filter(Boolean)
+    .join('|');
+  const signature = options[hashString(seed) % options.length] || options[0];
+
+  return {
+    signature,
+    label: getMockupLayoutSignatureLabel(signature),
+    reason: `Inferred ${getMockupLayoutSignatureLabel(signature)} from ${getMockupVariantLabel(input.variant)} template and prospect text.`,
+    inferred: true,
+  };
 }
 
 export function isFoodMockupTemplate(variant: MockupTemplateVariant) {
@@ -343,6 +442,37 @@ function buildSelectionText(input: MockupTemplateSelectionInput) {
     .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
     .join(' ')
     .toLowerCase();
+}
+
+function findLayoutSignatureInput(input: Record<string, unknown> | MockupTemplateSelectionInput | null | undefined) {
+  if (!input) return null;
+  const record = input as Record<string, unknown>;
+  const visualProfile = record.visual_profile || record.visualProfile;
+  if (visualProfile && typeof visualProfile === 'object' && !Array.isArray(visualProfile)) {
+    const nested = visualProfile as Record<string, unknown>;
+    if (typeof nested.layout_signature === 'string') return nested.layout_signature;
+    if (typeof nested.layoutSignature === 'string') return nested.layoutSignature;
+  }
+  if (typeof record.layout_signature === 'string') return record.layout_signature;
+  if (typeof record.layoutSignature === 'string') return record.layoutSignature;
+  return null;
+}
+
+function normalizeLayoutSignature(value: unknown): MockupLayoutSignature | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim().toLowerCase().replace(/[\s-]+/g, '_');
+  return (MOCKUP_LAYOUT_SIGNATURES as readonly string[]).includes(normalized)
+    ? (normalized as MockupLayoutSignature)
+    : null;
+}
+
+function hashString(value: string) {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash << 5) - hash + value.charCodeAt(index);
+    hash |= 0;
+  }
+  return Math.abs(hash);
 }
 
 function flattenTemplateFields(fields: Record<string, unknown> | null | undefined) {
