@@ -2,6 +2,7 @@ import { hasNormalizedApexDeliveryData, type ApexDeliveryData } from './apex-del
 import { hasNormalizedResinateFlooringData, type ResinateFlooringData } from './resinate-data';
 
 export const RICH_MOCKUP_TEXT_FIELDS = [
+  'template_variant',
   'brand_style_notes',
   'visual_direction',
   'layout_signature',
@@ -30,6 +31,7 @@ export const RICH_MOCKUP_LIST_FIELDS = [
 
 export const RICH_MOCKUP_SIGNAL_FIELDS = [
   'visual_direction',
+  'template_variant',
   'layout_signature',
   'design_style_key',
   'photo_strategy',

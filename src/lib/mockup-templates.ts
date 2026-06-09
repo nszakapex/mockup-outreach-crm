@@ -306,12 +306,13 @@ export function getMockupTemplateVariant(niche?: string | null): MockupTemplateV
 export function getMockupTemplateSelection(input?: string | null | MockupTemplateSelectionInput): MockupTemplateSelection {
   const normalizedInput = typeof input === 'string' || input == null ? { niche: input ?? null } : input;
   const normalized = buildSelectionText(normalizedInput);
+  const explicitVariant = normalizeTemplateVariant(findTemplateVariantInput(normalizedInput.fields) || findTemplateVariantInput(normalizedInput));
   const serviceMatch = findKeywordMatch(SERVICE_VARIANT_KEYWORDS, normalized);
   const foodMatch = findKeywordMatch(FOOD_VARIANT_KEYWORDS, normalized);
   const isClearlyNonFood = Boolean(serviceMatch);
 
   const selected = serviceMatch || foodMatch || null;
-  const variant = selected?.group.variant ?? 'local_service';
+  const variant = explicitVariant ?? selected?.group.variant ?? 'local_service';
   const isFoodTemplate = isFoodMockupTemplate(variant);
   const mismatchWarning =
     isClearlyNonFood && isFoodTemplate ? 'Template mismatch: non-food prospect mapped to food template.' : null;
@@ -323,10 +324,12 @@ export function getMockupTemplateSelection(input?: string | null | MockupTemplat
   return {
     variant,
     label: getMockupVariantLabel(variant),
-    reason: selected
-      ? `Selected from ${selected.group.reason}: "${selected.keyword}".`
-      : 'No food or niche-specific service keywords matched; using the non-food local service fallback.',
-    matchedKeyword: selected?.keyword ?? null,
+    reason: explicitVariant
+      ? `Explicit template_variant "${explicitVariant}" supplied in mockup data.`
+      : selected
+        ? `Selected from ${selected.group.reason}: "${selected.keyword}".`
+        : 'No food or niche-specific service keywords matched; using the non-food local service fallback.',
+    matchedKeyword: explicitVariant ? null : selected?.keyword ?? null,
     isFoodTemplate,
     isClearlyNonFood,
     mismatchWarning,
@@ -456,6 +459,22 @@ function findLayoutSignatureInput(input: Record<string, unknown> | MockupTemplat
   if (typeof record.layout_signature === 'string') return record.layout_signature;
   if (typeof record.layoutSignature === 'string') return record.layoutSignature;
   return null;
+}
+
+function findTemplateVariantInput(input: Record<string, unknown> | MockupTemplateSelectionInput | null | undefined) {
+  if (!input) return null;
+  const record = input as Record<string, unknown>;
+  if (typeof record.template_variant === 'string') return record.template_variant;
+  if (typeof record.templateVariant === 'string') return record.templateVariant;
+  return null;
+}
+
+function normalizeTemplateVariant(value: unknown): MockupTemplateVariant | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim().toLowerCase().replace(/[\s-]+/g, '_');
+  return (MOCKUP_TEMPLATE_VARIANTS as readonly string[]).includes(normalized)
+    ? (normalized as MockupTemplateVariant)
+    : null;
 }
 
 function normalizeLayoutSignature(value: unknown): MockupLayoutSignature | null {

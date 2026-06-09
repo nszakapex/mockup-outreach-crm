@@ -262,6 +262,7 @@ Keep the data practical and business-specific: current site snapshot, online pre
 For `campaign_type: "apex_social_content"` with `apex_delivery_mode: "public_mockup"` or `"link_plus_summary"`, future batches should include enough V2 data for the public concept to feel custom:
 
 - `visual_profile`: brand mood, design style key, palette, typography mood, layout signature, photo strategy, UI personality, trust style, and CTA style.
+- `template_variant`: explicit renderer category such as `pet_service`, `contractor`, `medical_aesthetics`, `auto_service`, `fitness_studio`, `professional_service`, or `restaurant`.
 - `layout_signature`: one of `immersive_photo_hero`, `split_proof_hero`, `editorial_service_grid`, `dark_premium_transform`, `clean_clinic_trust`, `warm_local_story`, `contractor_project_board`, `auto_detail_showcase`, `pet_care_booking`, `fitness_energy_landing`, `professional_trust_page`, or `luxury_service_page`.
 - `media_assets`: public website/social/profile images only when reliable, with `image_url`, `source_url`, `source_type`, `alt`, `usage_note`, and `confidence`.
 - `proof_assets` and `gallery_assets`: optional additional image arrays using the same shape as `media_assets`.
@@ -275,7 +276,8 @@ Rules for future Code X prospecting:
 - Use precise niche values so the renderer picks the right template variant.
 - Avoid generic nav like `Home, About, Services, Contact`; use the prospect's actual lead path.
 - Non-food prospects must not use food labels such as Menu, Order, Reservations, Happy Hour, Catering, Gift Cards, or Best Time to Visit.
-- Vary `layout_signature` across a batch; repeated section order is now flagged in import preview.
+- Vary `layout_signature` across a batch; repeated section order is flagged in import preview.
+- Public mockups now choose a layout renderer such as `PetCareBookingLayout`, `ContractorProjectBoardLayout`, `DarkPremiumTransformLayout`, `CleanClinicTrustLayout`, `FitnessEnergyLandingLayout`, `ProfessionalTrustPageLayout`, or `RestaurantExperienceLayout`. The DOM/header/hero/section plan should differ by renderer.
 
 ## Social Audit JSON Fields
 

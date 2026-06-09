@@ -41,7 +41,13 @@ import {
   type MockupLayoutSignature,
   type MockupTemplateVariant,
 } from '@/lib/mockup-templates';
-import { getUsableMockupMediaAssets, selectHeroMediaAsset } from '@/lib/mockup-v2';
+import {
+  getMockupLayoutRendererName,
+  getMockupLayoutSectionPlan,
+  getUsableMockupMediaAssets,
+  selectHeroMediaAsset,
+  type MockupLayoutRendererName,
+} from '@/lib/mockup-v2';
 import styles from './PremiumMockupSite.module.css';
 
 type PublicProspect = Pick<Prospect, 'business_name' | 'niche' | 'city' | 'state'>;
@@ -89,18 +95,6 @@ type IssueFix = {
   severity: 'low' | 'medium' | 'high';
 };
 
-type SectionKey =
-  | 'hero'
-  | 'conversion'
-  | 'story'
-  | 'gallery'
-  | 'experiences'
-  | 'offers'
-  | 'visit'
-  | 'growth'
-  | 'snapshot'
-  | 'walkthrough';
-
 type VariantConfig = {
   navItems: string[];
   primaryCta: string;
@@ -145,7 +139,8 @@ type SiteContext = {
   mediaAssets: MockupMediaAsset[];
   heroAsset: MockupMediaAsset | null;
   galleryAssets: MockupMediaAsset[];
-  sectionPlan: SectionKey[];
+  layoutRendererName: MockupLayoutRendererName;
+  sectionPlan: string[];
   themeStyle: CSSProperties;
   headline: string;
   subheadline: string;
@@ -1014,13 +1009,9 @@ export function PremiumMockupSite({ mockup, prospect, audit }: PremiumMockupSite
     <main
       className={`${styles.site} ${styles[`variant_${context.variant}`]} ${styles[`tone_${context.config.tone}`]} ${styles[`layout_${context.layoutSignature}`]}`}
       style={context.themeStyle}
+      data-layout-renderer={context.layoutRendererName}
     >
-      <ConceptNotice context={context} />
-      <WebsiteHeader context={context} />
-      {context.sectionPlan.map((section) => (
-        <MockupSection key={section} section={section} context={context} />
-      ))}
-      <WebsiteFooter context={context} />
+      <LayoutRenderer context={context} />
     </main>
   );
 }
@@ -1041,6 +1032,7 @@ function buildSiteContext(mockup: Mockup, prospect: PublicProspect | null, audit
   const variant = selection.variant;
   const config = VARIANT_CONFIG[variant];
   const layoutSignature = selection.layoutSignature;
+  const layoutRendererName = getMockupLayoutRendererName(layoutSignature, variant);
   const visualProfile = rich.visual_profile || inferVisualProfile(variant, layoutSignature, rich, config);
   const mediaAssets = getUsableMockupMediaAssets(rich);
   const heroAsset = selectHeroMediaAsset(mediaAssets);
@@ -1069,7 +1061,12 @@ function buildSiteContext(mockup: Mockup, prospect: PublicProspect | null, audit
     cleanText(rich.inspiration_notes) ||
     cleanText(parsed.notes) ||
     config.heroPhotoLabel;
-  const sectionPlan = buildSectionPlan(layoutSignature, variant, galleryAssets.length > 0, Boolean(rich.current_site_snapshot));
+  const sectionPlan = getMockupLayoutSectionPlan({
+    signature: layoutSignature,
+    variant,
+    hasGallery: galleryAssets.length > 0,
+    hasSnapshot: Boolean(rich.current_site_snapshot),
+  });
 
   return {
     mockup,
@@ -1083,6 +1080,7 @@ function buildSiteContext(mockup: Mockup, prospect: PublicProspect | null, audit
     audit,
     conceptNotes: parsed.notes,
     layoutSignature,
+    layoutRendererName,
     designStyleKey,
     photoStrategy,
     visualProfile,
@@ -1109,52 +1107,729 @@ function buildSiteContext(mockup: Mockup, prospect: PublicProspect | null, audit
   };
 }
 
-function MockupSection({ section, context }: { section: SectionKey; context: SiteContext }) {
-  if (section === 'hero') return <WebsiteHero context={context} />;
-  if (section === 'conversion') return <PrimaryConversion context={context} />;
-  if (section === 'story') return <BrandStory context={context} />;
-  if (section === 'gallery') return <ProjectGallerySection context={context} />;
-  if (section === 'experiences') return <ExperienceSection context={context} />;
-  if (section === 'offers') return <MenuOfferSection context={context} />;
-  if (section === 'visit') return <VisitSection context={context} />;
-  if (section === 'growth') return <GrowthSection context={context} />;
-  if (section === 'snapshot') return <OnlinePresenceSnapshot context={context} />;
-  return <FinalWalkthrough context={context} />;
+function LayoutRenderer({ context }: { context: SiteContext }) {
+  if (context.layoutRendererName === 'PetCareBookingLayout') return <PetCareBookingLayout context={context} />;
+  if (context.layoutRendererName === 'RestaurantExperienceLayout') return <RestaurantExperienceLayout context={context} />;
+  if (context.layoutRendererName === 'ContractorProjectBoardLayout') return <ContractorProjectBoardLayout context={context} />;
+  if (context.layoutRendererName === 'AutoDetailShowcaseLayout') return <AutoDetailShowcaseLayout context={context} />;
+  if (context.layoutRendererName === 'DarkPremiumTransformLayout') return <DarkPremiumTransformLayout context={context} />;
+  if (context.layoutRendererName === 'CleanClinicTrustLayout') return <CleanClinicTrustLayout context={context} />;
+  if (context.layoutRendererName === 'LuxuryServicePageLayout') return <LuxuryServicePageLayout context={context} />;
+  if (context.layoutRendererName === 'FitnessEnergyLandingLayout') return <FitnessEnergyLandingLayout context={context} />;
+  if (context.layoutRendererName === 'ProfessionalTrustPageLayout') return <ProfessionalTrustPageLayout context={context} />;
+  if (context.layoutRendererName === 'WarmLocalStoryLayout') return <WarmLocalStoryLayout context={context} />;
+  if (context.layoutRendererName === 'SplitProofHeroLayout') return <SplitProofHeroLayout context={context} />;
+  if (context.layoutRendererName === 'EditorialServiceGridLayout') return <EditorialServiceGridLayout context={context} />;
+  if (context.layoutRendererName === 'ImmersivePhotoHeroLayout') return <ImmersivePhotoHeroLayout context={context} />;
+  return <LocalServiceFallbackLayout context={context} />;
 }
 
-function ConceptNotice({ context }: { context: SiteContext }) {
+function PetCareBookingLayout({ context }: { context: SiteContext }) {
   return (
-    <div className={styles.conceptNotice}>
-      <span>Website concept preview</span>
+    <>
+      <LayoutNotice context={context} label="Pet-care booking concept" />
+      <PetCareHeader context={context} />
+      <PetBookingHero context={context} />
+      <PetBookingStrip context={context} />
+      <MenuOfferSection context={context} />
+      <BrandStory context={context} />
+      <ProjectGallerySection context={context} />
+      <VisitSection context={context} />
+      <FinalWalkthrough context={context} />
+      <WebsiteFooter context={context} />
+    </>
+  );
+}
+
+function RestaurantExperienceLayout({ context }: { context: SiteContext }) {
+  return (
+    <>
+      <RestaurantHeader context={context} />
+      <RestaurantExperienceHero context={context} />
+      <BrandStory context={context} />
+      <MenuOfferSection context={context} />
+      <VisitSection context={context} />
+      <ProjectGallerySection context={context} />
+      <GrowthSection context={context} />
+      <FinalWalkthrough context={context} />
+      <WebsiteFooter context={context} />
+    </>
+  );
+}
+
+function ContractorProjectBoardLayout({ context }: { context: SiteContext }) {
+  return (
+    <>
+      <LayoutNotice context={context} label="Project-board website concept" />
+      <ContractorHeader context={context} />
+      <ContractorProjectHero context={context} />
+      <ProjectProofBand context={context} />
+      <MenuOfferSection context={context} />
+      <PrimaryConversion context={context} />
+      <BrandStory context={context} />
+      <VisitSection context={context} />
+      <FinalWalkthrough context={context} />
+      <WebsiteFooter context={context} />
+    </>
+  );
+}
+
+function AutoDetailShowcaseLayout({ context }: { context: SiteContext }) {
+  return (
+    <>
+      <AutoShowroomHeader context={context} />
+      <AutoShowcaseHero context={context} />
+      <AutoTransformationStrip context={context} />
+      <MenuOfferSection context={context} />
+      <ProjectGallerySection context={context} />
+      <PrimaryConversion context={context} />
+      <FinalWalkthrough context={context} />
+      <WebsiteFooter context={context} />
+    </>
+  );
+}
+
+function DarkPremiumTransformLayout({ context }: { context: SiteContext }) {
+  return (
+    <>
+      <AutoShowroomHeader context={context} />
+      <AutoShowcaseHero context={context} />
+      <AutoTransformationStrip context={context} />
+      <ProjectGallerySection context={context} />
+      <MenuOfferSection context={context} />
+      <BrandStory context={context} />
+      <FinalWalkthrough context={context} />
+      <WebsiteFooter context={context} />
+    </>
+  );
+}
+
+function CleanClinicTrustLayout({ context }: { context: SiteContext }) {
+  return (
+    <>
+      <LayoutNotice context={context} label="Clinic trust concept" />
+      <ClinicHeader context={context} />
+      <ClinicConsultationHero context={context} />
+      <MenuOfferSection context={context} />
+      <ClinicTrustPanel context={context} />
+      <PrimaryConversion context={context} />
+      <VisitSection context={context} />
+      <FinalWalkthrough context={context} />
+      <WebsiteFooter context={context} />
+    </>
+  );
+}
+
+function LuxuryServicePageLayout({ context }: { context: SiteContext }) {
+  return (
+    <>
+      <LayoutNotice context={context} label="Premium service concept" />
+      <ClinicHeader context={context} />
+      <LuxuryServiceHero context={context} />
+      <MenuOfferSection context={context} />
+      <BrandStory context={context} />
+      <PrimaryConversion context={context} />
+      <FinalWalkthrough context={context} />
+      <WebsiteFooter context={context} />
+    </>
+  );
+}
+
+function FitnessEnergyLandingLayout({ context }: { context: SiteContext }) {
+  return (
+    <>
+      <FitnessHeader context={context} />
+      <FitnessEnergyHero context={context} />
+      <MenuOfferSection context={context} />
+      <PrimaryConversion context={context} />
+      <BrandStory context={context} />
+      <VisitSection context={context} />
+      <FinalWalkthrough context={context} />
+      <WebsiteFooter context={context} />
+    </>
+  );
+}
+
+function ProfessionalTrustPageLayout({ context }: { context: SiteContext }) {
+  return (
+    <>
+      <ProfessionalHeader context={context} />
+      <ProfessionalTrustHero context={context} />
+      <MenuOfferSection context={context} />
+      <PrimaryConversion context={context} />
+      <BrandStory context={context} />
+      {context.rich.current_site_snapshot && <OnlinePresenceSnapshot context={context} />}
+      <FinalWalkthrough context={context} />
+      <WebsiteFooter context={context} />
+    </>
+  );
+}
+
+function WarmLocalStoryLayout({ context }: { context: SiteContext }) {
+  return (
+    <>
+      <LayoutNotice context={context} label="Warm local story concept" />
+      <WarmStoryHeader context={context} />
+      <WarmStoryHero context={context} />
+      <BrandStory context={context} />
+      <MenuOfferSection context={context} />
+      <VisitSection context={context} />
+      <FinalWalkthrough context={context} />
+      <WebsiteFooter context={context} />
+    </>
+  );
+}
+
+function SplitProofHeroLayout({ context }: { context: SiteContext }) {
+  return (
+    <>
+      <LayoutNotice context={context} label="Split proof concept" />
+      <SplitProofHeader context={context} />
+      <SplitProofHero context={context} />
+      <ProjectProofBand context={context} />
+      <MenuOfferSection context={context} />
+      <PrimaryConversion context={context} />
+      <VisitSection context={context} />
+      {context.rich.current_site_snapshot && <OnlinePresenceSnapshot context={context} />}
+      <FinalWalkthrough context={context} />
+      <WebsiteFooter context={context} />
+    </>
+  );
+}
+
+function EditorialServiceGridLayout({ context }: { context: SiteContext }) {
+  return (
+    <>
+      <ServiceIndexHeader context={context} />
+      <EditorialServiceGridHero context={context} />
+      <MenuOfferSection context={context} />
+      <BrandStory context={context} />
+      <GrowthSection context={context} />
+      <FinalWalkthrough context={context} />
+      <WebsiteFooter context={context} />
+    </>
+  );
+}
+
+function ImmersivePhotoHeroLayout({ context }: { context: SiteContext }) {
+  return (
+    <>
+      <ImmersiveHeader context={context} />
+      <WebsiteHero context={context} />
+      <PrimaryConversion context={context} />
+      <ExperienceSection context={context} />
+      <ProjectGallerySection context={context} />
+      <VisitSection context={context} />
+      <FinalWalkthrough context={context} />
+      <WebsiteFooter context={context} />
+    </>
+  );
+}
+
+function LocalServiceFallbackLayout({ context }: { context: SiteContext }) {
+  return (
+    <>
+      <LayoutNotice context={context} label="Service-first website concept" />
+      <ServiceIndexHeader context={context} />
+      <ServiceFirstHero context={context} />
+      <BrandStory context={context} />
+      <MenuOfferSection context={context} />
+      <PrimaryConversion context={context} />
+      <VisitSection context={context} />
+      <FinalWalkthrough context={context} />
+      <WebsiteFooter context={context} />
+    </>
+  );
+}
+
+function LayoutNotice({ context, label }: { context: SiteContext; label: string }) {
+  return (
+    <div className={styles.layoutNotice}>
+      <strong>{label}</strong>
       <span>{context.businessName}</span>
-      <span>{context.location}</span>
-      <span>Prepared by Apex Marketing Group</span>
-      <span>Visual concept, not final production website</span>
+      <span>{context.layoutRendererName.replace(/Layout$/, '')}</span>
+      <small>Visual concept by Apex Marketing Group</small>
     </div>
   );
 }
 
-function WebsiteHeader({ context }: { context: SiteContext }) {
+function PetCareHeader({ context }: { context: SiteContext }) {
   return (
-    <header className={styles.header}>
-      <a className={styles.brand} href="#home" aria-label={`${context.businessName} concept homepage`}>
+    <header className={styles.petHeader}>
+      <a href="#home" className={styles.petBrand} aria-label={`${context.businessName} concept homepage`}>
         <span className={styles.logoMark}>{businessInitials(context.businessName)}</span>
-        <span>
-          <strong>{context.businessName}</strong>
-          <small>{context.location}</small>
-        </span>
+        <strong>{context.businessName}</strong>
       </a>
-      <nav className={styles.nav} aria-label="Concept website navigation">
-        {context.navItems.map((item) => (
+      <nav aria-label="Pet care concept navigation">
+        {context.navItems.slice(0, 4).map((item) => (
           <a key={item} href={navHref(item)}>
             {item}
           </a>
         ))}
       </nav>
-      <a className={styles.headerCta} href="#primary-action">
+      <a className={styles.petHeaderCta} href="#primary-action">
         {context.primaryCta}
       </a>
     </header>
+  );
+}
+
+function RestaurantHeader({ context }: { context: SiteContext }) {
+  return (
+    <header className={styles.restaurantHeader}>
+      <div>
+        <small>Hospitality concept</small>
+        <a href="#home">{context.businessName}</a>
+      </div>
+      <nav aria-label="Hospitality concept navigation">
+        {context.navItems.slice(0, 5).map((item) => (
+          <a key={item} href={navHref(item)}>
+            {item}
+          </a>
+        ))}
+      </nav>
+      <a href="#primary-action">{context.primaryCta}</a>
+    </header>
+  );
+}
+
+function ContractorHeader({ context }: { context: SiteContext }) {
+  return (
+    <header className={styles.contractorHeader}>
+      <a href="#home" aria-label={`${context.businessName} concept homepage`}>
+        <span>{businessInitials(context.businessName)}</span>
+        <strong>{context.businessName}</strong>
+      </a>
+      <nav aria-label="Contractor concept navigation">
+        {context.navItems.slice(0, 5).map((item) => (
+          <a key={item} href={navHref(item)}>
+            {item}
+          </a>
+        ))}
+      </nav>
+      <div>
+        <small>{context.city}</small>
+        <a href="#primary-action">{context.primaryCta}</a>
+      </div>
+    </header>
+  );
+}
+
+function AutoShowroomHeader({ context }: { context: SiteContext }) {
+  return (
+    <header className={styles.autoHeader}>
+      <a href="#home" aria-label={`${context.businessName} concept homepage`}>
+        <strong>{context.businessName}</strong>
+        <span>{context.city} finish studio</span>
+      </a>
+      <nav aria-label="Auto detail concept navigation">
+        {context.navItems.slice(0, 4).map((item) => (
+          <a key={item} href={navHref(item)}>
+            {item}
+          </a>
+        ))}
+      </nav>
+      <a href="#primary-action">{context.primaryCta}</a>
+    </header>
+  );
+}
+
+function ClinicHeader({ context }: { context: SiteContext }) {
+  return (
+    <header className={styles.clinicHeader}>
+      <a href="#home" aria-label={`${context.businessName} concept homepage`}>
+        <strong>{context.businessName}</strong>
+        <span>{context.location}</span>
+      </a>
+      <nav aria-label="Clinic concept navigation">
+        {context.navItems.slice(0, 4).map((item) => (
+          <a key={item} href={navHref(item)}>
+            {item}
+          </a>
+        ))}
+      </nav>
+      <a href="#primary-action">{context.primaryCta}</a>
+    </header>
+  );
+}
+
+function FitnessHeader({ context }: { context: SiteContext }) {
+  return (
+    <header className={styles.fitnessHeader}>
+      <a href="#home">{context.businessName}</a>
+      <div>
+        {context.navItems.slice(0, 4).map((item) => (
+          <a key={item} href={navHref(item)}>
+            {item}
+          </a>
+        ))}
+      </div>
+      <a href="#primary-action">{context.primaryCta}</a>
+    </header>
+  );
+}
+
+function ProfessionalHeader({ context }: { context: SiteContext }) {
+  return (
+    <header className={styles.professionalHeader}>
+      <a href="#home">
+        <strong>{context.businessName}</strong>
+        <span>{context.niche}</span>
+      </a>
+      <nav aria-label="Professional service concept navigation">
+        {context.navItems.slice(0, 5).map((item) => (
+          <a key={item} href={navHref(item)}>
+            {item}
+          </a>
+        ))}
+      </nav>
+    </header>
+  );
+}
+
+function WarmStoryHeader({ context }: { context: SiteContext }) {
+  return (
+    <header className={styles.warmStoryHeader}>
+      <a href="#home">{context.businessName}</a>
+      <span>{context.visualProfile?.brand_mood || context.location}</span>
+      <a href="#primary-action">{context.primaryCta}</a>
+    </header>
+  );
+}
+
+function SplitProofHeader({ context }: { context: SiteContext }) {
+  return (
+    <header className={styles.splitProofHeader}>
+      <a href="#home">{context.businessName}</a>
+      <nav aria-label="Proof concept navigation">
+        {context.navItems.slice(0, 4).map((item) => (
+          <a key={item} href={navHref(item)}>
+            {item}
+          </a>
+        ))}
+      </nav>
+      <a href="#primary-action">{context.primaryCta}</a>
+    </header>
+  );
+}
+
+function ServiceIndexHeader({ context }: { context: SiteContext }) {
+  return (
+    <header className={styles.serviceIndexHeader}>
+      <a href="#home">{context.businessName}</a>
+      <div>
+        <span>{context.location}</span>
+        <a href="#primary-action">{context.primaryCta}</a>
+      </div>
+    </header>
+  );
+}
+
+function ImmersiveHeader({ context }: { context: SiteContext }) {
+  return (
+    <>
+      <LayoutNotice context={context} label="Immersive photo concept" />
+      <header className={styles.immersiveHeader}>
+        <a href="#home">{context.businessName}</a>
+        <nav aria-label="Immersive concept navigation">
+          {context.navItems.slice(0, 5).map((item) => (
+            <a key={item} href={navHref(item)}>
+              {item}
+            </a>
+          ))}
+        </nav>
+      </header>
+    </>
+  );
+}
+
+function PetBookingHero({ context }: { context: SiteContext }) {
+  return (
+    <section id="home" className={styles.petHero}>
+      <div className={styles.petHeroCopy}>
+        <p>{context.visualProfile?.brand_mood || 'Warm pet-care concept'}</p>
+        <h1>{context.headline}</h1>
+        <span>{context.subheadline}</span>
+      </div>
+      <div className={styles.petPhotoCollage}>
+        <LayoutMedia context={context} index={0} fallbackRole="pet" label="Grooming comfort visual" />
+        <LayoutMedia context={context} index={1} fallbackRole="pet" label="Happy-pet proof card" />
+        <LayoutMedia context={context} index={2} fallbackRole="office" label="Appointment trust cue" />
+      </div>
+      <aside className={styles.petAppointmentCard} id="primary-action">
+        <small>Appointment path</small>
+        <strong>{context.primaryCta}</strong>
+        <span>{context.conversionSteps.slice(0, 3).join(' -> ')}</span>
+        <a href="#visit">{context.primaryCta}</a>
+      </aside>
+    </section>
+  );
+}
+
+function RestaurantExperienceHero({ context }: { context: SiteContext }) {
+  return (
+    <section id="home" className={styles.restaurantHero}>
+      <LayoutMedia context={context} index={0} fallbackRole="interior" label={context.photoStrategy || 'Atmosphere visual'} />
+      <div className={styles.restaurantHeroCopy}>
+        <p>Occasion-first hospitality concept</p>
+        <h1>{context.headline}</h1>
+        <span>{context.subheadline}</span>
+        <div>
+          <a href="#primary-action">{context.primaryCta}</a>
+          <a href="#menu">{context.config.secondaryCta}</a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ContractorProjectHero({ context }: { context: SiteContext }) {
+  return (
+    <section id="home" className={styles.contractorHero}>
+      <div className={styles.contractorHeroCopy}>
+        <p>{context.city} project direction</p>
+        <h1>{context.headline}</h1>
+        <span>{context.subheadline}</span>
+        <a href="#primary-action">{context.primaryCta}</a>
+      </div>
+      <div className={styles.projectBoard}>
+        {context.offers.slice(0, 4).map((offer, index) => (
+          <article key={offer.title}>
+            <LayoutMedia context={context} index={index} fallbackRole={offer.photoRole} label={offer.label || offer.title} />
+            <strong>{offer.title}</strong>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function AutoShowcaseHero({ context }: { context: SiteContext }) {
+  return (
+    <section id="home" className={styles.autoHero}>
+      <div className={styles.autoHeroMedia}>
+        <LayoutMedia context={context} index={0} fallbackRole="vehicle" label={context.photoStrategy || 'Transformation visual'} />
+      </div>
+      <div className={styles.autoHeroCopy}>
+        <small>Transformation-first concept</small>
+        <h1>{context.headline}</h1>
+        <p>{context.subheadline}</p>
+        <div>
+          {context.badges.slice(0, 4).map((badge) => (
+            <span key={badge}>{badge}</span>
+          ))}
+        </div>
+        <a href="#primary-action">{context.primaryCta}</a>
+      </div>
+    </section>
+  );
+}
+
+function ClinicConsultationHero({ context }: { context: SiteContext }) {
+  return (
+    <section id="home" className={styles.clinicHero}>
+      <div className={styles.clinicHeroCopy}>
+        <p>Consultation-first concept</p>
+        <h1>{context.headline}</h1>
+        <span>{context.subheadline}</span>
+        <a href="#primary-action">{context.primaryCta}</a>
+      </div>
+      <aside className={styles.clinicTrustCard}>
+        <LayoutMedia context={context} index={0} fallbackRole="treatment" label="Treatment-room or provider visual" />
+        <strong>{context.trustSignals[0] || 'Provider trust before booking'}</strong>
+        <span>{context.visualProfile?.trust_style || 'Trust and expectations stay close to the consultation CTA.'}</span>
+      </aside>
+    </section>
+  );
+}
+
+function LuxuryServiceHero({ context }: { context: SiteContext }) {
+  return (
+    <section id="home" className={styles.luxuryServiceHero}>
+      <p>{context.visualProfile?.brand_mood || context.config.eyebrow}</p>
+      <h1>{context.headline}</h1>
+      <span>{context.subheadline}</span>
+      <LayoutMedia context={context} index={0} fallbackRole={context.config.heroPhoto} label={context.photoStrategy || context.config.heroPhotoLabel} />
+      <a href="#primary-action">{context.primaryCta}</a>
+    </section>
+  );
+}
+
+function FitnessEnergyHero({ context }: { context: SiteContext }) {
+  return (
+    <section id="home" className={styles.fitnessHero}>
+      <div className={styles.fitnessHeroCopy}>
+        <small>Movement-led concept</small>
+        <h1>{context.headline}</h1>
+        <p>{context.subheadline}</p>
+        <a href="#primary-action">{context.primaryCta}</a>
+      </div>
+      <div className={styles.fitnessProgramStack}>
+        {context.offers.slice(0, 3).map((offer, index) => (
+          <article key={offer.title}>
+            <span>{String(index + 1).padStart(2, '0')}</span>
+            <strong>{offer.title}</strong>
+            <LayoutMedia context={context} index={index} fallbackRole="fitness" label={offer.label || 'Program visual'} />
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ProfessionalTrustHero({ context }: { context: SiteContext }) {
+  return (
+    <section id="home" className={styles.professionalHero}>
+      <div>
+        <p>{context.config.eyebrow}</p>
+        <h1>{context.headline}</h1>
+        <span>{context.subheadline}</span>
+      </div>
+      <aside id="primary-action">
+        <strong>{primaryPathLabel(context)}</strong>
+        {context.conversionSteps.slice(0, 4).map((step) => (
+          <span key={step}>{step}</span>
+        ))}
+        <a href="#walkthrough">{context.primaryCta}</a>
+      </aside>
+    </section>
+  );
+}
+
+function WarmStoryHero({ context }: { context: SiteContext }) {
+  return (
+    <section id="home" className={styles.warmStoryHero}>
+      <LayoutMedia context={context} index={0} fallbackRole={context.config.heroPhoto} label={context.photoStrategy || context.config.heroPhotoLabel} />
+      <div>
+        <p>{context.visualProfile?.brand_mood || context.config.eyebrow}</p>
+        <h1>{context.headline}</h1>
+        <span>{context.subheadline}</span>
+        <a href="#primary-action">{context.primaryCta}</a>
+      </div>
+    </section>
+  );
+}
+
+function SplitProofHero({ context }: { context: SiteContext }) {
+  return (
+    <section id="home" className={styles.splitHero}>
+      <div className={styles.splitHeroProof}>
+        <LayoutMedia context={context} index={0} fallbackRole={context.config.heroPhoto} label={context.photoStrategy || 'Primary proof visual'} />
+        <div>
+          {context.trustSignals.slice(0, 2).map((signal) => (
+            <strong key={signal}>{signal}</strong>
+          ))}
+        </div>
+      </div>
+      <div className={styles.splitHeroCopy}>
+        <p>{context.config.eyebrow}</p>
+        <h1>{context.headline}</h1>
+        <span>{context.subheadline}</span>
+        <a href="#primary-action">{context.primaryCta}</a>
+      </div>
+    </section>
+  );
+}
+
+function EditorialServiceGridHero({ context }: { context: SiteContext }) {
+  return (
+    <section id="home" className={styles.editorialGridHero}>
+      <div>
+        <p>Service index concept</p>
+        <h1>{context.headline}</h1>
+      </div>
+      <span>{context.subheadline}</span>
+      <div>
+        {context.offers.slice(0, 4).map((offer) => (
+          <a key={offer.title} href="#menu">
+            {offer.title}
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ServiceFirstHero({ context }: { context: SiteContext }) {
+  return (
+    <section id="home" className={styles.serviceFirstHero}>
+      <div>
+        <p>{context.config.eyebrow}</p>
+        <h1>{context.headline}</h1>
+        <span>{context.subheadline}</span>
+      </div>
+      <div id="primary-action">
+        {context.conversionSteps.slice(0, 4).map((step) => (
+          <article key={step}>
+            <strong>{step}</strong>
+          </article>
+        ))}
+        <a href="#visit">{context.primaryCta}</a>
+      </div>
+    </section>
+  );
+}
+
+function PetBookingStrip({ context }: { context: SiteContext }) {
+  return (
+    <section className={styles.petBookingStrip}>
+      {context.conversionSteps.slice(0, 4).map((step, index) => (
+        <article key={step}>
+          <small>{String(index + 1).padStart(2, '0')}</small>
+          <strong>{step}</strong>
+        </article>
+      ))}
+    </section>
+  );
+}
+
+function ProjectProofBand({ context }: { context: SiteContext }) {
+  return (
+    <section className={styles.projectProofBand}>
+      <div>
+        <p>{galleryEyebrow(context)}</p>
+        <h2>{galleryTitle(context)}</h2>
+      </div>
+      {context.offers.slice(0, 3).map((offer, index) => (
+        <article key={offer.title}>
+          <LayoutMedia context={context} index={index} fallbackRole={offer.photoRole} label={offer.label || offer.title} />
+          <strong>{offer.title}</strong>
+          <span>{offer.body}</span>
+        </article>
+      ))}
+    </section>
+  );
+}
+
+function AutoTransformationStrip({ context }: { context: SiteContext }) {
+  return (
+    <section id="primary-action" className={styles.autoTransformationStrip}>
+      {context.offers.slice(0, 3).map((offer, index) => (
+        <article key={offer.title}>
+          <small>{offer.label || 'Package'}</small>
+          <strong>{offer.title}</strong>
+          <span>{context.conversionSteps[index] || offer.body}</span>
+        </article>
+      ))}
+      <a href="#walkthrough">{context.primaryCta}</a>
+    </section>
+  );
+}
+
+function ClinicTrustPanel({ context }: { context: SiteContext }) {
+  return (
+    <section className={styles.clinicTrustPanel}>
+      <div>
+        <p>{storyLabel(context)}</p>
+        <h2>{context.visualProfile?.trust_style || context.config.storyTitle(context.businessName)}</h2>
+      </div>
+      {context.trustSignals.slice(0, 3).map((signal) => (
+        <article key={signal}>
+          <Star size={16} />
+          <strong>{signal}</strong>
+        </article>
+      ))}
+    </section>
   );
 }
 
@@ -1449,6 +2124,26 @@ function WebsiteFooter({ context }: { context: SiteContext }) {
   );
 }
 
+function LayoutMedia({
+  context,
+  index,
+  fallbackRole,
+  label,
+}: {
+  context: SiteContext;
+  index: number;
+  fallbackRole: PhotoRole;
+  label: string;
+}) {
+  const asset = mediaAssetAt(context, index);
+  return (
+    <div className={`${styles.layoutMedia} ${styles[`photo_${fallbackRole}`]} ${asset ? styles.hasRealMedia : ''}`}>
+      {asset && <SafeImage asset={asset} className={styles.realImage} />}
+      <span>{asset?.usage_note || asset?.alt || label}</span>
+    </div>
+  );
+}
+
 function PhotoCard({ item, asset }: { item: HomepageItem; asset?: MockupMediaAsset }) {
   return (
     <article className={styles.photoCard}>
@@ -1502,6 +2197,11 @@ function SafeImage({
       }}
     />
   );
+}
+
+function mediaAssetAt(context: SiteContext, index: number) {
+  const assets = [context.heroAsset, ...context.galleryAssets].filter((asset): asset is MockupMediaAsset => Boolean(asset));
+  return assets[index] || null;
 }
 
 function prioritizeGalleryAssets(assets: MockupMediaAsset[], heroAsset: MockupMediaAsset | null) {
@@ -1596,44 +2296,6 @@ function buildFallbackPhotoStrategy(variant: MockupTemplateVariant, heroAsset: M
   if (variant === 'fitness_studio') return 'Use class energy, coach, and community photos where public, with program visuals as fallback.';
   if (isServiceMockupTemplate(variant)) return 'Use real service, project, team, or proof photos where available; keep fallback visuals clearly conceptual.';
   return 'Use real food, interior, exterior, or atmosphere photos where available; keep fallback visuals clearly conceptual.';
-}
-
-function buildSectionPlan(
-  layoutSignature: MockupLayoutSignature,
-  variant: MockupTemplateVariant,
-  hasGallery: boolean,
-  hasSnapshot: boolean
-): SectionKey[] {
-  const plans: Record<MockupLayoutSignature, SectionKey[]> = {
-    immersive_photo_hero: ['hero', 'conversion', 'gallery', 'offers', 'story', 'visit', 'growth', 'walkthrough'],
-    split_proof_hero: ['hero', 'story', 'offers', 'gallery', 'conversion', 'visit', 'snapshot', 'walkthrough'],
-    editorial_service_grid: ['hero', 'offers', 'conversion', 'story', 'growth', 'visit', 'snapshot', 'walkthrough'],
-    dark_premium_transform: ['hero', 'gallery', 'offers', 'conversion', 'growth', 'visit', 'snapshot', 'walkthrough'],
-    clean_clinic_trust: ['hero', 'story', 'offers', 'conversion', 'visit', 'growth', 'snapshot', 'walkthrough'],
-    warm_local_story: ['hero', 'story', 'offers', 'gallery', 'visit', 'growth', 'conversion', 'walkthrough'],
-    contractor_project_board: ['hero', 'gallery', 'conversion', 'offers', 'story', 'visit', 'snapshot', 'walkthrough'],
-    auto_detail_showcase: ['hero', 'gallery', 'offers', 'conversion', 'growth', 'visit', 'snapshot', 'walkthrough'],
-    pet_care_booking: ['hero', 'offers', 'story', 'gallery', 'visit', 'conversion', 'growth', 'walkthrough'],
-    fitness_energy_landing: ['hero', 'offers', 'gallery', 'story', 'conversion', 'visit', 'growth', 'walkthrough'],
-    professional_trust_page: ['hero', 'story', 'conversion', 'offers', 'visit', 'snapshot', 'growth', 'walkthrough'],
-    luxury_service_page: ['hero', 'story', 'gallery', 'offers', 'conversion', 'visit', 'growth', 'walkthrough'],
-  };
-
-  const fallback: SectionKey[] = ['hero', 'conversion', 'story', 'experiences', 'offers', 'visit', 'growth', 'walkthrough'];
-  const planned = plans[layoutSignature] || fallback;
-  const filtered = planned.filter((section) => {
-    if (section === 'gallery') return hasGallery;
-    if (section === 'snapshot') return hasSnapshot;
-    if (section === 'experiences') return !hasGallery || variant === 'local_service';
-    return true;
-  });
-
-  const minimum = ['hero', 'conversion', 'offers', 'visit', 'walkthrough'] as SectionKey[];
-  for (const section of minimum) {
-    if (!filtered.includes(section)) filtered.push(section);
-  }
-
-  return filtered.slice(0, 8);
 }
 
 function filterNavItemsForVariant(items: string[], variant: MockupTemplateVariant) {

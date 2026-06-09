@@ -19,6 +19,7 @@ const SAMPLE_JSON = `[
   {
     "business_name": "Example Detail Studio",
     "niche": "auto detailing",
+    "template_variant": "auto_service",
     "website_url": "https://example-detail-studio.com",
     "public_email": "hello@example-detail-studio.com",
     "city": "Denver",
@@ -476,9 +477,11 @@ function MockupV2Cell({ item }: { item: HermesImportPreview }) {
         <strong style={{ color: 'var(--color-ink)' }}>{v2.layoutLabel}</strong>
         {v2.layoutInferred && <span style={{ color: 'var(--color-warning)' }}> inferred</span>}
       </div>
+      <div>Renderer: {v2.layoutRendererName}</div>
+      <div>Sections: {v2.sectionPlan.join(' -> ')}</div>
       <div>
         Media: {v2.usableMediaAssetCount}/{v2.mediaAssetCount} usable
-        {v2.heroImageSourceType ? ` · hero from ${v2.heroImageSourceType.replace(/_/g, ' ')}` : ''}
+        {v2.heroImageSourceType ? ` | hero from ${v2.heroImageSourceType.replace(/_/g, ' ')}` : ''}
       </div>
       <div>{v2.visualProfileSummary}</div>
       {v2.imageSourceTypes.length > 0 && <div>Sources: {v2.imageSourceTypes.join(', ')}</div>}

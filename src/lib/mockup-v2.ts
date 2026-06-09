@@ -10,6 +10,8 @@ import {
 export type MockupV2Diagnostics = {
   layoutSignature: MockupLayoutSignature;
   layoutLabel: string;
+  layoutRendererName: MockupLayoutRendererName;
+  sectionPlan: string[];
   layoutInferred: boolean;
   visualProfileSummary: string;
   hasVisualProfile: boolean;
@@ -20,6 +22,22 @@ export type MockupV2Diagnostics = {
   imageSourceTypes: string[];
   warnings: string[];
 };
+
+export type MockupLayoutRendererName =
+  | 'ImmersivePhotoHeroLayout'
+  | 'SplitProofHeroLayout'
+  | 'EditorialServiceGridLayout'
+  | 'DarkPremiumTransformLayout'
+  | 'CleanClinicTrustLayout'
+  | 'WarmLocalStoryLayout'
+  | 'ContractorProjectBoardLayout'
+  | 'AutoDetailShowcaseLayout'
+  | 'PetCareBookingLayout'
+  | 'FitnessEnergyLandingLayout'
+  | 'ProfessionalTrustPageLayout'
+  | 'LuxuryServicePageLayout'
+  | 'RestaurantExperienceLayout'
+  | 'LocalServiceFallbackLayout';
 
 type DiagnosticsInput = {
   rich: RichMockupData;
@@ -66,12 +84,79 @@ export function selectHeroMediaAsset(assets: MockupMediaAsset[]) {
   );
 }
 
+export function getMockupLayoutRendererName(
+  signature: MockupLayoutSignature,
+  variant: MockupTemplateVariant
+): MockupLayoutRendererName {
+  if (isFoodMockupTemplate(variant)) {
+    return 'RestaurantExperienceLayout';
+  }
+
+  if (signature === 'pet_care_booking') return 'PetCareBookingLayout';
+  if (signature === 'contractor_project_board') return 'ContractorProjectBoardLayout';
+  if (signature === 'auto_detail_showcase') return 'AutoDetailShowcaseLayout';
+  if (signature === 'dark_premium_transform') return 'DarkPremiumTransformLayout';
+  if (signature === 'clean_clinic_trust') return 'CleanClinicTrustLayout';
+  if (signature === 'fitness_energy_landing') return 'FitnessEnergyLandingLayout';
+  if (signature === 'professional_trust_page') return 'ProfessionalTrustPageLayout';
+  if (signature === 'luxury_service_page') return 'LuxuryServicePageLayout';
+  if (signature === 'warm_local_story') return 'WarmLocalStoryLayout';
+  if (signature === 'split_proof_hero') return 'SplitProofHeroLayout';
+  if (signature === 'editorial_service_grid') return 'EditorialServiceGridLayout';
+  if (signature === 'immersive_photo_hero') return 'ImmersivePhotoHeroLayout';
+
+  return 'LocalServiceFallbackLayout';
+}
+
+export function getMockupLayoutSectionPlan({
+  signature,
+  variant,
+  hasGallery,
+  hasSnapshot,
+}: {
+  signature: MockupLayoutSignature;
+  variant: MockupTemplateVariant;
+  hasGallery: boolean;
+  hasSnapshot: boolean;
+}) {
+  const rendererName = getMockupLayoutRendererName(signature, variant);
+  const plans: Record<MockupLayoutRendererName, string[]> = {
+    PetCareBookingLayout: ['pet hero', 'booking strip', 'grooming services', 'trust and safety', 'happy-pet proof', 'location', 'appointment CTA'],
+    RestaurantExperienceLayout: ['atmosphere hero', 'occasion story', 'menu highlights', 'visit or reservation', 'social proof', 'reserve CTA'],
+    ContractorProjectBoardLayout: ['project-board hero', 'project proof', 'services and scope', 'process timeline', 'review strip', 'service area', 'estimate CTA'],
+    AutoDetailShowcaseLayout: ['dark showcase hero', 'transformation proof', 'package cards', 'detail process', 'finish gallery', 'book detail CTA'],
+    DarkPremiumTransformLayout: ['dark transformation hero', 'before and after proof', 'package cards', 'process', 'protection proof', 'book detail CTA'],
+    CleanClinicTrustLayout: ['consultation hero', 'treatments', 'provider trust', 'what to expect', 'reviews', 'consultation CTA'],
+    LuxuryServicePageLayout: ['quiet premium hero', 'service menu', 'trust editorial', 'what to expect', 'proof', 'consultation CTA'],
+    FitnessEnergyLandingLayout: ['movement hero', 'program cards', 'schedule and trial', 'coach proof', 'community proof', 'start trial CTA'],
+    ProfessionalTrustPageLayout: ['authority hero', 'service clarity', 'process', 'proof', 'contact CTA'],
+    WarmLocalStoryLayout: ['warm story hero', 'local trust', 'services', 'proof', 'location', 'final CTA'],
+    SplitProofHeroLayout: ['split proof hero', 'proof cards', 'services', 'process', 'service area', 'CTA'],
+    EditorialServiceGridLayout: ['service index hero', 'service grid', 'proof rail', 'process', 'local search', 'CTA'],
+    ImmersivePhotoHeroLayout: ['full-bleed hero', 'proof ribbon', 'service highlights', 'gallery', 'visit path', 'final CTA'],
+    LocalServiceFallbackLayout: ['service-first hero', 'proof', 'services', 'process', 'service area', 'CTA'],
+  };
+
+  return plans[rendererName].filter((section) => {
+    if (!hasGallery && /gallery/i.test(section)) return false;
+    if (!hasSnapshot && section === 'proof rail') return true;
+    return true;
+  });
+}
+
 export function getMockupV2Diagnostics(input: DiagnosticsInput): MockupV2Diagnostics {
   const mediaAssets = getAllMockupMediaAssets(input.rich);
   const usableMediaAssets = mediaAssets.filter((asset) => isUsableImageUrl(asset.image_url));
   const heroAsset = selectHeroMediaAsset(usableMediaAssets);
   const sourceTypes = [...new Set(usableMediaAssets.map((asset) => asset.source_type))];
   const hasVisualProfile = hasUsefulVisualProfile(input.rich.visual_profile);
+  const layoutRendererName = getMockupLayoutRendererName(input.template.layoutSignature, input.template.variant);
+  const sectionPlan = getMockupLayoutSectionPlan({
+    signature: input.template.layoutSignature,
+    variant: input.template.variant,
+    hasGallery: usableMediaAssets.length > 1,
+    hasSnapshot: Boolean(input.rich.current_site_snapshot),
+  });
   const isApexPublicMockup =
     input.campaignType === 'apex_social_content' &&
     (input.apexDeliveryMode === 'public_mockup' || input.apexDeliveryMode === 'link_plus_summary');
@@ -85,6 +170,10 @@ export function getMockupV2Diagnostics(input: DiagnosticsInput): MockupV2Diagnos
 
   if (input.template.layoutInferred) {
     warnings.push('No explicit layout_signature; renderer will use an inferred layout.');
+  }
+
+  if (layoutRendererName === 'LocalServiceFallbackLayout' && input.rich.layout_signature) {
+    warnings.push('layout_signature is present but maps to the local-service fallback renderer.');
   }
 
   if (!hasVisualProfile) {
@@ -132,6 +221,8 @@ export function getMockupV2Diagnostics(input: DiagnosticsInput): MockupV2Diagnos
   return {
     layoutSignature: input.template.layoutSignature,
     layoutLabel: getMockupLayoutSignatureLabel(input.template.layoutSignature),
+    layoutRendererName,
+    sectionPlan,
     layoutInferred: input.template.layoutInferred,
     visualProfileSummary: summarizeVisualProfile(input.rich.visual_profile, input.template.variant),
     hasVisualProfile,

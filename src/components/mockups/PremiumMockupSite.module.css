@@ -160,6 +160,1365 @@
   text-transform: none;
 }
 
+.layoutNotice {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  border-bottom: 1px solid var(--site-line);
+  background: var(--site-paper);
+  color: var(--site-ink);
+  padding: 10px max(20px, calc((100vw - 1240px) / 2));
+  font-size: 0.78rem;
+}
+
+.layoutNotice strong,
+.layoutNotice span,
+.layoutNotice small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.layoutNotice strong {
+  color: var(--site-olive);
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.layoutNotice small {
+  justify-self: end;
+  color: var(--site-muted);
+  font-weight: 800;
+}
+
+.petHeader,
+.restaurantHeader,
+.contractorHeader,
+.autoHeader,
+.clinicHeader,
+.fitnessHeader,
+.professionalHeader,
+.warmStoryHeader,
+.splitProofHeader,
+.serviceIndexHeader,
+.immersiveHeader {
+  position: relative;
+  z-index: 10;
+  padding-inline: max(20px, calc((100vw - 1240px) / 2));
+}
+
+.petHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 16px;
+  align-items: center;
+  background: color-mix(in oklch, var(--site-cream) 88%, white);
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+
+.petBrand {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+.petBrand strong {
+  overflow: hidden;
+  color: var(--site-ink);
+  font-size: 1.06rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.petHeader nav,
+.restaurantHeader nav,
+.contractorHeader nav,
+.autoHeader nav,
+.clinicHeader nav,
+.professionalHeader nav,
+.splitProofHeader nav,
+.immersiveHeader nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.petHeader nav a {
+  border-radius: 999px;
+  background: var(--site-paper);
+  color: var(--site-muted);
+  padding: 8px 11px;
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
+.petHeaderCta {
+  border-radius: 999px;
+  background: var(--site-olive);
+  color: var(--site-paper);
+  padding: 12px 16px;
+  font-weight: 950;
+}
+
+.restaurantHeader {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 22px;
+  align-items: center;
+  color: var(--site-cream);
+  padding-top: 24px;
+  padding-bottom: 24px;
+}
+
+.restaurantHeader small,
+.restaurantHeader div > a {
+  display: block;
+}
+
+.restaurantHeader small {
+  color: color-mix(in oklch, var(--site-cream) 74%, transparent);
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.restaurantHeader div > a {
+  margin-top: 4px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.4rem;
+}
+
+.restaurantHeader nav a {
+  color: color-mix(in oklch, var(--site-cream) 82%, transparent);
+  font-size: 0.9rem;
+  font-weight: 850;
+}
+
+.restaurantHeader > a {
+  border: 1px solid color-mix(in oklch, var(--site-cream) 56%, transparent);
+  border-radius: 999px;
+  padding: 11px 15px;
+  font-weight: 950;
+}
+
+.contractorHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 0.42fr) minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: stretch;
+  background: var(--site-charcoal);
+  color: var(--site-cream);
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.contractorHeader > a,
+.contractorHeader > div {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--site-line-dark);
+  background: color-mix(in oklch, var(--site-charcoal) 82%, white);
+}
+
+.contractorHeader > a {
+  gap: 12px;
+  padding: 12px;
+}
+
+.contractorHeader > a span {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  background: var(--site-amber);
+  color: var(--site-charcoal);
+  font-weight: 950;
+}
+
+.contractorHeader nav {
+  align-items: center;
+  justify-content: center;
+  border-top: 1px solid var(--site-line-dark);
+  border-bottom: 1px solid var(--site-line-dark);
+}
+
+.contractorHeader nav a {
+  color: color-mix(in oklch, var(--site-cream) 78%, transparent);
+  font-size: 0.88rem;
+  font-weight: 850;
+}
+
+.contractorHeader > div {
+  flex-direction: column;
+  justify-content: center;
+  min-width: 148px;
+  padding: 10px 14px;
+}
+
+.contractorHeader small {
+  color: var(--site-amber);
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.contractorHeader > div a {
+  margin-top: 3px;
+  font-weight: 950;
+}
+
+.autoHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 24px;
+  align-items: center;
+  background: color-mix(in oklch, var(--site-charcoal) 96%, black);
+  color: var(--site-cream);
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+
+.autoHeader strong,
+.autoHeader span {
+  display: block;
+}
+
+.autoHeader strong {
+  text-transform: uppercase;
+}
+
+.autoHeader span {
+  margin-top: 3px;
+  color: color-mix(in oklch, var(--site-amber) 86%, white);
+  font-size: 0.8rem;
+  font-weight: 850;
+}
+
+.autoHeader nav a {
+  color: color-mix(in oklch, var(--site-cream) 72%, transparent);
+  font-size: 0.88rem;
+  font-weight: 850;
+}
+
+.autoHeader > a:last-child {
+  background: var(--site-amber);
+  color: var(--site-charcoal);
+  padding: 12px 16px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.clinicHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 18px;
+  align-items: center;
+  border-bottom: 1px solid var(--site-line);
+  background: var(--site-paper);
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+
+.clinicHeader strong,
+.clinicHeader span {
+  display: block;
+}
+
+.clinicHeader strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.24rem;
+  font-weight: 600;
+}
+
+.clinicHeader span {
+  color: var(--site-muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.clinicHeader nav a {
+  color: var(--site-muted);
+  font-size: 0.88rem;
+  font-weight: 850;
+}
+
+.clinicHeader > a:last-child {
+  border: 1px solid var(--site-line);
+  border-radius: 999px;
+  padding: 11px 15px;
+  font-weight: 950;
+}
+
+.fitnessHeader {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  background: var(--site-amber);
+  color: var(--site-charcoal);
+  padding-top: 14px;
+  padding-bottom: 14px;
+  text-transform: uppercase;
+}
+
+.fitnessHeader > a:first-child {
+  font-size: 1.2rem;
+  font-weight: 950;
+}
+
+.fitnessHeader div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.fitnessHeader div a,
+.fitnessHeader > a:last-child {
+  font-size: 0.84rem;
+  font-weight: 950;
+}
+
+.fitnessHeader > a:last-child {
+  background: var(--site-charcoal);
+  color: var(--site-cream);
+  padding: 12px 15px;
+}
+
+.professionalHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 0.75fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: end;
+  border-bottom: 1px solid var(--site-line);
+  background: var(--site-paper);
+  padding-top: 26px;
+  padding-bottom: 18px;
+}
+
+.professionalHeader strong,
+.professionalHeader span {
+  display: block;
+}
+
+.professionalHeader strong {
+  font-size: 1.18rem;
+}
+
+.professionalHeader span {
+  margin-top: 5px;
+  color: var(--site-muted);
+  font-size: 0.82rem;
+}
+
+.professionalHeader nav {
+  justify-content: flex-end;
+}
+
+.professionalHeader nav a {
+  color: var(--site-muted);
+  font-size: 0.9rem;
+  font-weight: 850;
+}
+
+.warmStoryHeader {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  background: var(--site-cream);
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+
+.warmStoryHeader > a:first-child {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.35rem;
+}
+
+.warmStoryHeader span {
+  color: var(--site-muted);
+  text-align: center;
+}
+
+.warmStoryHeader > a:last-child {
+  color: var(--site-olive);
+  font-weight: 950;
+}
+
+.splitProofHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 0.55fr) minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  border-bottom: 1px solid var(--site-line);
+  background: var(--site-paper);
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+
+.splitProofHeader > a:first-child {
+  font-weight: 950;
+}
+
+.splitProofHeader nav a {
+  color: var(--site-muted);
+  font-size: 0.88rem;
+  font-weight: 850;
+}
+
+.splitProofHeader > a:last-child {
+  background: var(--site-charcoal);
+  color: var(--site-cream);
+  padding: 11px 15px;
+  font-weight: 950;
+}
+
+.serviceIndexHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  border-bottom: 1px solid var(--site-line);
+  background: var(--site-paper);
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+
+.serviceIndexHeader > a {
+  font-size: 1.12rem;
+  font-weight: 950;
+}
+
+.serviceIndexHeader div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-end;
+  color: var(--site-muted);
+  font-size: 0.88rem;
+  font-weight: 850;
+}
+
+.serviceIndexHeader div a {
+  background: var(--site-amber);
+  color: var(--site-charcoal);
+  padding: 11px 14px;
+}
+
+.immersiveHeader {
+  position: absolute;
+  top: 39px;
+  right: 0;
+  left: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  color: var(--site-cream);
+}
+
+.immersiveHeader > a {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.35rem;
+}
+
+.immersiveHeader nav a {
+  color: color-mix(in oklch, var(--site-cream) 78%, transparent);
+  font-size: 0.88rem;
+  font-weight: 850;
+}
+
+.layoutMedia {
+  position: relative;
+  min-height: 260px;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, color-mix(in oklch, var(--site-photo-a) 90%, black), color-mix(in oklch, var(--site-photo-b) 70%, white)),
+    repeating-linear-gradient(135deg, color-mix(in oklch, var(--site-paper) 24%, transparent) 0 1px, transparent 1px 28px);
+}
+
+.layoutMedia span {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 1;
+  max-width: calc(100% - 28px);
+  background: color-mix(in oklch, var(--site-charcoal) 74%, transparent);
+  color: var(--site-cream);
+  padding: 8px 10px;
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.petHero {
+  display: grid;
+  grid-template-columns: minmax(0, 0.78fr) minmax(260px, 0.62fr) minmax(250px, 0.42fr);
+  gap: 24px;
+  align-items: center;
+  background:
+    radial-gradient(circle at 12% 10%, color-mix(in oklch, var(--site-amber) 32%, transparent), transparent 34%),
+    var(--site-cream);
+  padding: 62px max(20px, calc((100vw - 1240px) / 2)) 72px;
+}
+
+.petHeroCopy p,
+.petHeroCopy span,
+.restaurantHeroCopy p,
+.restaurantHeroCopy span,
+.contractorHeroCopy p,
+.contractorHeroCopy span,
+.clinicHeroCopy p,
+.clinicHeroCopy span,
+.luxuryServiceHero p,
+.luxuryServiceHero span,
+.fitnessHeroCopy small,
+.fitnessHeroCopy p,
+.professionalHero p,
+.professionalHero span,
+.warmStoryHero p,
+.warmStoryHero span,
+.splitHeroCopy p,
+.splitHeroCopy span,
+.editorialGridHero p,
+.editorialGridHero span,
+.serviceFirstHero p,
+.serviceFirstHero span {
+  display: block;
+  margin: 0;
+}
+
+.petHeroCopy p,
+.contractorHeroCopy p,
+.clinicHeroCopy p,
+.luxuryServiceHero p,
+.professionalHero p,
+.warmStoryHero p,
+.splitHeroCopy p,
+.editorialGridHero p,
+.serviceFirstHero p {
+  color: var(--site-olive);
+  font-size: 0.82rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.petHero h1,
+.contractorHero h1,
+.clinicHero h1,
+.luxuryServiceHero h1,
+.professionalHero h1,
+.warmStoryHero h1,
+.splitHero h1,
+.editorialGridHero h1,
+.serviceFirstHero h1 {
+  margin: 16px 0 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 4rem;
+  font-weight: 600;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.petHeroCopy span,
+.contractorHeroCopy span,
+.clinicHeroCopy span,
+.luxuryServiceHero span,
+.professionalHero span,
+.warmStoryHero span,
+.splitHeroCopy span,
+.editorialGridHero span,
+.serviceFirstHero span {
+  margin-top: 22px;
+  color: var(--site-muted);
+  font-size: 1.06rem;
+  line-height: 1.7;
+}
+
+.petPhotoCollage {
+  display: grid;
+  grid-template-columns: 1fr 0.75fr;
+  grid-template-rows: 180px 180px;
+  gap: 12px;
+}
+
+.petPhotoCollage .layoutMedia {
+  min-height: 0;
+  border: 6px solid var(--site-paper);
+  border-radius: 28px;
+  box-shadow: 0 18px 36px color-mix(in oklch, var(--site-charcoal) 14%, transparent);
+}
+
+.petPhotoCollage .layoutMedia:first-child {
+  grid-row: span 2;
+  border-radius: 42px;
+}
+
+.petAppointmentCard {
+  border: 1px solid var(--site-line);
+  border-radius: 26px;
+  background: var(--site-paper);
+  padding: 24px;
+  box-shadow: var(--site-shadow);
+}
+
+.petAppointmentCard small,
+.petAppointmentCard strong,
+.petAppointmentCard span,
+.petAppointmentCard a {
+  display: block;
+}
+
+.petAppointmentCard small {
+  color: var(--site-olive);
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.petAppointmentCard strong {
+  margin-top: 12px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.petAppointmentCard span {
+  margin-top: 14px;
+  color: var(--site-muted);
+  line-height: 1.55;
+}
+
+.petAppointmentCard a {
+  margin-top: 22px;
+  border-radius: 999px;
+  background: var(--site-olive);
+  color: var(--site-paper);
+  padding: 13px 15px;
+  text-align: center;
+  font-weight: 950;
+}
+
+.petBookingStrip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  background: var(--site-paper);
+  padding: 24px max(20px, calc((100vw - 1240px) / 2));
+}
+
+.petBookingStrip article {
+  border-radius: 20px;
+  background: color-mix(in oklch, var(--site-cream) 72%, white);
+  padding: 18px;
+}
+
+.petBookingStrip small,
+.petBookingStrip strong {
+  display: block;
+}
+
+.petBookingStrip small {
+  color: var(--site-olive);
+  font-weight: 950;
+}
+
+.petBookingStrip strong {
+  margin-top: 16px;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.restaurantHero {
+  position: relative;
+  display: grid;
+  min-height: 760px;
+  place-items: end center;
+  overflow: hidden;
+  background: var(--site-charcoal);
+  color: var(--site-cream);
+  padding: 140px 20px 86px;
+}
+
+.restaurantHero .layoutMedia {
+  position: absolute;
+  inset: 0;
+  min-height: 100%;
+}
+
+.restaurantHero .layoutMedia::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background:
+    linear-gradient(180deg, color-mix(in oklch, var(--site-charcoal) 72%, transparent), transparent 28%, color-mix(in oklch, var(--site-charcoal) 88%, transparent)),
+    linear-gradient(90deg, color-mix(in oklch, var(--site-charcoal) 45%, transparent), transparent 55%);
+}
+
+.restaurantHero .layoutMedia span {
+  right: auto;
+  left: 26px;
+  bottom: 26px;
+}
+
+.restaurantHeroCopy {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  width: min(920px, 100%);
+  text-align: center;
+}
+
+.restaurantHeroCopy p {
+  color: var(--site-amber);
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.restaurantHeroCopy h1 {
+  margin: 18px 0 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(3.2rem, 8vw, 7.4rem);
+  font-weight: 600;
+  line-height: 0.92;
+  overflow-wrap: anywhere;
+}
+
+.restaurantHeroCopy span {
+  max-width: 720px;
+  margin-top: 24px;
+  color: color-mix(in oklch, var(--site-cream) 82%, transparent);
+  line-height: 1.7;
+}
+
+.restaurantHeroCopy div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.restaurantHeroCopy a {
+  border: 1px solid color-mix(in oklch, var(--site-cream) 48%, transparent);
+  border-radius: 999px;
+  padding: 13px 18px;
+  font-weight: 950;
+}
+
+.restaurantHeroCopy a:first-child {
+  background: var(--site-amber);
+  color: var(--site-charcoal);
+}
+
+.contractorHero {
+  display: grid;
+  grid-template-columns: minmax(0, 0.58fr) minmax(0, 1fr);
+  gap: 28px;
+  align-items: stretch;
+  background:
+    linear-gradient(90deg, var(--site-charcoal) 0 42%, var(--site-cream) 42%),
+    var(--site-cream);
+  padding: 58px max(20px, calc((100vw - 1240px) / 2)) 70px;
+}
+
+.contractorHeroCopy {
+  align-self: center;
+  color: var(--site-cream);
+  padding-right: 24px;
+}
+
+.contractorHeroCopy p,
+.contractorHeroCopy span {
+  color: color-mix(in oklch, var(--site-cream) 78%, transparent);
+}
+
+.contractorHeroCopy a {
+  display: inline-flex;
+  margin-top: 28px;
+  background: var(--site-amber);
+  color: var(--site-charcoal);
+  padding: 14px 18px;
+  font-weight: 950;
+}
+
+.projectBoard {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.projectBoard article {
+  border: 1px solid var(--site-line);
+  background: var(--site-paper);
+  padding: 10px;
+}
+
+.projectBoard article:nth-child(1) {
+  grid-row: span 2;
+}
+
+.projectBoard .layoutMedia {
+  min-height: 230px;
+}
+
+.projectBoard article:nth-child(1) .layoutMedia {
+  min-height: 430px;
+}
+
+.projectBoard strong {
+  display: block;
+  padding: 14px 4px 4px;
+  font-size: 1rem;
+}
+
+.projectProofBand {
+  display: grid;
+  grid-template-columns: minmax(0, 0.74fr) repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  background: var(--site-paper);
+  padding: 34px max(20px, calc((100vw - 1240px) / 2));
+}
+
+.projectProofBand > div {
+  align-self: center;
+}
+
+.projectProofBand p,
+.projectProofBand h2 {
+  margin: 0;
+}
+
+.projectProofBand p {
+  color: var(--site-olive);
+  font-size: 0.8rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.projectProofBand h2 {
+  margin-top: 10px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1.08;
+}
+
+.projectProofBand article {
+  border: 1px solid var(--site-line);
+  background: var(--site-cream);
+  padding: 10px;
+}
+
+.projectProofBand .layoutMedia {
+  min-height: 190px;
+}
+
+.projectProofBand strong,
+.projectProofBand span {
+  display: block;
+}
+
+.projectProofBand strong {
+  padding: 14px 6px 0;
+}
+
+.projectProofBand span {
+  padding: 8px 6px 8px;
+  color: var(--site-muted);
+  line-height: 1.5;
+}
+
+.autoHero {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(0, 0.72fr);
+  min-height: 720px;
+  background:
+    radial-gradient(circle at 72% 18%, color-mix(in oklch, var(--site-amber) 22%, transparent), transparent 32%),
+    color-mix(in oklch, var(--site-charcoal) 98%, black);
+  color: var(--site-cream);
+}
+
+.autoHeroMedia {
+  padding: 42px 0 42px max(20px, calc((100vw - 1240px) / 2));
+}
+
+.autoHeroMedia .layoutMedia {
+  min-height: 636px;
+  border: 1px solid var(--site-line-dark);
+  box-shadow: 0 34px 80px color-mix(in oklch, black 42%, transparent);
+}
+
+.autoHeroCopy {
+  align-self: center;
+  padding: 64px max(20px, calc((100vw - 1240px) / 2)) 64px 44px;
+}
+
+.autoHeroCopy small {
+  color: var(--site-amber);
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.autoHeroCopy h1 {
+  margin: 18px 0 0;
+  font-size: clamp(3rem, 7vw, 6.3rem);
+  line-height: 0.9;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.autoHeroCopy p {
+  color: color-mix(in oklch, var(--site-cream) 76%, transparent);
+  line-height: 1.7;
+}
+
+.autoHeroCopy div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.autoHeroCopy div span {
+  border: 1px solid var(--site-line-dark);
+  padding: 10px;
+  font-size: 0.8rem;
+  font-weight: 850;
+}
+
+.autoHeroCopy a {
+  display: inline-flex;
+  margin-top: 28px;
+  background: var(--site-amber);
+  color: var(--site-charcoal);
+  padding: 14px 18px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.autoTransformationStrip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: 1px;
+  background: var(--site-line-dark);
+  color: var(--site-cream);
+}
+
+.autoTransformationStrip article,
+.autoTransformationStrip a {
+  background: var(--site-charcoal);
+  padding: 24px;
+}
+
+.autoTransformationStrip small,
+.autoTransformationStrip strong,
+.autoTransformationStrip span {
+  display: block;
+}
+
+.autoTransformationStrip small {
+  color: var(--site-amber);
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.autoTransformationStrip strong {
+  margin-top: 18px;
+  font-size: 1.2rem;
+}
+
+.autoTransformationStrip span {
+  margin-top: 10px;
+  color: color-mix(in oklch, var(--site-cream) 72%, transparent);
+  line-height: 1.5;
+}
+
+.autoTransformationStrip a {
+  display: grid;
+  place-items: center;
+  background: var(--site-amber);
+  color: var(--site-charcoal);
+  font-weight: 950;
+  text-align: center;
+}
+
+.clinicHero {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(300px, 0.58fr);
+  gap: 42px;
+  align-items: center;
+  background:
+    linear-gradient(180deg, var(--site-paper), var(--site-cream)),
+    var(--site-paper);
+  padding: 78px max(20px, calc((100vw - 1240px) / 2));
+}
+
+.clinicHero h1 {
+  max-width: 760px;
+}
+
+.clinicHeroCopy a,
+.luxuryServiceHero a {
+  display: inline-flex;
+  margin-top: 28px;
+  border: 1px solid var(--site-line);
+  border-radius: 999px;
+  background: var(--site-paper);
+  color: var(--site-ink);
+  padding: 14px 18px;
+  font-weight: 950;
+}
+
+.clinicTrustCard {
+  display: grid;
+  gap: 18px;
+  border: 1px solid var(--site-line);
+  border-radius: 8px;
+  background: var(--site-paper);
+  padding: 14px;
+}
+
+.clinicTrustCard .layoutMedia {
+  min-height: 320px;
+  border-radius: 6px;
+}
+
+.clinicTrustCard strong,
+.clinicTrustCard span {
+  display: block;
+  padding-inline: 8px;
+}
+
+.clinicTrustCard strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.45rem;
+  font-weight: 600;
+  line-height: 1.14;
+}
+
+.clinicTrustCard span {
+  color: var(--site-muted);
+  line-height: 1.55;
+  padding-bottom: 8px;
+}
+
+.clinicTrustPanel {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  background: var(--site-paper);
+  padding: 54px max(20px, calc((100vw - 1240px) / 2));
+}
+
+.clinicTrustPanel p,
+.clinicTrustPanel h2 {
+  margin: 0;
+}
+
+.clinicTrustPanel p {
+  color: var(--site-olive);
+  font-size: 0.8rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.clinicTrustPanel h2 {
+  margin-top: 12px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1.08;
+}
+
+.clinicTrustPanel article {
+  border: 1px solid var(--site-line);
+  background: var(--site-cream);
+  padding: 22px;
+}
+
+.clinicTrustPanel article svg {
+  color: var(--site-olive);
+}
+
+.clinicTrustPanel article strong {
+  display: block;
+  margin-top: 22px;
+  line-height: 1.35;
+}
+
+.luxuryServiceHero {
+  display: grid;
+  grid-template-columns: minmax(0, 0.72fr) minmax(0, 1fr);
+  gap: 34px;
+  align-items: end;
+  background: var(--site-paper);
+  padding: 72px max(20px, calc((100vw - 1240px) / 2)) 82px;
+}
+
+.luxuryServiceHero .layoutMedia {
+  grid-column: 2;
+  grid-row: 1 / span 5;
+  min-height: 520px;
+  border-radius: 8px;
+}
+
+.fitnessHero {
+  display: grid;
+  grid-template-columns: minmax(0, 0.74fr) minmax(0, 1fr);
+  gap: 30px;
+  overflow: hidden;
+  background:
+    linear-gradient(110deg, var(--site-charcoal) 0 54%, var(--site-amber) 54%),
+    var(--site-charcoal);
+  color: var(--site-cream);
+  padding: 70px max(20px, calc((100vw - 1240px) / 2));
+}
+
+.fitnessHeroCopy {
+  align-self: center;
+}
+
+.fitnessHeroCopy small {
+  color: var(--site-amber);
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.fitnessHeroCopy h1 {
+  margin: 16px 0 0;
+  font-size: clamp(3.2rem, 8vw, 6.6rem);
+  line-height: 0.88;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.fitnessHeroCopy p {
+  max-width: 640px;
+  color: color-mix(in oklch, var(--site-cream) 76%, transparent);
+  line-height: 1.7;
+}
+
+.fitnessHeroCopy a {
+  display: inline-flex;
+  margin-top: 28px;
+  background: var(--site-amber);
+  color: var(--site-charcoal);
+  padding: 15px 18px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.fitnessProgramStack {
+  display: grid;
+  gap: 14px;
+  align-self: center;
+}
+
+.fitnessProgramStack article {
+  display: grid;
+  grid-template-columns: auto minmax(0, 0.78fr) minmax(180px, 0.54fr);
+  gap: 14px;
+  align-items: center;
+  transform: skew(-4deg);
+  background: var(--site-paper);
+  color: var(--site-charcoal);
+  padding: 10px;
+}
+
+.fitnessProgramStack article:nth-child(2) {
+  margin-left: 34px;
+}
+
+.fitnessProgramStack article:nth-child(3) {
+  margin-left: 68px;
+}
+
+.fitnessProgramStack article > span {
+  color: var(--site-olive);
+  font-weight: 950;
+}
+
+.fitnessProgramStack .layoutMedia {
+  min-height: 130px;
+}
+
+.professionalHero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.42fr);
+  gap: 48px;
+  align-items: start;
+  background: var(--site-paper);
+  padding: 86px max(20px, calc((100vw - 1240px) / 2));
+}
+
+.professionalHero h1 {
+  max-width: 780px;
+}
+
+.professionalHero aside {
+  border-left: 3px solid var(--site-olive);
+  background: var(--site-cream);
+  padding: 24px;
+}
+
+.professionalHero aside strong,
+.professionalHero aside span,
+.professionalHero aside a {
+  display: block;
+}
+
+.professionalHero aside strong {
+  color: var(--site-olive);
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.professionalHero aside span {
+  border-top: 1px solid var(--site-line);
+  padding: 13px 0;
+  color: var(--site-muted);
+}
+
+.professionalHero aside a {
+  margin-top: 16px;
+  background: var(--site-charcoal);
+  color: var(--site-cream);
+  padding: 13px 15px;
+  text-align: center;
+  font-weight: 950;
+}
+
+.warmStoryHero {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.62fr) minmax(0, 0.8fr);
+  gap: 44px;
+  align-items: center;
+  background: var(--site-cream);
+  padding: 70px max(20px, calc((100vw - 1240px) / 2));
+}
+
+.warmStoryHero .layoutMedia {
+  min-height: 520px;
+  border-radius: 44px 44px 8px 44px;
+}
+
+.warmStoryHero a {
+  display: inline-flex;
+  margin-top: 28px;
+  border-radius: 999px;
+  background: var(--site-olive);
+  color: var(--site-paper);
+  padding: 14px 18px;
+  font-weight: 950;
+}
+
+.splitHero {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.8fr) minmax(0, 0.74fr);
+  gap: 34px;
+  align-items: center;
+  background: var(--site-paper);
+  padding: 70px max(20px, calc((100vw - 1240px) / 2));
+}
+
+.splitHeroProof {
+  display: grid;
+  gap: 14px;
+}
+
+.splitHeroProof .layoutMedia {
+  min-height: 480px;
+  border-radius: 8px;
+}
+
+.splitHeroProof > div:last-child {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.splitHeroProof strong {
+  border: 1px solid var(--site-line);
+  background: var(--site-cream);
+  padding: 18px;
+}
+
+.splitHeroCopy a {
+  display: inline-flex;
+  margin-top: 28px;
+  background: var(--site-charcoal);
+  color: var(--site-cream);
+  padding: 14px 18px;
+  font-weight: 950;
+}
+
+.editorialGridHero {
+  display: grid;
+  grid-template-columns: minmax(0, 0.72fr) minmax(280px, 0.42fr);
+  gap: 34px;
+  align-items: end;
+  background: var(--site-paper);
+  padding: 76px max(20px, calc((100vw - 1240px) / 2));
+}
+
+.editorialGridHero > div:first-child {
+  grid-row: span 2;
+}
+
+.editorialGridHero > div:last-child {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1px;
+  background: var(--site-line);
+}
+
+.editorialGridHero > div:last-child a {
+  background: var(--site-cream);
+  padding: 16px;
+  font-weight: 900;
+}
+
+.serviceFirstHero {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(300px, 0.52fr);
+  gap: 32px;
+  background: var(--site-paper);
+  padding: 74px max(20px, calc((100vw - 1240px) / 2));
+}
+
+.serviceFirstHero > div:last-child {
+  display: grid;
+  gap: 10px;
+}
+
+.serviceFirstHero article {
+  border: 1px solid var(--site-line);
+  background: var(--site-cream);
+  padding: 18px;
+}
+
+.serviceFirstHero article strong {
+  font-size: 1rem;
+}
+
+.serviceFirstHero a {
+  display: grid;
+  place-items: center;
+  background: var(--site-amber);
+  color: var(--site-charcoal);
+  padding: 14px;
+  font-weight: 950;
+}
+
 .header {
   position: sticky;
   top: 0;
@@ -1242,6 +2601,88 @@
     display: none;
   }
 
+  .layoutNotice,
+  .petHeader,
+  .restaurantHeader,
+  .contractorHeader,
+  .autoHeader,
+  .clinicHeader,
+  .fitnessHeader,
+  .professionalHeader,
+  .warmStoryHeader,
+  .splitProofHeader,
+  .serviceIndexHeader,
+  .immersiveHeader,
+  .petHero,
+  .restaurantHero,
+  .contractorHero,
+  .projectProofBand,
+  .autoHero,
+  .clinicHero,
+  .clinicTrustPanel,
+  .luxuryServiceHero,
+  .fitnessHero,
+  .professionalHero,
+  .warmStoryHero,
+  .splitHero,
+  .editorialGridHero,
+  .serviceFirstHero {
+    grid-template-columns: 1fr;
+  }
+
+  .restaurantHeader,
+  .immersiveHeader {
+    position: relative;
+    top: auto;
+    background: var(--site-charcoal);
+  }
+
+  .restaurantHeader nav,
+  .contractorHeader nav,
+  .autoHeader nav,
+  .clinicHeader nav,
+  .professionalHeader nav,
+  .splitProofHeader nav,
+  .immersiveHeader nav {
+    justify-content: flex-start;
+  }
+
+  .contractorHero {
+    background: var(--site-charcoal);
+  }
+
+  .contractorHeroCopy {
+    padding-right: 0;
+  }
+
+  .autoHero {
+    min-height: auto;
+  }
+
+  .autoHeroMedia,
+  .autoHeroCopy {
+    padding: 34px max(20px, calc((100vw - 1240px) / 2));
+  }
+
+  .autoHeroMedia .layoutMedia {
+    min-height: 430px;
+  }
+
+  .luxuryServiceHero .layoutMedia {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .fitnessProgramStack article,
+  .autoTransformationStrip {
+    grid-template-columns: 1fr;
+  }
+
+  .fitnessProgramStack article:nth-child(2),
+  .fitnessProgramStack article:nth-child(3) {
+    margin-left: 0;
+  }
+
   .heroContent,
   .conversion,
   .story,
@@ -1315,6 +2756,135 @@
     grid-template-columns: 1fr;
     gap: 10px;
     padding: 12px 16px;
+  }
+
+  .layoutNotice {
+    grid-template-columns: 1fr;
+    gap: 4px;
+    padding: 10px 16px;
+  }
+
+  .layoutNotice small {
+    justify-self: start;
+  }
+
+  .petHeader,
+  .restaurantHeader,
+  .contractorHeader,
+  .autoHeader,
+  .clinicHeader,
+  .fitnessHeader,
+  .professionalHeader,
+  .warmStoryHeader,
+  .splitProofHeader,
+  .serviceIndexHeader,
+  .immersiveHeader {
+    gap: 12px;
+    padding: 14px 16px;
+  }
+
+  .petHeader nav,
+  .restaurantHeader nav,
+  .contractorHeader nav,
+  .autoHeader nav,
+  .clinicHeader nav,
+  .professionalHeader nav,
+  .splitProofHeader nav,
+  .immersiveHeader nav,
+  .fitnessHeader div {
+    display: none;
+  }
+
+  .petHeaderCta,
+  .restaurantHeader > a,
+  .contractorHeader > div,
+  .autoHeader > a:last-child,
+  .clinicHeader > a:last-child,
+  .fitnessHeader > a:last-child,
+  .splitProofHeader > a:last-child,
+  .serviceIndexHeader div a {
+    width: 100%;
+    text-align: center;
+  }
+
+  .petHero,
+  .contractorHero,
+  .autoHero,
+  .clinicHero,
+  .clinicTrustPanel,
+  .luxuryServiceHero,
+  .fitnessHero,
+  .professionalHero,
+  .warmStoryHero,
+  .splitHero,
+  .editorialGridHero,
+  .serviceFirstHero {
+    padding: 48px 16px;
+  }
+
+  .restaurantHero {
+    min-height: 620px;
+    padding: 90px 16px 54px;
+  }
+
+  .petHero h1,
+  .contractorHero h1,
+  .clinicHero h1,
+  .luxuryServiceHero h1,
+  .professionalHero h1,
+  .warmStoryHero h1,
+  .splitHero h1,
+  .editorialGridHero h1,
+  .serviceFirstHero h1,
+  .restaurantHeroCopy h1,
+  .autoHeroCopy h1,
+  .fitnessHeroCopy h1 {
+    font-size: 2.3rem;
+    line-height: 1.04;
+  }
+
+  .petPhotoCollage,
+  .projectBoard,
+  .projectProofBand,
+  .petBookingStrip,
+  .clinicTrustPanel,
+  .splitHeroProof > div:last-child {
+    grid-template-columns: 1fr;
+  }
+
+  .petPhotoCollage {
+    grid-template-rows: none;
+  }
+
+  .petPhotoCollage .layoutMedia:first-child,
+  .projectBoard article:nth-child(1) {
+    grid-row: auto;
+  }
+
+  .petPhotoCollage .layoutMedia,
+  .projectBoard .layoutMedia,
+  .projectBoard article:nth-child(1) .layoutMedia,
+  .projectProofBand .layoutMedia,
+  .clinicTrustCard .layoutMedia,
+  .luxuryServiceHero .layoutMedia,
+  .warmStoryHero .layoutMedia,
+  .splitHeroProof .layoutMedia,
+  .autoHeroMedia .layoutMedia {
+    min-height: 250px;
+  }
+
+  .autoHeroMedia,
+  .autoHeroCopy {
+    padding: 0;
+  }
+
+  .autoHeroCopy div,
+  .fitnessProgramStack article {
+    grid-template-columns: 1fr;
+  }
+
+  .fitnessProgramStack article {
+    transform: none;
   }
 
   .brand strong {

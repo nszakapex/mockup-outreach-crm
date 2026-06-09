@@ -75,6 +75,7 @@ export type ProspectIntakeInput = {
   primary_cta?: string | null;
   features_included?: string | string[] | null;
   concept_notes?: string | null;
+  template_variant?: string | null;
   brand_style_notes?: string | null;
   visual_direction?: string | null;
   layout_signature?: string | null;
@@ -573,6 +574,7 @@ export function normalizeHermesJsonRecord(value: unknown): ProspectIntakeInput |
       ? record.features_included.map((item) => String(item))
       : clean(record.features_included),
     concept_notes: clean(record.concept_notes),
+    template_variant: clean(record.template_variant),
     brand_style_notes: clean(record.brand_style_notes),
     visual_direction: clean(record.visual_direction),
     layout_signature: clean(record.layout_signature),
@@ -760,6 +762,12 @@ export async function previewHermesImport(records: ProspectIntakeInput[]) {
   if (publicApexPreviews.length > 1 && explicitLayoutSet.size === 1) {
     for (const item of publicApexPreviews) {
       item.warnings.push('All Apex public mockups in this paste use the same layout signature; vary layout_signature to avoid repeated section order.');
+    }
+  }
+  const rendererSet = new Set(publicApexPreviews.map((item) => item.mockupV2.layoutRendererName));
+  if (publicApexPreviews.length > 1 && rendererSet.size === 1) {
+    for (const item of publicApexPreviews) {
+      item.warnings.push('All Apex public mockups in this paste use the same layout renderer; vary template_variant and layout_signature to avoid repeated hero/header structure.');
     }
   }
 
