@@ -162,7 +162,7 @@ type SiteContext = {
 export const MOCKUP_VISUAL_RULES = [
   'Website concept starts with a real business-site header and hero.',
   'Audit content is secondary and never replaces homepage content.',
-  'Every page has photo-style placeholders that read as intentional image slots.',
+  'Every page has photo-style media areas that read as intentional image slots.',
   'Variant differences include section composition, not just color.',
   'Mobile must have no horizontal overflow at 320, 375, 414, and 768 pixels.',
 ] as const;
@@ -1345,7 +1345,7 @@ function LocalServiceFallbackLayout({ context }: { context: SiteContext }) {
 function LayoutNotice({ context }: { context: SiteContext }) {
   return (
     <div className={styles.layoutNotice}>
-      <strong>Website concept preview</strong>
+      <strong>Website concept by Apex</strong>
       <span>{context.businessName}</span>
       <small>Prepared by Apex Marketing Group</small>
     </div>
@@ -1377,7 +1377,7 @@ function RestaurantHeader({ context }: { context: SiteContext }) {
   return (
     <header className={styles.restaurantHeader}>
       <div>
-        <small>Website concept preview</small>
+        <small>Website concept by Apex</small>
         <a href="#home">{context.businessName}</a>
       </div>
       <nav aria-label="Hospitality concept navigation">
@@ -2288,15 +2288,15 @@ function isSafeCssColor(value: string) {
 
 function buildFallbackPhotoStrategy(variant: MockupTemplateVariant, heroAsset: MockupMediaAsset | null) {
   if (heroAsset?.source_type && heroAsset.source_type !== 'fallback') {
-    return `Use public ${heroAsset.source_type.replace(/_/g, ' ')} imagery as the visual anchor, then support it with proof and process cards.`;
+    return 'Business imagery anchors the page, with proof and process cards supporting each next step.';
   }
-  if (variant === 'contractor') return 'Use recent project photos first; fall back to grounded project-board concept visuals only when no public photos are reliable.';
-  if (variant === 'auto_service') return 'Use transformation photos, shine details, package cards, and before/after proof where public photos are reliable.';
-  if (variant === 'medical_aesthetics') return 'Use calm clinic/provider visuals and avoid implying treatment outcomes that are not public.';
-  if (variant === 'pet_service') return 'Use warm pet and grooming proof photos when public, with friendly concept visuals as fallback.';
-  if (variant === 'fitness_studio') return 'Use class energy, coach, and community photos where public, with program visuals as fallback.';
-  if (isServiceMockupTemplate(variant)) return 'Use real service, project, team, or proof photos where available; keep fallback visuals clearly conceptual.';
-  return 'Use real food, interior, exterior, or atmosphere photos where available; keep fallback visuals clearly conceptual.';
+  if (variant === 'contractor') return 'Recent project photos, scope cues, and estimate confidence stay connected.';
+  if (variant === 'auto_service') return 'Transformation photos, shine details, and package cards make the booking path concrete.';
+  if (variant === 'medical_aesthetics') return 'Calm provider imagery and expectation-setting copy make the consultation path feel clear.';
+  if (variant === 'pet_service') return 'Warm pet and grooming proof help visitors feel comfortable booking.';
+  if (variant === 'fitness_studio') return 'Class energy, coach presence, and community proof make the first visit easy to picture.';
+  if (isServiceMockupTemplate(variant)) return 'Service proof, team cues, and next steps stay visible as visitors compare options.';
+  return 'Food, atmosphere, and visit details help guests decide where to go next.';
 }
 
 function filterNavItemsForVariant(items: string[], variant: MockupTemplateVariant) {
