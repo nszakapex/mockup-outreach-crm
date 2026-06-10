@@ -18,12 +18,17 @@ import StatusBadge from '@/components/StatusBadge';
 import EmptyState from '@/components/EmptyState';
 import ErrorBanner from '@/components/ErrorBanner';
 import { useApprovalQueue } from '@/lib/hooks';
+import { getApexDeliveryMode, parseApexDeliveryConceptNotes } from '@/lib/apex-delivery-data';
+import { parseMockupConceptNotes } from '@/lib/mockup-rich-data';
+import { getMockupTemplateSelection } from '@/lib/mockup-templates';
+import { getMockupV2Diagnostics } from '@/lib/mockup-v2';
 import {
   getResinateDeliveryMode,
   getResinatePublicArtifactRequired,
   isResinateCampaign,
   parseResinateConceptNotes,
 } from '@/lib/resinate-data';
+import { parseSocialAuditConceptNotes } from '@/lib/social-audit-data';
 
 export default function ApprovalPage() {
   const { prospects, loading, error, refetch, approve } = useApprovalQueue();
@@ -127,6 +132,37 @@ export default function ApprovalPage() {
             const mockup = prospect.mockups?.[0];
             const resinateStrategy = mockup ? parseResinateConceptNotes(mockup.concept_notes) : {};
             const isResinate = isResinateCampaign(resinateStrategy);
+            const apexDeliveryStrategy = !isResinate && mockup ? parseApexDeliveryConceptNotes(mockup.concept_notes) : {};
+            const apexDeliveryMode = !isResinate ? getApexDeliveryMode(apexDeliveryStrategy, email?.body) : null;
+            const mockupStrategy = mockup ? parseMockupConceptNotes(mockup.concept_notes) : null;
+            const socialAuditStrategy = mockup ? parseSocialAuditConceptNotes(mockup.concept_notes) : {};
+            const mockupTemplate = getMockupTemplateSelection({
+              businessName: prospect.business_name,
+              niche: prospect.niche,
+              fields: mockupStrategy?.rich as Record<string, unknown> | undefined,
+            });
+            const mockupV2 = mockupStrategy
+              ? getMockupV2Diagnostics({
+                  rich: mockupStrategy.rich,
+                  template: mockupTemplate,
+                  social: socialAuditStrategy,
+                  niche: prospect.niche,
+                  businessName: prospect.business_name,
+                  campaignType: resinateStrategy.campaign_type || apexDeliveryStrategy.campaign_type,
+                  apexDeliveryMode,
+                  emailBody: email?.body,
+                  heroHeadline: mockup?.hero_headline,
+                  heroSubheadline: mockup?.hero_subheadline,
+                  primaryCta: mockup?.primary_cta,
+                  publicEmail: prospect.public_email,
+                  notes: prospect.notes,
+                })
+              : null;
+            const publicMockupBlocked = Boolean(
+              !isResinate &&
+                mockupV2?.qualityGate.required &&
+                !mockupV2.qualityGate.outreachReady
+            );
             const resinateDeliveryMode = isResinate ? getResinateDeliveryMode(resinateStrategy, email?.body) : null;
             const publicArtifactRequired = isResinate
               ? getResinatePublicArtifactRequired(resinateStrategy, email?.body)
@@ -141,7 +177,8 @@ export default function ApprovalPage() {
               Boolean(email?.subject) &&
               Boolean(email?.body) &&
               Boolean(mockup) &&
-              (!publicArtifactRequired || Boolean(mockup?.slug));
+              (!publicArtifactRequired || Boolean(mockup?.slug)) &&
+              !publicMockupBlocked;
 
             return (
               <Card key={prospect.id}>
@@ -210,6 +247,13 @@ export default function ApprovalPage() {
                 {publicArtifactRequired && !mockup?.slug && (
                   <div className="mb-4 rounded-lg p-3 text-xs" style={{ background: 'oklch(75% 0.16 85 / 0.08)', border: '1px solid oklch(75% 0.16 85 / 0.2)', color: 'var(--color-warning)' }}>
                     Missing public artifact link. Add a slug before sending this prospect to Telegram.
+                  </div>
+                )}
+
+                {publicMockupBlocked && mockupV2 && (
+                  <div className="mb-4 rounded-lg p-3 text-xs" style={{ background: 'oklch(65% 0.22 25 / 0.08)', border: '1px solid oklch(65% 0.22 25 / 0.2)', color: 'var(--color-error)' }}>
+                    <div className="font-semibold">Mockup not outreach-ready</div>
+                    <div className="mt-1 leading-5">{mockupV2.qualityGate.failures.join(' ')}</div>
                   </div>
                 )}
 

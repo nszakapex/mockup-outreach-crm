@@ -277,6 +277,8 @@ Keep the data practical and business-specific: current site snapshot, online pre
 
 For `campaign_type: "apex_social_content"` with `apex_delivery_mode: "public_mockup"` or `"link_plus_summary"`, future batches should include enough V2 data for the public concept to feel custom:
 
+- `approved_archetype`: one of the approved public mockup archetypes listed below.
+- `personalization_score`: numeric quality score. Public mockups require `>= 85`; records below `90` should be manually spot-checked.
 - `visual_profile`: brand mood, design style key, palette, typography mood, layout signature, photo strategy, UI personality, trust style, and CTA style.
 - `template_variant`: explicit renderer category such as `pet_service`, `contractor`, `medical_aesthetics`, `auto_service`, `fitness_studio`, `professional_service`, or `restaurant`.
 - `design_family`: explicit art direction such as `editorial_photo_story`, `modern_service_stack`, `premium_dark_showcase`, `clean_conversion_clinic`, `project_board_contractor`, `cozy_local_brand`, `transformation_gallery`, `hospitality_experience`, `minimalist_luxury_service`, or `bold_action_local_service`.
@@ -297,6 +299,34 @@ Rules for future Code X prospecting:
 - Vary `layout_signature` across a batch; repeated section order is flagged in import preview.
 - Vary `design_family` across a batch; import preview warns when one family dominates a public mockup paste.
 - Public mockups now choose a layout renderer such as `PetCareBookingLayout`, `ContractorProjectBoardLayout`, `DarkPremiumTransformLayout`, `CleanClinicTrustLayout`, `FitnessEnergyLandingLayout`, `ProfessionalTrustPageLayout`, or `RestaurantExperienceLayout`. The DOM/header/hero/section plan should differ by renderer.
+
+### Apex Public Mockup Quality Gate
+
+Apex public mockups are for high-quality prospects, not blind volume. Any Apex record using `apex_delivery_mode: "public_mockup"` or `"link_plus_summary"` must pass the public mockup quality gate before outreach. If it fails, the app marks it as `Mockup not outreach-ready` in import preview, prospect detail, approval, Telegram approval validation, and send queue eligibility.
+
+Approved `approved_archetype` values:
+
+- `premium_service_landing`: home services, local services, HVAC, plumbing, electrical, cleaning, pressure washing, garage doors, windows/doors.
+- `proof_first_contractor`: contractors, remodelers, roofing, siding, concrete, landscaping, hardscaping, deck builders, fencing, flooring contractors.
+- `transformation_showcase`: auto detail, ceramic coating, tint, transformation-led salons, and fitness transformations when appropriate.
+- `clean_clinic_conversion`: med spas, aesthetics, dental, orthodontics, and wellness clinics.
+- `warm_local_booking`: pet grooming, local appointment services, family-friendly service businesses, and warmth-led salons/barbershops.
+- `hospitality_experience`: restaurants, cafes, event spaces, and hospitality businesses only.
+- `professional_trust_page`: professional services, studios, consultants, photographers, and local B2B services.
+- `fitness_energy_page`: gyms, fitness studios, pilates/yoga, and personal training.
+
+Hard gate requirements:
+
+- `approved_archetype` must be present and compatible with the prospect niche.
+- `personalization_score` must be `>= 85`; scores from `85` to `89` are importable only with a warning.
+- Public mockups need at least three specific `website_issue_examples`, non-generic nav/sections/offers/trust signals, a real CTA strategy, useful visual direction, media assets or a clearly explained fallback, specific social audit data, and a specific four-week content plan.
+- Non-food businesses cannot use food labels such as Menu, Order, Reservations, Happy Hour, Catering, Gift Cards, or Best Time to Visit.
+- Banned generic phrases such as "Make the result easier to trust", "Your trusted local experts", "Modern solutions", and "Experience the difference" fail the gate.
+- Public emails that appear guessed instead of publicly sourced are blocked.
+
+Batch variety is also checked. For 10 public mockups, no more than 3 should share the same `approved_archetype`, `design_family`, or `layout_signature` unless justified. For 20 public mockups, the limit is 4.
+
+When the business is a fit but public mockup quality is thin, use Apex inline brief delivery instead of forcing a public mockup.
 
 ## Social Audit JSON Fields
 

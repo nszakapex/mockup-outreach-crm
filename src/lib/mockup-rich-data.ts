@@ -2,6 +2,7 @@ import { hasNormalizedApexDeliveryData, type ApexDeliveryData } from './apex-del
 import { hasNormalizedResinateFlooringData, type ResinateFlooringData } from './resinate-data';
 
 export const RICH_MOCKUP_TEXT_FIELDS = [
+  'approved_archetype',
   'template_variant',
   'design_family',
   'brand_style_notes',
@@ -39,6 +40,7 @@ export const RICH_MOCKUP_LIST_FIELDS = [
 ] as const;
 
 export const RICH_MOCKUP_SIGNAL_FIELDS = [
+  'approved_archetype',
   'visual_direction',
   'template_variant',
   'design_family',
@@ -115,6 +117,7 @@ export type MockupMediaAsset = {
 
 export type RichMockupData = Partial<Record<RichMockupTextField, string | null>> &
   Partial<Record<RichMockupListField, string[]>> & {
+    personalization_score?: number | null;
     visual_profile?: MockupVisualProfile | null;
     media_assets?: MockupMediaAsset[];
     proof_assets?: MockupMediaAsset[];
@@ -149,6 +152,9 @@ export function normalizeRichMockupData(input: Record<string, unknown> | null | 
     const value = cleanList(input?.[field]);
     if (value.length > 0) rich[field] = value;
   }
+
+  const personalizationScore = cleanScore(input?.personalization_score ?? input?.personalizationScore);
+  if (personalizationScore !== null) rich.personalization_score = personalizationScore;
 
   const visualProfile = normalizeVisualProfile(input?.visual_profile ?? input?.visualProfile);
   if (visualProfile) {
@@ -291,6 +297,12 @@ function cleanString(value: unknown) {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+function cleanScore(value: unknown) {
+  const score = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(score)) return null;
+  return Math.max(0, Math.min(100, Math.round(score)));
 }
 
 function cleanRecord(value: unknown) {

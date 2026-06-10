@@ -19,6 +19,8 @@ const SAMPLE_JSON = `[
   {
     "business_name": "Example Detail Studio",
     "niche": "auto detailing",
+    "approved_archetype": "transformation_showcase",
+    "personalization_score": 91,
     "template_variant": "auto_service",
     "design_family": "premium_dark_showcase",
     "website_url": "https://example-detail-studio.com",
@@ -91,8 +93,8 @@ const SAMPLE_JSON = `[
     "proposed_site_nav": ["Services", "Results", "Areas", "Reviews", "Quote"],
     "homepage_sections": ["Quote-first hero", "Package comparison", "Before-and-after proof", "Service area CTA"],
     "menu_or_offer_items": ["Interior refresh", "Full detail", "Ceramic coating", "Paint protection"],
-    "website_issue_examples": ["Booking packages are hard to compare on mobile", "Quote CTA is buried below service copy"],
-    "trust_signals": ["Five-star local detail studio", "Paint-safe products", "Weekend appointments"],
+    "website_issue_examples": ["Booking packages are hard to compare on mobile before a visitor asks for a quote", "Quote CTA is buried below service copy instead of sitting beside package proof", "Before-and-after proof is not used early enough to help visitors choose a package"],
+    "trust_signals": ["Published package and service information", "Public gallery or social result proof", "Visible local contact path"],
     "cta_strategy": "Compare packages -> Choose service -> Request a quote",
     "local_seo_angle": "auto detailing packages in Denver",
     "content_strategy_angle": "weekly before-and-after detail reels",
@@ -485,9 +487,27 @@ function TemplateCell({ item }: { item: HermesImportPreview }) {
 function MockupV2Cell({ item }: { item: HermesImportPreview }) {
   const v2 = item.mockupV2;
   const warningCount = v2.warnings.length;
+  const gate = v2.qualityGate;
 
   return (
     <div className="min-w-64 space-y-1 text-xs leading-5" style={{ color: 'var(--color-ink-2)' }}>
+      {gate.required && (
+        <div
+          className="inline-flex rounded-full px-2.5 py-1 font-medium"
+          style={{
+            color: gate.outreachReady ? 'var(--color-emerald)' : 'var(--color-error)',
+            background: gate.outreachReady ? 'var(--color-emerald-muted)' : 'oklch(65% 0.22 25 / 0.12)',
+          }}
+        >
+          {gate.label}
+        </div>
+      )}
+      <div>
+        Archetype:{' '}
+        <strong style={{ color: 'var(--color-ink)' }}>{v2.approvedArchetypeLabel}</strong>
+        {v2.approvedArchetypeInferred && <span style={{ color: 'var(--color-warning)' }}> inferred</span>}
+      </div>
+      <div>Personalization: {v2.personalizationScore ?? 'missing'}</div>
       <div>
         <strong style={{ color: 'var(--color-ink)' }}>{v2.designFamilyLabel}</strong>
         {v2.designFamilyInferred && <span style={{ color: 'var(--color-warning)' }}> inferred</span>}

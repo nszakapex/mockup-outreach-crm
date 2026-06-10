@@ -208,6 +208,11 @@ const SERVICE_VARIANT_KEYWORDS: KeywordGroup[] = [
       'facial',
       'skin',
       'wellness clinic',
+      'dentist',
+      'dentistry',
+      'dental',
+      'orthodontic',
+      'orthodontics',
     ],
   },
   {
@@ -252,11 +257,6 @@ const SERVICE_VARIANT_KEYWORDS: KeywordGroup[] = [
       'insurance',
       'financial advisor',
       'bookkeeping',
-      'orthodontic',
-      'orthodontics',
-      'dentist',
-      'dentistry',
-      'dental',
     ],
   },
   {

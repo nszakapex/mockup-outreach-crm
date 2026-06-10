@@ -6,7 +6,13 @@ import {
   sanitizeEmailAddress,
   sanitizeHeaderValue,
 } from '@/lib/email-sanitization';
-import { buildPublicFlooringAuditUrl, buildPublicMockupUrl, buildPublicSocialAuditUrl } from '@/lib/mockup-templates';
+import {
+  buildPublicFlooringAuditUrl,
+  buildPublicMockupUrl,
+  buildPublicSocialAuditUrl,
+  getMockupTemplateSelection,
+} from '@/lib/mockup-templates';
+import { getMockupV2Diagnostics } from '@/lib/mockup-v2';
 import {
   buildInlineApexBrief,
   containsInlineApexBriefReference,
@@ -58,6 +64,9 @@ type MockupRow = {
   title: string;
   mockup_url: string | null;
   mockup_status: string;
+  hero_headline: string | null;
+  hero_subheadline: string | null;
+  primary_cta: string | null;
   concept_notes: string | null;
 };
 
@@ -521,7 +530,7 @@ async function fetchQueueProspects() {
   const supabase = getServerSupabase();
   const { data, error } = await supabase
     .from('prospects')
-    .select('id, business_name, niche, notes, public_email, status, city, state, audits(main_problem, conversion_opportunity, recommended_offer, audit_notes), mockups(id, slug, title, mockup_url, mockup_status, concept_notes), email_drafts(id, subject, body, status)')
+    .select('id, business_name, niche, notes, public_email, status, city, state, audits(main_problem, conversion_opportunity, recommended_offer, audit_notes), mockups(id, slug, title, mockup_url, mockup_status, hero_headline, hero_subheadline, primary_cta, concept_notes), email_drafts(id, subject, body, status)')
     .eq('status', 'approved_to_send')
     .order('updated_at', { ascending: true });
 
@@ -533,7 +542,7 @@ async function fetchProspectForSend(prospectId: string) {
   const supabase = getServerSupabase();
   const { data, error } = await supabase
     .from('prospects')
-    .select('id, business_name, niche, notes, public_email, status, city, state, audits(main_problem, conversion_opportunity, recommended_offer, audit_notes), mockups(id, slug, title, mockup_url, mockup_status, concept_notes), email_drafts(id, subject, body, status)')
+    .select('id, business_name, niche, notes, public_email, status, city, state, audits(main_problem, conversion_opportunity, recommended_offer, audit_notes), mockups(id, slug, title, mockup_url, mockup_status, hero_headline, hero_subheadline, primary_cta, concept_notes), email_drafts(id, subject, body, status)')
     .eq('id', prospectId)
     .maybeSingle();
 
@@ -690,6 +699,31 @@ function buildQueueItem(
   const audit = pickAudit(prospect.audits);
   const mockupStrategy = parseMockupConceptNotes(mockup.concept_notes);
   const socialAuditStrategy = parseSocialAuditConceptNotes(mockup.concept_notes);
+  const mockupTemplate = getMockupTemplateSelection({
+    businessName: prospect.business_name,
+    niche: prospect.niche,
+    campaignType: campaignTypeDetected,
+    fields: mockupStrategy.rich as Record<string, unknown>,
+    text: [audit?.main_problem, audit?.conversion_opportunity, audit?.recommended_offer, audit?.audit_notes],
+  });
+  const mockupV2Diagnostics = getMockupV2Diagnostics({
+    rich: mockupStrategy.rich,
+    template: mockupTemplate,
+    social: socialAuditStrategy,
+    niche: prospect.niche,
+    businessName: prospect.business_name,
+    campaignType: isApexCampaign ? apexDelivery.campaign_type || campaignTypeDetected : campaignTypeDetected,
+    apexDeliveryMode,
+    emailBody: draftBody,
+    heroHeadline: mockup.hero_headline,
+    heroSubheadline: mockup.hero_subheadline,
+    primaryCta: mockup.primary_cta,
+    publicEmail: prospect.public_email,
+    notes: prospect.notes,
+  });
+  if (isApexCampaign && mockupV2Diagnostics.qualityGate.required && !mockupV2Diagnostics.qualityGate.outreachReady) {
+    blockedReasons.push(`Mockup not outreach-ready: ${mockupV2Diagnostics.qualityGate.failures.join(' ')}`);
+  }
   const inlineFlooringBrief = buildInlineFlooringBrief(resinateFlooring);
   const inlineApexBrief = buildInlineApexBrief({
     prospect: {
@@ -795,18 +829,23 @@ function buildQueueItem(
     linkReplacementApplied: replacedBody !== emailDraft.body,
     fallbackLinkAppended: finalEmail.fallbackLinkAppended,
     optOutIncluded: finalEmail.optOutIncluded,
-    emailQualityWarnings: getEmailQualityWarnings({
-      businessName: prospect.business_name,
-      rawBody: emailDraft.body,
-      finalBody: finalEmail.body,
-      usesMockupLink,
-      usesSocialAuditLink,
-      usesFlooringAuditLink,
-      usesInlineFlooringBrief,
-      usesInlineApexBrief,
-      apexDeliveryMode,
-      apexContentDirectionPresent,
-    }),
+    emailQualityWarnings: [
+      ...getEmailQualityWarnings({
+        businessName: prospect.business_name,
+        rawBody: emailDraft.body,
+        finalBody: finalEmail.body,
+        usesMockupLink,
+        usesSocialAuditLink,
+        usesFlooringAuditLink,
+        usesInlineFlooringBrief,
+        usesInlineApexBrief,
+        apexDeliveryMode,
+        apexContentDirectionPresent,
+      }),
+      ...(isApexCampaign && mockupV2Diagnostics.qualityGate.required
+        ? mockupV2Diagnostics.qualityGate.warnings
+        : []),
+    ],
     status: prospect.status,
     sendable: blockedReasons.length === 0,
     blockedReasons,

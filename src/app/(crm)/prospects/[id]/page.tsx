@@ -166,11 +166,17 @@ export default function ProspectDetailPage({
     ? getMockupV2Diagnostics({
         rich: mockupStrategy.rich,
         template: mockupTemplateSelection,
+        social: socialAuditStrategy,
         niche: prospect.niche,
         businessName: prospect.business_name,
         campaignType: resinateStrategy.campaign_type || apexDeliveryStrategy.campaign_type,
         apexDeliveryMode,
         emailBody: emailDraft?.body,
+        heroHeadline: mockup?.hero_headline,
+        heroSubheadline: mockup?.hero_subheadline,
+        primaryCta: mockup?.primary_cta,
+        publicEmail: prospect.public_email,
+        notes: prospect.notes,
       })
     : null;
 
@@ -324,6 +330,21 @@ export default function ProspectDetailPage({
           ) : undefined}>
             {mockup ? (
               <div className="space-y-3">
+                {mockupV2Diagnostics?.qualityGate.required && !mockupV2Diagnostics.qualityGate.outreachReady && (
+                  <div
+                    className="rounded-lg p-3 text-xs"
+                    style={{
+                      background: 'oklch(65% 0.22 25 / 0.08)',
+                      border: '1px solid oklch(65% 0.22 25 / 0.2)',
+                      color: 'var(--color-error)',
+                    }}
+                  >
+                    <div className="font-semibold">Mockup not outreach-ready</div>
+                    <div className="mt-1 leading-5">
+                      {mockupV2Diagnostics.qualityGate.failures.join(' ')}
+                    </div>
+                  </div>
+                )}
                 {!mockup.slug && (
                   <div
                     className="rounded-lg p-3 text-xs"
@@ -644,6 +665,7 @@ export default function ProspectDetailPage({
 }
 
 function MockupV2DiagnosticsPanel({ diagnostics }: { diagnostics: MockupV2Diagnostics }) {
+  const gate = diagnostics.qualityGate;
   return (
     <div className="pt-3" style={{ borderTop: '1px solid var(--color-divider)' }}>
       <div className="text-xs font-medium mb-2" style={{ color: 'var(--color-ink-3)' }}>
@@ -651,6 +673,9 @@ function MockupV2DiagnosticsPanel({ diagnostics }: { diagnostics: MockupV2Diagno
       </div>
       <div className="space-y-3 text-xs leading-5" style={{ color: 'var(--color-ink-2)' }}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <MiniDiagnostic label="Quality Gate" value={gate.required ? gate.label : 'Not applicable'} />
+          <MiniDiagnostic label="Approved Archetype" value={`${diagnostics.approvedArchetypeLabel}${diagnostics.approvedArchetypeInferred ? ' (inferred)' : ''}`} />
+          <MiniDiagnostic label="Personalization" value={diagnostics.personalizationScore === null ? 'missing' : String(diagnostics.personalizationScore)} />
           <MiniDiagnostic label="Design Family" value={`${diagnostics.designFamilyLabel}${diagnostics.designFamilyInferred ? ' (inferred)' : ''}`} />
           <MiniDiagnostic label="Layout Signature" value={`${diagnostics.layoutLabel}${diagnostics.layoutInferred ? ' (inferred)' : ''}`} />
           <MiniDiagnostic label="Layout Renderer" value={diagnostics.layoutRendererName} />
@@ -659,6 +684,13 @@ function MockupV2DiagnosticsPanel({ diagnostics }: { diagnostics: MockupV2Diagno
           <MiniDiagnostic label="Hero Image" value={diagnostics.heroImageSourceType ? diagnostics.heroImageSourceType.replace(/_/g, ' ') : 'fallback visual'} />
           <MiniDiagnostic label="Image Sources" value={diagnostics.imageSourceTypes.length ? diagnostics.imageSourceTypes.join(', ') : 'none'} />
         </div>
+        <FieldBlock label="Approved Archetype Reason" value={diagnostics.approvedArchetypeReason} />
+        {gate.required && !gate.outreachReady && (
+          <FieldBlock label="Quality Gate Failures" value={gate.failures.join(' | ')} />
+        )}
+        {gate.required && gate.warnings.length > 0 && (
+          <FieldBlock label="Quality Gate Warnings" value={gate.warnings.join(' | ')} />
+        )}
         <FieldBlock label="Design Family Reason" value={diagnostics.designFamilyReason} />
         <FieldBlock label="Section Plan" value={diagnostics.sectionPlan.join(' -> ')} />
         {diagnostics.mobileRiskWarnings.length > 0 && (

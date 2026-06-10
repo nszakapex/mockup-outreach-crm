@@ -75,6 +75,8 @@ export type ProspectIntakeInput = {
   primary_cta?: string | null;
   features_included?: string | string[] | null;
   concept_notes?: string | null;
+  approved_archetype?: string | null;
+  personalization_score?: number | string | null;
   template_variant?: string | null;
   design_family?: string | null;
   brand_style_notes?: string | null;
@@ -583,6 +585,11 @@ export function normalizeHermesJsonRecord(value: unknown): ProspectIntakeInput |
       ? record.features_included.map((item) => String(item))
       : clean(record.features_included),
     concept_notes: clean(record.concept_notes),
+    approved_archetype: clean(record.approved_archetype),
+    personalization_score:
+      typeof record.personalization_score === 'number' || typeof record.personalization_score === 'string'
+        ? record.personalization_score
+        : null,
     template_variant: clean(record.template_variant),
     design_family: clean(record.design_family),
     brand_style_notes: clean(record.brand_style_notes),
@@ -736,6 +743,7 @@ export async function previewHermesImport(records: ProspectIntakeInput[]) {
     const resinateFlooring = getResinateImportSummary(record as Record<string, unknown>, record.email_body);
     const apexDelivery = getApexImportSummary(record as Record<string, unknown>, record.email_body);
     const rich = normalizeRichMockupData(record as Record<string, unknown>);
+    const socialAuditData = normalizeSocialAuditData(record as Record<string, unknown>);
     const mockupTemplate = getMockupTemplateSelection({
       businessName: record.business_name,
       niche: record.niche,
@@ -746,14 +754,26 @@ export async function previewHermesImport(records: ProspectIntakeInput[]) {
     const mockupV2 = getMockupV2Diagnostics({
       rich,
       template: mockupTemplate,
+      social: socialAuditData,
       niche: record.niche,
       businessName: record.business_name,
       campaignType: record.campaign_type,
       apexDeliveryMode: apexDelivery?.deliveryMode,
       emailBody: record.email_body,
+      heroHeadline: record.hero_headline,
+      heroSubheadline: record.hero_subheadline,
+      primaryCta: record.primary_cta,
+      publicEmail: record.public_email,
+      notes: record.notes,
     });
     const resinateWarnings =
       resinateFlooring?.missingFields.map((field) => `Resinate missing ${field}.`) ?? [];
+    const publicMockupGateFailures = mockupV2.qualityGate.required && !mockupV2.qualityGate.outreachReady
+      ? [`${mockupV2.qualityGate.label}: ${mockupV2.qualityGate.failures.join(' ')}`]
+      : [];
+    const errors = duplicate
+      ? [...validation.errors, 'Duplicate website_url or public_email detected.', ...publicMockupGateFailures]
+      : [...validation.errors, ...publicMockupGateFailures];
     return {
       index,
       input: record,
@@ -762,9 +782,9 @@ export async function previewHermesImport(records: ProspectIntakeInput[]) {
       publicEmail: normalizeEmail(record.public_email),
       status: deriveHermesStatus(record),
       slug: slugifyBusinessName(clean(record.mockup_slug) ?? `${cleanRequired(record.business_name)} mockup`),
-      valid: validation.errors.length === 0 && !duplicate,
+      valid: errors.length === 0,
       duplicate,
-      errors: duplicate ? [...validation.errors, 'Duplicate website_url or public_email detected.'] : validation.errors,
+      errors,
       warnings: [...validation.warnings, ...resinateWarnings, ...mockupV2.warnings],
       mockupRichness: getMockupRichness(record as Record<string, unknown>, hasMockupData(record)),
       mockupTemplate,
@@ -778,6 +798,62 @@ export async function previewHermesImport(records: ProspectIntakeInput[]) {
   const publicApexPreviews = previews.filter(
     (item) => item.apexDelivery?.deliveryMode === 'public_mockup' || item.apexDelivery?.deliveryMode === 'link_plus_summary'
   );
+  const repetitionLimit = publicApexPreviews.length >= 20 ? 4 : publicApexPreviews.length >= 10 ? 3 : null;
+  const archetypeCounts = new Map<string, number>();
+  const layoutCounts = new Map<string, number>();
+  const heroCounts = new Map<string, number>();
+  for (const item of publicApexPreviews) {
+    const archetype = item.mockupV2.approvedArchetype || 'missing';
+    archetypeCounts.set(archetype, (archetypeCounts.get(archetype) ?? 0) + 1);
+    layoutCounts.set(item.mockupV2.layoutSignature, (layoutCounts.get(item.mockupV2.layoutSignature) ?? 0) + 1);
+    const heroPattern = (item.input.hero_headline || '')
+      .toLowerCase()
+      .replace(/[^\w\s]+/g, ' ')
+      .replace(/\b([a-z]{2,})\b/g, (word) => (word.length > 4 ? word : ''))
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (heroPattern) heroCounts.set(heroPattern, (heroCounts.get(heroPattern) ?? 0) + 1);
+  }
+  if (repetitionLimit) {
+    for (const [archetype, count] of archetypeCounts) {
+      if (count > repetitionLimit) {
+        for (const item of publicApexPreviews) {
+          const itemArchetype = item.mockupV2.approvedArchetype || 'missing';
+          if (itemArchetype === archetype) {
+            item.warnings.push(
+              `Approved archetype "${item.mockupV2.approvedArchetypeLabel}" appears ${count} times; limit is ${repetitionLimit} for this batch size unless justified.`
+            );
+          }
+        }
+      }
+    }
+    for (const [layoutSignature, count] of layoutCounts) {
+      if (count > repetitionLimit) {
+        for (const item of publicApexPreviews) {
+          if (item.mockupV2.layoutSignature === layoutSignature) {
+            item.warnings.push(
+              `Layout signature "${item.mockupV2.layoutLabel}" appears ${count} times; limit is ${repetitionLimit} for this batch size unless justified.`
+            );
+          }
+        }
+      }
+    }
+  }
+  for (const [heroPattern, count] of heroCounts) {
+    if (count > 1) {
+      for (const item of publicApexPreviews) {
+        const itemPattern = (item.input.hero_headline || '')
+          .toLowerCase()
+          .replace(/[^\w\s]+/g, ' ')
+          .replace(/\b([a-z]{2,})\b/g, (word) => (word.length > 4 ? word : ''))
+          .replace(/\s+/g, ' ')
+          .trim();
+        if (itemPattern === heroPattern) {
+          item.warnings.push('Multiple records share the same generic hero pattern; rewrite hero_headline to be prospect-specific.');
+        }
+      }
+    }
+  }
   const explicitLayoutSet = new Set(publicApexPreviews.map((item) => item.mockupV2.layoutSignature));
   if (publicApexPreviews.length > 1 && explicitLayoutSet.size === 1) {
     for (const item of publicApexPreviews) {
@@ -789,6 +865,19 @@ export async function previewHermesImport(records: ProspectIntakeInput[]) {
     familyCounts.set(item.mockupV2.designFamily, (familyCounts.get(item.mockupV2.designFamily) ?? 0) + 1);
   }
   const topFamily = [...familyCounts.entries()].sort((a, b) => b[1] - a[1])[0];
+  if (repetitionLimit) {
+    for (const [family, count] of familyCounts) {
+      if (count > repetitionLimit) {
+        for (const item of publicApexPreviews) {
+          if (item.mockupV2.designFamily === family) {
+            item.warnings.push(
+              `Design family "${item.mockupV2.designFamilyLabel}" appears ${count} times; limit is ${repetitionLimit} for this batch size unless justified.`
+            );
+          }
+        }
+      }
+    }
+  }
   if (publicApexPreviews.length > 1 && familyCounts.size === 1) {
     for (const item of publicApexPreviews) {
       item.warnings.push('All Apex public mockups in this paste use the same design family; vary design_family to prevent repeated art direction.');

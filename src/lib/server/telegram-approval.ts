@@ -1,6 +1,9 @@
 import 'server-only';
 
-import { buildPublicFlooringAuditUrl, buildPublicMockupUrl } from '@/lib/mockup-templates';
+import { getApexDeliveryMode, parseApexDeliveryConceptNotes } from '@/lib/apex-delivery-data';
+import { parseMockupConceptNotes } from '@/lib/mockup-rich-data';
+import { buildPublicFlooringAuditUrl, buildPublicMockupUrl, getMockupTemplateSelection } from '@/lib/mockup-templates';
+import { getMockupV2Diagnostics } from '@/lib/mockup-v2';
 import {
   buildInlineFlooringBrief,
   getResinateDeliveryMode,
@@ -10,6 +13,7 @@ import {
   parseResinateConceptNotes,
   type ResinateFlooringData,
 } from '@/lib/resinate-data';
+import { parseSocialAuditConceptNotes } from '@/lib/social-audit-data';
 import { getServerSupabase } from './supabase';
 
 const TELEGRAM_TIMEOUT_MS = 10000;
@@ -24,6 +28,9 @@ interface ApprovalMockup {
   slug: string;
   title: string;
   mockup_status: string;
+  hero_headline: string | null;
+  hero_subheadline: string | null;
+  primary_cta: string | null;
   concept_notes: string | null;
 }
 
@@ -261,7 +268,7 @@ async function fetchApprovalProspect(prospectId: string): Promise<ApprovalProspe
   const { data, error } = await supabase
     .from('prospects')
     .select(
-      'id, business_name, niche, city, state, public_email, status, lead_score, notes, mockups(id, slug, title, mockup_status, concept_notes), email_drafts(id, subject, body, status, reply_status)'
+      'id, business_name, niche, city, state, public_email, status, lead_score, notes, mockups(id, slug, title, mockup_status, hero_headline, hero_subheadline, primary_cta, concept_notes), email_drafts(id, subject, body, status, reply_status)'
     )
     .eq('id', prospectId)
     .maybeSingle();
@@ -300,6 +307,41 @@ async function validateApprovalCandidate(
 
   const mockup = pickMockup(prospect.mockups);
   if (requireMockup && !mockup) throw new Error('Prospect is missing a mockup.');
+
+  if (mockup) {
+    const flooring = parseResinateConceptNotes(mockup.concept_notes);
+    if (!isResinateCampaign(flooring)) {
+      const apexDelivery = parseApexDeliveryConceptNotes(mockup.concept_notes);
+      const apexDeliveryMode = getApexDeliveryMode(apexDelivery, emailDraft.body);
+      const rich = parseMockupConceptNotes(mockup.concept_notes).rich;
+      const social = parseSocialAuditConceptNotes(mockup.concept_notes);
+      const template = getMockupTemplateSelection({
+        businessName: prospect.business_name,
+        niche: prospect.niche,
+        campaignType: apexDelivery.campaign_type,
+        fields: rich as Record<string, unknown>,
+      });
+      const diagnostics = getMockupV2Diagnostics({
+        rich,
+        template,
+        social,
+        niche: prospect.niche,
+        businessName: prospect.business_name,
+        campaignType: apexDelivery.campaign_type,
+        apexDeliveryMode,
+        emailBody: emailDraft.body,
+        heroHeadline: mockup.hero_headline,
+        heroSubheadline: mockup.hero_subheadline,
+        primaryCta: mockup.primary_cta,
+        publicEmail: prospect.public_email,
+        notes: prospect.notes,
+      });
+
+      if (diagnostics.qualityGate.required && !diagnostics.qualityGate.outreachReady) {
+        throw new Error(`Mockup not outreach-ready: ${diagnostics.qualityGate.failures.join(' ')}`);
+      }
+    }
+  }
 
   if (checkOptOut) {
     await assertNotOptedOut(prospect.public_email);
