@@ -430,7 +430,7 @@ export function getMockupLayoutSectionPlan({
   const rendererName = getMockupLayoutRendererName(signature, variant, designFamily);
   const plans: Record<MockupLayoutRendererName, string[]> = {
     PetCareBookingLayout: ['pet hero', 'booking strip', 'grooming services', 'trust and safety', 'happy-pet proof', 'location', 'appointment CTA'],
-    RestaurantExperienceLayout: ['atmosphere hero', 'occasion story', 'menu highlights', 'visit or reservation', 'social proof', 'reserve CTA'],
+    RestaurantExperienceLayout: ['boxed restaurant header', 'editorial food hero', 'local dining story', 'menu highlights', 'visit planning', 'guest proof', 'plan-a-visit CTA'],
     ContractorProjectBoardLayout: ['project-board hero', 'project proof', 'services and scope', 'process timeline', 'review strip', 'service area', 'estimate CTA'],
     AutoDetailShowcaseLayout: ['dark showcase hero', 'transformation proof', 'package cards', 'detail process', 'finish gallery', 'book detail CTA'],
     DarkPremiumTransformLayout: ['dark transformation hero', 'before and after proof', 'package cards', 'process', 'protection proof', 'book detail CTA'],
@@ -1035,9 +1035,40 @@ function getNicheQualityFailures({
   }
 
   if (archetype === 'hospitality_experience' || isFoodMockupTemplate(variant)) {
+    if (isFoodMockupTemplate(variant) && archetype !== 'hospitality_experience') {
+      failures.push('Food and hospitality mockups must use approved_archetype "hospitality_experience".');
+    }
     if (!isFoodMockupTemplate(variant)) failures.push('Hospitality labels may only be used for food, venue, or hospitality prospects.');
-    if (!/(menu|reservation|reserve|visit|occasion|event|private|order)/.test(text)) {
-      failures.push('Hospitality mockups need visit, reservation, menu, order, or occasion clarity.');
+    if (!/(menu|reservation|reserve|visit|occasion|event|private|order|plan a visit|view menu|special)/.test(text)) {
+      failures.push('Hospitality mockups need visit, reservation, menu, order, special, or occasion clarity.');
+    }
+
+    const navText = (rich.proposed_site_nav || []).join(' ').toLowerCase();
+    const sectionText = (rich.homepage_sections || []).join(' ').toLowerCase();
+    const offerText = (rich.menu_or_offer_items || []).join(' ').toLowerCase();
+    const mediaText = [rich.visual_direction, rich.image_treatment, rich.photo_strategy, rich.hero_mode]
+      .map(cleanText)
+      .join(' ')
+      .toLowerCase();
+    const ctaText = [primaryCta, rich.cta_strategy].map(cleanText).join(' ').toLowerCase();
+
+    if (!/(menu|dish|food|drink|coffee|special|entree|plate|dining|brunch|lunch|dinner|dessert|cocktail|beer|wine|private dining|catering|food truck|stop)/.test(offerText)) {
+      failures.push('Restaurant mockups need menu_or_offer_items that read like food, drink, menu, special, visit, or event cards.');
+    }
+    if (!/(atmosphere|interior|dining|guest|experience|story|occasion|chef|food|menu|visit|reservation|order)/.test(sectionText)) {
+      failures.push('Restaurant mockups need food, atmosphere, menu, story, proof, and visit-path sections.');
+    }
+    if (!/(menu|story|visit|reviews|proof|reservation|reserve|order|private|event|special|hours|location|plan)/.test(navText)) {
+      failures.push('Restaurant mockups need restaurant-specific navigation, not generic service navigation.');
+    }
+    if (!/(view menu|menu|plan a visit|reserve|reservation|order|call|visit|private|event|book)/.test(ctaText)) {
+      failures.push('Restaurant mockups need a restaurant-appropriate CTA such as View Menu, Plan a Visit, Reserve, Order, Call, or Private Events.');
+    }
+    if (/(service area|request quote|free estimate|estimate path|project proof|contractor|treatment cards|consultation path|grooming services)/.test(text)) {
+      failures.push('Food mockups must not use service-business labels like quote, estimate, project, treatment, or grooming paths.');
+    }
+    if (!/(food|dish|menu|drink|coffee|atmosphere|interior|guest|dining|restaurant|hospitality|fallback|concept|public photo|photo)/.test(mediaText)) {
+      failures.push('Restaurant mockups need a food, atmosphere, menu, or visit-focused media strategy.');
     }
   }
 

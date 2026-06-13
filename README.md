@@ -179,6 +179,7 @@ When you are ready to test real Gmail delivery:
 5. Use `Send Now` while `OUTREACH_EMAIL_TEST_MODE=true` to record a test send without Gmail delivery.
 6. Switch `OUTREACH_EMAIL_TEST_MODE=false` only after Google credentials are verified.
 
+
 ## Rich Mockup JSON Fields
 
 Hermes can make public mockups feel prospect-specific by adding optional fields to each import record. These are stored safely in `mockups.concept_notes` as JSON, so no schema migration is required.
@@ -187,47 +188,47 @@ Recommended fields:
 
 ```json
 {
-  "current_site_snapshot": "Reservation, gift card, and private dining paths exist but feel disconnected on mobile.",
+  "current_site_snapshot": "Menu highlights, atmosphere, and visit details exist but feel disconnected on mobile.",
   "online_presence_status": [
-    "Website UX: reservation CTA competes with menu links",
+    "Website UX: menu and visit CTAs compete with generic footer links",
     "Social/content: strong photos need a better website destination"
   ],
-  "visual_direction": "Dark premium steakhouse feel with reservation-first hierarchy.",
-  "brand_tone": "editorial, hospitality-driven, immersive, atmospheric",
+  "visual_direction": "UI UX Pro Max restaurant-food baseline with boxed hospitality header, warm cream background, editorial serif hero, staggered food and atmosphere collage, menu cards, visit panel, and guest proof.",
+  "brand_tone": "editorial, hospitality-driven, food-forward, atmospheric",
   "design_family": "hospitality_experience",
-  "layout_signature": "luxury_service_page",
-  "hero_mode": "full_bleed_atmosphere",
-  "design_style_key": "premium_hospitality_editorial",
-  "image_treatment": "full-bleed atmosphere hero with proof cards",
-  "cta_style": "single reservation or inquiry path repeated after proof",
-  "proof_style": "reviews, private dining, and atmosphere near the CTA",
-  "palette_direction": "warm charcoal, copper, cream",
-  "typography_direction": "large hospitality serif",
-  "section_priority": ["atmosphere hero", "occasion story", "menu highlights", "visit path", "reservation CTA"],
-  "photo_strategy": "Use public website food/interior photos as the hero and proof cards. If no reliable public photos exist, use clearly conceptual hospitality visuals and do not imply they are actual menu items.",
+  "layout_signature": "immersive_photo_hero",
+  "hero_mode": "editorial_food_collage",
+  "design_style_key": "ui_ux_pro_max_restaurant_food_baseline",
+  "image_treatment": "boxed editorial food and atmosphere collage",
+  "cta_style": "restaurant-appropriate CTA such as Plan a Visit, View Menu, Reserve, Order, or Call only when public",
+  "proof_style": "reviews, food photography, atmosphere, and visit details near the CTA",
+  "palette_direction": "warm cream paper, dark ink, orange accent, block shadows",
+  "typography_direction": "large editorial hospitality serif with compact sans navigation",
+  "section_priority": ["editorial food hero", "local dining story", "menu highlights", "visit planning", "guest proof", "plan-a-visit CTA"],
+  "photo_strategy": "Use public food, dish, dining room, and atmosphere photos where available. If public media is thin, keep fallback visuals clearly conceptual and do not imply fake dishes.",
   "visual_profile": {
-    "brand_mood": "dark, warm, polished, reservation-led",
-    "brand_tone": "editorial, hospitality-driven, immersive, atmospheric",
+    "brand_mood": "warm, polished, food-forward hospitality",
+    "brand_tone": "editorial, hospitality-driven, food-forward, atmospheric",
     "design_family": "hospitality_experience",
-    "design_style_key": "premium_hospitality_editorial",
+    "design_style_key": "ui_ux_pro_max_restaurant_food_baseline",
     "color_palette": {
-      "primary": "oklch(18% 0.04 38)",
-      "secondary": "oklch(32% 0.06 45)",
-      "accent": "oklch(72% 0.16 55)",
-      "background": "oklch(96% 0.028 78)",
-      "text": "oklch(19% 0.04 40)"
+      "primary": "oklch(18% 0.05 42)",
+      "secondary": "oklch(48% 0.14 36)",
+      "accent": "oklch(68% 0.2 43)",
+      "background": "oklch(97% 0.035 84)",
+      "text": "oklch(18% 0.05 42)"
     },
-    "typography_mood": "editorial serif with confident service copy",
-    "layout_signature": "luxury_service_page",
-    "hero_mode": "full_bleed_atmosphere",
-    "image_treatment": "full-bleed atmosphere hero with proof cards",
-    "proof_style": "reviews, private dining, and atmosphere near the CTA",
-    "palette_direction": "warm charcoal, copper, cream",
-    "typography_direction": "large hospitality serif",
-    "photo_strategy": "Hero image plus 3 to 6 proof/gallery cards from public business photos when available.",
-    "ui_personality": "layered photo cards, quiet proof badges, reservation-focused hierarchy",
-    "trust_style": "reviews, awards, private dining, and real atmosphere near the CTA",
-    "cta_style": "single reservation or inquiry path repeated after proof"
+    "typography_mood": "editorial hospitality serif",
+    "layout_signature": "immersive_photo_hero",
+    "hero_mode": "editorial_food_collage",
+    "image_treatment": "boxed editorial food and atmosphere collage",
+    "proof_style": "reviews, food photography, atmosphere, and visit details near the CTA",
+    "palette_direction": "warm cream paper, dark ink, orange accent, block shadows",
+    "typography_direction": "large editorial hospitality serif with compact sans navigation",
+    "photo_strategy": "Hero collage plus 3 to 6 proof/gallery cards from public food, dining room, staff, or atmosphere photos when available.",
+    "ui_personality": "boxed restaurant header, editorial food collage hero, menu card rhythm, visit panel, final plan-a-visit CTA",
+    "trust_style": "reviews, food photography, atmosphere, and practical visit details near the CTA",
+    "cta_style": "Plan a Visit plus View Menu unless public ordering or reservations are verified"
   },
   "media_assets": [
     {
@@ -241,33 +242,36 @@ Recommended fields:
     },
     {
       "type": "proof",
-      "image_url": "https://example.com/public-private-dining-photo.jpg",
-      "source_url": "https://example.com/private-dining",
+      "image_url": "https://example.com/public-dining-room-photo.jpg",
+      "source_url": "https://example.com/gallery",
       "source_type": "website",
-      "alt": "Public private dining photo from the business website",
-      "usage_note": "Use as proof card for private dining",
+      "alt": "Public dining room photo from the business website",
+      "usage_note": "Use as proof card for food, room, or guest experience",
       "confidence": "high"
     }
   ],
-  "proposed_site_nav": ["Menu", "Reservations", "Private Dining", "Gift Cards", "Awards"],
+  "proposed_site_nav": ["Menu", "Story", "Visit", "Reviews", "Plan a Visit"],
   "homepage_sections": [
-    "Reservation-first hero",
-    "Signature dishes",
-    "Private dining inquiry",
-    "Gift card CTA"
+    "Boxed restaurant header",
+    "Editorial food and atmosphere hero",
+    "Local dining story",
+    "Menu highlight cards",
+    "Visit planning panel",
+    "Guest proof",
+    "Final Plan a Visit CTA"
   ],
-  "menu_or_offer_items": ["Signature steaks", "Reservations", "Gift cards", "Private dining"],
-  "website_issue_examples": ["Reservation CTA is hard to find", "Private dining is buried"],
-  "trust_signals": ["Local steakhouse", "Gift cards available", "Private dining"],
-  "cta_strategy": "Explore menu -> Choose occasion -> Reserve table",
+  "menu_or_offer_items": ["Seasonal dinner plates", "Shareable starters", "Weekend brunch", "Dessert and coffee"],
+  "website_issue_examples": ["Food photography should appear before generic location links", "Menu highlights should support visit intent instead of sitting on a separate page", "The primary CTA should fit restaurant behavior with a Plan a Visit path"],
+  "trust_signals": ["Visible food photography", "Atmosphere before visit details", "Guest proof near the CTA"],
+  "cta_strategy": "Show food and atmosphere first -> Review menu highlights -> Check visit details -> Plan a visit",
   "local_seo_angle": "best steakhouse in Loveland",
-  "content_strategy_angle": "weekly featured dish reels and date-night posts",
-  "meta_ads_angle": "date-night and gift-card campaigns",
-  "brand_style_notes": "Elegant, confident, warm but not rustic",
-  "primary_colors": ["charcoal", "champagne"],
-  "secondary_colors": ["deep red"],
-  "original_site_notes": "Current site hides reservations below menu copy",
-  "inspiration_notes": "Premium hospitality editorial feel"
+  "content_strategy_angle": "weekly food, atmosphere, and visit-planning posts that connect social proof to the homepage CTA",
+  "meta_ads_angle": "promote the strongest food or atmosphere proof reel locally, then retarget people who viewed menu or visit content with a Plan a Visit CTA",
+  "brand_style_notes": "Warm, editorial, food-forward, polished without pretending unverified awards or menu items are confirmed",
+  "primary_colors": ["warm cream", "dark ink"],
+  "secondary_colors": ["warm orange"],
+  "original_site_notes": "Current site hides visit details below menu copy",
+  "inspiration_notes": "UI UX Pro Max restaurant-food demo baseline"
 }
 ```
 
@@ -299,6 +303,8 @@ Rules for future Code X prospecting:
 - Vary `layout_signature` across a batch; repeated section order is flagged in import preview.
 - Vary `design_family` across a batch; import preview warns when one family dominates a public mockup paste.
 - Public mockups now choose a layout renderer such as `PetCareBookingLayout`, `ContractorProjectBoardLayout`, `DarkPremiumTransformLayout`, `CleanClinicTrustLayout`, `FitnessEnergyLandingLayout`, `ProfessionalTrustPageLayout`, or `RestaurantExperienceLayout`. The DOM/header/hero/section plan should differ by renderer.
+- Restaurant, cafe, bar/grill, premium dining, food truck, and hospitality records use `RestaurantExperienceLayout`, based on the UI UX Pro Max restaurant-food baseline: boxed nav, editorial serif hero, food/atmosphere collage, grouped menu cards, visit/order/reservation path, proof/social section, and final CTA.
+- Use `Plan a Visit` when reservation, ordering, delivery, catering, gift cards, or private dining are not publicly verified. Do not invent dishes, awards, reservation systems, catering, delivery, gift cards, or private dining.
 
 ### Apex Public Mockup Quality Gate
 
@@ -321,6 +327,8 @@ Hard gate requirements:
 - `personalization_score` must be `>= 85`; scores from `85` to `89` are importable only with a warning.
 - Public mockups need at least three specific `website_issue_examples`, non-generic nav/sections/offers/trust signals, a real CTA strategy, useful visual direction, media assets or a clearly explained fallback, specific social audit data, and a specific four-week content plan.
 - Non-food businesses cannot use food labels such as Menu, Order, Reservations, Happy Hour, Catering, Gift Cards, or Best Time to Visit.
+- Food and hospitality public mockups must use `approved_archetype: "hospitality_experience"` and restaurant-appropriate nav, homepage sections, offer/menu items, CTA language, and food/atmosphere/menu/visit media strategy.
+- Food and hospitality public mockups fail the gate if they use service-business labels such as Services, Request Quote, Free Estimate, Project Proof, Treatment Cards, Grooming Services, Service Area, or contractor-style lead paths.
 - Banned generic phrases such as "Make the result easier to trust", "Your trusted local experts", "Modern solutions", and "Experience the difference" fail the gate.
 - Public emails that appear guessed instead of publicly sourced are blocked.
 
@@ -424,11 +432,11 @@ The sender replaces `[Inline Apex Brief]` with:
 
 ```text
 First impression direction:
-• Trust leak: ...
-• Lead path: ...
-• Proof asset: ...
-• Meta angle: ...
-• What I would test first: ...
+â€¢ Trust leak: ...
+â€¢ Lead path: ...
+â€¢ Proof asset: ...
+â€¢ Meta angle: ...
+â€¢ What I would test first: ...
 ```
 
 Keep first-touch emails short, specific, and problem-first: one real observation, one business implication, one useful proof asset, and one soft ask. Avoid generic phrases like "boost your online presence", "optimize engagement", or "I ran a full audit."
