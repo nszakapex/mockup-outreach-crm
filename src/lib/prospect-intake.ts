@@ -5,6 +5,7 @@ import {
   hasRichMockupData,
   normalizeRichMockupData,
   type MockupMediaAsset,
+  type RestaurantExperienceData,
   type MockupVisualProfile,
   type MockupRichness,
 } from './mockup-rich-data';
@@ -95,6 +96,7 @@ export type ProspectIntakeInput = {
   media_assets?: MockupMediaAsset[] | null;
   proof_assets?: MockupMediaAsset[] | null;
   gallery_assets?: MockupMediaAsset[] | null;
+  restaurant_experience?: RestaurantExperienceData | null;
   primary_colors?: string | string[] | null;
   secondary_colors?: string | string[] | null;
   menu_or_offer_items?: string | string[] | null;
@@ -608,6 +610,7 @@ export function normalizeHermesJsonRecord(value: unknown): ProspectIntakeInput |
     media_assets: Array.isArray(record.media_assets) ? (record.media_assets as MockupMediaAsset[]) : null,
     proof_assets: Array.isArray(record.proof_assets) ? (record.proof_assets as MockupMediaAsset[]) : null,
     gallery_assets: Array.isArray(record.gallery_assets) ? (record.gallery_assets as MockupMediaAsset[]) : null,
+    restaurant_experience: cleanRecord(record.restaurant_experience ?? record.restaurantExperience) as RestaurantExperienceData | null,
     primary_colors: Array.isArray(record.primary_colors)
       ? record.primary_colors.map((item) => String(item))
       : clean(record.primary_colors),

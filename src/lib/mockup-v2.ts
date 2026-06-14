@@ -91,6 +91,8 @@ type DiagnosticsInput = {
   notes?: string | null;
 };
 
+export const RESTAURANT_BASELINE_DESIGN_STYLE_KEY = 'ui_ux_pro_max_restaurant_food_baseline';
+
 const FOOD_TERMS = [
   'menu',
   'order',
@@ -234,12 +236,12 @@ const FAMILY_OPTIONS_BY_VARIANT: Record<MockupTemplateVariant, readonly MockupDe
   fitness_studio: ['bold_action_local_service', 'transformation_gallery', 'premium_dark_showcase'],
   professional_service: ['minimalist_luxury_service', 'clean_conversion_clinic', 'modern_service_stack'],
   local_service: ['modern_service_stack', 'cozy_local_brand', 'bold_action_local_service'],
-  coffee_shop: ['hospitality_experience', 'cozy_local_brand', 'editorial_photo_story'],
-  restaurant: ['hospitality_experience', 'editorial_photo_story', 'minimalist_luxury_service'],
-  bar_grill: ['hospitality_experience', 'premium_dark_showcase', 'bold_action_local_service'],
-  premium_dining: ['minimalist_luxury_service', 'hospitality_experience', 'editorial_photo_story'],
-  nonprofit_cafe: ['cozy_local_brand', 'editorial_photo_story', 'hospitality_experience'],
-  food_truck: ['bold_action_local_service', 'hospitality_experience', 'modern_service_stack'],
+  coffee_shop: ['hospitality_experience'],
+  restaurant: ['hospitality_experience'],
+  bar_grill: ['hospitality_experience'],
+  premium_dining: ['hospitality_experience'],
+  nonprofit_cafe: ['hospitality_experience'],
+  food_truck: ['hospitality_experience'],
 };
 
 export function getAllMockupMediaAssets(rich: RichMockupData) {
@@ -278,6 +280,17 @@ export function getApexApprovedArchetypeSelection({
   niche?: string | null;
 }): ApexApprovedArchetypeSelection {
   const explicit = normalizeApprovedArchetype(rich.approved_archetype);
+  if (isFoodMockupTemplate(template.variant) && explicit !== 'hospitality_experience') {
+    return {
+      archetype: 'hospitality_experience',
+      label: getApexApprovedArchetypeLabel('hospitality_experience'),
+      reason: explicit
+        ? `Food template coerced from explicit approved_archetype "${explicit}" to hospitality_experience.`
+        : 'Food template defaults to hospitality_experience.',
+      inferred: !explicit,
+    };
+  }
+
   if (explicit) {
     return {
       archetype: explicit,
@@ -310,6 +323,18 @@ export function getMockupDesignFamilySelection({
   businessName?: string | null;
 }): MockupDesignFamilySelection {
   const explicit = normalizeDesignFamily(rich.design_family || rich.visual_profile?.design_family);
+  if (isFoodMockupTemplate(template.variant)) {
+    return {
+      family: 'hospitality_experience',
+      label: getMockupDesignFamilyLabel('hospitality_experience'),
+      reason:
+        explicit && explicit !== 'hospitality_experience'
+          ? `Food template coerced from explicit design_family "${explicit}" to hospitality_experience.`
+          : 'Food template uses the permanent UI UX Pro restaurant baseline family.',
+      inferred: !explicit,
+    };
+  }
+
   if (explicit) {
     return {
       family: explicit,
@@ -373,6 +398,10 @@ export function getMockupLayoutRendererName(
   variant: MockupTemplateVariant,
   designFamily?: MockupDesignFamily | null
 ): MockupLayoutRendererName {
+  if (isFoodMockupTemplate(variant)) {
+    return 'RestaurantExperienceLayout';
+  }
+
   if (designFamily) {
     if (designFamily === 'hospitality_experience') return 'RestaurantExperienceLayout';
     if (designFamily === 'editorial_photo_story') {
@@ -562,6 +591,19 @@ export function getMockupV2Diagnostics(input: DiagnosticsInput): MockupV2Diagnos
     const foodHits = findFoodTerms(input.rich);
     if (foodHits.length > 0) {
       warnings.push(`Non-food prospect contains food-specific labels: ${foodHits.join(', ')}.`);
+    }
+  } else {
+    const explicitArchetype = normalizeApprovedArchetype(input.rich.approved_archetype);
+    const explicitFamily = normalizeDesignFamily(input.rich.design_family || input.rich.visual_profile?.design_family);
+    const explicitStyleKey = cleanText(input.rich.design_style_key || input.rich.visual_profile?.design_style_key);
+    if (explicitArchetype && explicitArchetype !== 'hospitality_experience') {
+      warnings.push('Food mockup approved_archetype was coerced to hospitality_experience.');
+    }
+    if (explicitFamily && explicitFamily !== 'hospitality_experience') {
+      warnings.push('Food mockup design_family was coerced to hospitality_experience.');
+    }
+    if (explicitStyleKey && explicitStyleKey !== RESTAURANT_BASELINE_DESIGN_STYLE_KEY) {
+      warnings.push(`Food mockup design_style_key should use ${RESTAURANT_BASELINE_DESIGN_STYLE_KEY}.`);
     }
   }
 
@@ -1051,6 +1093,7 @@ function getNicheQualityFailures({
       .join(' ')
       .toLowerCase();
     const ctaText = [primaryCta, rich.cta_strategy].map(cleanText).join(' ').toLowerCase();
+    const designStyleKey = cleanText(rich.design_style_key || rich.visual_profile?.design_style_key);
 
     if (!/(menu|dish|food|drink|coffee|special|entree|plate|dining|brunch|lunch|dinner|dessert|cocktail|beer|wine|private dining|catering|food truck|stop)/.test(offerText)) {
       failures.push('Restaurant mockups need menu_or_offer_items that read like food, drink, menu, special, visit, or event cards.');
@@ -1070,9 +1113,149 @@ function getNicheQualityFailures({
     if (!/(food|dish|menu|drink|coffee|atmosphere|interior|guest|dining|restaurant|hospitality|fallback|concept|public photo|photo)/.test(mediaText)) {
       failures.push('Restaurant mockups need a food, atmosphere, menu, or visit-focused media strategy.');
     }
+    if (designStyleKey && designStyleKey !== RESTAURANT_BASELINE_DESIGN_STYLE_KEY) {
+      failures.push(`Restaurant mockups must use design_style_key "${RESTAURANT_BASELINE_DESIGN_STYLE_KEY}".`);
+    }
+    if (rich.restaurant_experience?.night_planner_enabled === false) {
+      failures.push('Restaurant Night Planner must stay enabled for food mockups.');
+    }
+    if (!hasRestaurantNightPlannerRenderable(rich)) {
+      failures.push('Restaurant mockups need Night Planner data or enough safe menu/category fallback to render it.');
+    }
+    if (!hasRestaurantMenuFilteringRenderable(rich)) {
+      failures.push('Restaurant mockups need menu filtering data or enough safe menu/category fallback to render filters.');
+    }
+    const unsupportedClaims = findUnsupportedRestaurantCtaClaims(rich, primaryCta);
+    if (unsupportedClaims.length > 0) {
+      failures.push(`Restaurant CTA claims need public/imported support: ${unsupportedClaims.join(', ')}.`);
+    }
+    const unsupportedDietary = findUnsupportedDietaryFilters(rich);
+    if (unsupportedDietary.length > 0) {
+      failures.push(`Dietary filters need matching menu-item support: ${unsupportedDietary.join(', ')}.`);
+    }
+    if (/(award[- ]winning|voted best|best of)/.test(text) && !/(public|visible|official|found|reviewed)/i.test(text)) {
+      failures.push('Restaurant mockups must not claim awards unless the award is publicly sourced.');
+    }
   }
 
   return failures;
+}
+
+function hasRestaurantNightPlannerRenderable(rich: RichMockupData) {
+  if (rich.restaurant_experience?.night_planner_enabled === false) return false;
+  return (
+    (rich.menu_or_offer_items || []).length >= 3 ||
+    (rich.restaurant_experience?.featured_menu_items || []).length >= 3 ||
+    (rich.restaurant_experience?.visit_types || []).length > 0 ||
+    (rich.restaurant_experience?.occasion_tags || []).length > 0
+  );
+}
+
+function hasRestaurantMenuFilteringRenderable(rich: RichMockupData) {
+  return (
+    (rich.menu_or_offer_items || []).length >= 3 ||
+    (rich.restaurant_experience?.featured_menu_items || []).length >= 3 ||
+    (rich.restaurant_experience?.menu_filters || []).length > 0
+  );
+}
+
+function findUnsupportedRestaurantCtaClaims(rich: RichMockupData, primaryCta?: string | null) {
+  const claimsText = [primaryCta, rich.cta_strategy, ...(rich.proposed_site_nav || [])]
+    .map(cleanText)
+    .join(' ')
+    .toLowerCase();
+  const supportText = getRestaurantSupportText(rich);
+  const unsupported: string[] = [];
+
+  if (/\b(order|online ordering|takeout|pickup)\b/.test(claimsText) && !hasRestaurantCapabilitySupport(rich, 'ordering', supportText)) {
+    unsupported.push('order/takeout');
+  }
+  if (/\b(reserve|reservation|book a table)\b/.test(claimsText) && !hasRestaurantCapabilitySupport(rich, 'reservation', supportText)) {
+    unsupported.push('reservation');
+  }
+  if (/\b(private dining|private event|private events)\b/.test(claimsText) && !hasRestaurantCapabilitySupport(rich, 'privateEvents', supportText)) {
+    unsupported.push('private events');
+  }
+  if (/\bcater|catering\b/.test(claimsText) && !hasRestaurantCapabilitySupport(rich, 'catering', supportText)) {
+    unsupported.push('catering');
+  }
+
+  return unsupported;
+}
+
+function hasRestaurantCapabilitySupport(
+  rich: RichMockupData,
+  capability: 'ordering' | 'reservation' | 'privateEvents' | 'catering',
+  supportText: string
+) {
+  if (capability === 'ordering') {
+    if (rich.restaurant_experience?.ordering_supported === false) return false;
+    return Boolean(rich.restaurant_experience?.ordering_supported) || /\b(order|online ordering|takeout|pickup)\b/.test(supportText);
+  }
+  if (capability === 'reservation') {
+    if (rich.restaurant_experience?.reservation_supported === false) return false;
+    return Boolean(rich.restaurant_experience?.reservation_supported) || /\b(reserve|reservation|book a table)\b/.test(supportText);
+  }
+  if (capability === 'privateEvents') {
+    if (rich.restaurant_experience?.private_events_supported === false) return false;
+    return Boolean(rich.restaurant_experience?.private_events_supported) || /\b(private dining|private event|private events)\b/.test(supportText);
+  }
+  if (rich.restaurant_experience?.catering_supported === false) return false;
+  return Boolean(rich.restaurant_experience?.catering_supported) || /\bcater|catering\b/.test(supportText);
+}
+
+function getRestaurantSupportText(rich: RichMockupData) {
+  const experience = rich.restaurant_experience;
+  const itemText = (experience?.featured_menu_items || [])
+    .map((item) =>
+      [
+        item.title,
+        item.description,
+        item.category,
+        ...(item.tags || []),
+        ...(item.meal_periods || []),
+        ...(item.experience_tags || []),
+        item.cta,
+      ]
+        .filter(Boolean)
+        .join(' ')
+    )
+    .join(' ');
+
+  return [
+    ...(rich.menu_or_offer_items || []),
+    ...(rich.homepage_sections || []),
+    ...(rich.proposed_site_nav || []),
+    ...(experience?.visit_types || []),
+    ...(experience?.planner_prompts || []),
+    ...(experience?.occasion_tags || []),
+    ...(experience?.menu_filters || []),
+    experience?.reservation_or_visit_cta,
+    itemText,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+}
+
+function findUnsupportedDietaryFilters(rich: RichMockupData) {
+  const dietaryTerms = ['vegetarian', 'vegan', 'gluten-free', 'gluten free', 'dairy-free', 'dairy free'];
+  const filters = rich.restaurant_experience?.menu_filters || [];
+  const filterText = filters.join(' ').toLowerCase();
+  if (!filterText) return [];
+
+  const itemText = [
+    ...(rich.menu_or_offer_items || []),
+    ...(rich.restaurant_experience?.featured_menu_items || []).map((item) =>
+      [item.title, item.description, item.category, ...(item.tags || []), ...(item.meal_periods || []), ...(item.experience_tags || [])]
+        .filter(Boolean)
+        .join(' ')
+    ),
+  ]
+    .join(' ')
+    .toLowerCase();
+
+  return dietaryTerms.filter((term) => filterText.includes(term) && !itemText.includes(term));
 }
 
 function recordCouldApplyToAnyBusiness(

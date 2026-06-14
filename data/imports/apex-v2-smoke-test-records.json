@@ -471,9 +471,59 @@
         "confidence": "low"
       }
     ],
-    "proposed_site_nav": ["Menu", "Story", "Visit", "Reviews", "Plan a Visit"],
-    "homepage_sections": ["Boxed restaurant header", "Editorial food and atmosphere hero", "Local dining story", "Menu highlight cards", "Visit planning panel", "Guest proof", "Final Plan a Visit CTA"],
+    "proposed_site_nav": ["Planner", "Menu", "Story", "Visit", "Reviews", "Plan a Visit"],
+    "homepage_sections": ["Boxed restaurant header", "Editorial food and atmosphere hero", "Local dining story", "Interactive Night Planner", "Filtered menu highlight cards", "Visit planning panel", "Guest proof", "Final Plan a Visit CTA"],
     "menu_or_offer_items": ["Seasonal dinner plates", "Shareable starters", "Weekend brunch", "Dessert and coffee"],
+    "restaurant_experience": {
+      "night_planner_enabled": true,
+      "planner_prompts": [
+        "Help first-time guests choose a visit path from food, atmosphere, and timing instead of making them hunt through separate pages.",
+        "What kind of visit are they planning?",
+        "What should the visit feel like?"
+      ],
+      "visit_types": ["First visit", "Casual dinner", "Weekend brunch", "Group meal"],
+      "occasion_tags": ["Something easy", "A table with atmosphere", "A shareable order", "Dessert and coffee"],
+      "menu_filters": ["Dinner", "Shareable", "Brunch", "Dessert", "Coffee"],
+      "featured_menu_items": [
+        {
+          "title": "Seasonal dinner plates",
+          "description": "Category-level dinner cards that can be replaced with verified public menu items.",
+          "category": "Dinner",
+          "tags": ["Food", "Seasonal"],
+          "meal_periods": ["Dinner"],
+          "experience_tags": ["Occasion"]
+        },
+        {
+          "title": "Shareable starters",
+          "description": "A flexible starter section for groups, first visits, or table-sharing decisions.",
+          "category": "Shareable",
+          "tags": ["Food", "Group-friendly"],
+          "meal_periods": ["Dinner"],
+          "experience_tags": ["Group meal"]
+        },
+        {
+          "title": "Weekend brunch",
+          "description": "A timing-based menu card that supports a reason to visit this weekend.",
+          "category": "Brunch",
+          "tags": ["Food", "Weekend"],
+          "meal_periods": ["Morning"],
+          "experience_tags": ["Casual visit"]
+        },
+        {
+          "title": "Dessert and coffee",
+          "description": "A simple after-meal path that pairs food proof with a low-pressure visit cue.",
+          "category": "Dessert",
+          "tags": ["Dessert", "Coffee"],
+          "meal_periods": ["Dinner"],
+          "experience_tags": ["A table with atmosphere"]
+        }
+      ],
+      "reservation_or_visit_cta": "Plan a Visit",
+      "ordering_supported": false,
+      "reservation_supported": false,
+      "private_events_supported": false,
+      "catering_supported": false
+    },
     "trust_signals": ["Visible food photography", "Atmosphere before visit details", "Guest proof near the CTA"],
     "website_issue_examples": ["Food photography should appear before generic location links", "Menu highlights should support visit intent instead of sitting on a separate page", "The primary CTA should fit restaurant behavior with a Plan a Visit path"],
     "cta_strategy": "Show food and atmosphere first -> Review menu highlights -> Check visit details -> Plan a visit",

@@ -115,6 +115,30 @@ export type MockupMediaAsset = {
   confidence: 'high' | 'medium' | 'low';
 };
 
+export type RestaurantMenuItem = {
+  title: string;
+  description?: string | null;
+  category?: string | null;
+  tags?: string[];
+  meal_periods?: string[];
+  experience_tags?: string[];
+  cta?: string | null;
+};
+
+export type RestaurantExperienceData = {
+  night_planner_enabled?: boolean | null;
+  planner_prompts?: string[];
+  visit_types?: string[];
+  occasion_tags?: string[];
+  menu_filters?: string[];
+  featured_menu_items?: RestaurantMenuItem[];
+  reservation_or_visit_cta?: string | null;
+  ordering_supported?: boolean | null;
+  reservation_supported?: boolean | null;
+  private_events_supported?: boolean | null;
+  catering_supported?: boolean | null;
+};
+
 export type RichMockupData = Partial<Record<RichMockupTextField, string | null>> &
   Partial<Record<RichMockupListField, string[]>> & {
     personalization_score?: number | null;
@@ -122,6 +146,7 @@ export type RichMockupData = Partial<Record<RichMockupTextField, string | null>>
     media_assets?: MockupMediaAsset[];
     proof_assets?: MockupMediaAsset[];
     gallery_assets?: MockupMediaAsset[];
+    restaurant_experience?: RestaurantExperienceData | null;
   };
 
 export type MockupRichnessLevel = 'rich' | 'basic' | 'missing';
@@ -180,6 +205,12 @@ export function normalizeRichMockupData(input: Record<string, unknown> | null | 
   const galleryAssets = normalizeMediaAssetList(input?.gallery_assets ?? input?.galleryAssets);
   if (galleryAssets.length > 0) rich.gallery_assets = galleryAssets;
 
+  const restaurantExperience = normalizeRestaurantExperience(
+    input?.restaurant_experience ?? input?.restaurantExperience,
+    input?.menu_or_offer_items ?? input?.menuOrOfferItems
+  );
+  if (restaurantExperience) rich.restaurant_experience = restaurantExperience;
+
   return rich;
 }
 
@@ -198,6 +229,7 @@ export function getRichMockupSignalCount(rich: RichMockupData) {
     rich.media_assets && rich.media_assets.length > 0,
     rich.proof_assets && rich.proof_assets.length > 0,
     rich.gallery_assets && rich.gallery_assets.length > 0,
+    rich.restaurant_experience && hasRestaurantExperienceSignal(rich.restaurant_experience),
   ].filter(Boolean).length;
 
   return legacySignals + v2Signals;
@@ -305,6 +337,15 @@ function cleanScore(value: unknown) {
   return Math.max(0, Math.min(100, Math.round(score)));
 }
 
+function cleanBoolean(value: unknown) {
+  if (typeof value === 'boolean') return value;
+  const clean = cleanString(value)?.toLowerCase();
+  if (!clean) return null;
+  if (['true', 'yes', 'y', '1', 'supported'].includes(clean)) return true;
+  if (['false', 'no', 'n', '0', 'unsupported'].includes(clean)) return false;
+  return null;
+}
+
 function cleanRecord(value: unknown) {
   return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
 }
@@ -384,6 +425,91 @@ function normalizeMediaAssetList(value: unknown) {
     seen.add(key);
     return true;
   }).slice(0, 18);
+}
+
+function normalizeRestaurantExperience(value: unknown, menuFallback?: unknown): RestaurantExperienceData | null {
+  const record = cleanRecord(value);
+  const fallbackItems = normalizeRestaurantMenuItemList(menuFallback);
+
+  if (!record) {
+    return fallbackItems.length > 0 ? { featured_menu_items: fallbackItems } : null;
+  }
+
+  const featuredItems = normalizeRestaurantMenuItemList(
+    record.featured_menu_items ?? record.featuredMenuItems ?? record.menu_items ?? record.menuItems
+  );
+
+  const data: RestaurantExperienceData = {
+    night_planner_enabled: cleanBoolean(record.night_planner_enabled ?? record.nightPlannerEnabled),
+    planner_prompts: cleanList(record.planner_prompts ?? record.plannerPrompts),
+    visit_types: cleanList(record.visit_types ?? record.visitTypes),
+    occasion_tags: cleanList(record.occasion_tags ?? record.occasionTags),
+    menu_filters: cleanList(record.menu_filters ?? record.menuFilters),
+    featured_menu_items: featuredItems.length > 0 ? featuredItems : fallbackItems,
+    reservation_or_visit_cta: cleanString(record.reservation_or_visit_cta ?? record.reservationOrVisitCta),
+    ordering_supported: cleanBoolean(record.ordering_supported ?? record.orderingSupported),
+    reservation_supported: cleanBoolean(record.reservation_supported ?? record.reservationSupported),
+    private_events_supported: cleanBoolean(record.private_events_supported ?? record.privateEventsSupported),
+    catering_supported: cleanBoolean(record.catering_supported ?? record.cateringSupported),
+  };
+
+  return hasRestaurantExperienceSignal(data) ? data : null;
+}
+
+function normalizeRestaurantMenuItemList(value: unknown) {
+  const rawItems = Array.isArray(value) ? value : cleanString(value) ? cleanList(value) : [];
+  const items = rawItems
+    .map((item) => normalizeRestaurantMenuItem(item))
+    .filter((item): item is RestaurantMenuItem => Boolean(item));
+
+  const seen = new Set<string>();
+  return items
+    .filter((item) => {
+      const key = item.title.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 12);
+}
+
+function normalizeRestaurantMenuItem(value: unknown): RestaurantMenuItem | null {
+  if (typeof value === 'string') {
+    const title = cleanString(value);
+    return title ? { title } : null;
+  }
+
+  const record = cleanRecord(value);
+  if (!record) return null;
+
+  const title = cleanString(record.title ?? record.name ?? record.label ?? record.item ?? record.value);
+  if (!title) return null;
+
+  return {
+    title,
+    description: cleanString(record.description ?? record.body ?? record.summary),
+    category: cleanString(record.category ?? record.type ?? record.group),
+    tags: cleanList(record.tags ?? record.style_tags ?? record.styleTags),
+    meal_periods: cleanList(record.meal_periods ?? record.mealPeriods ?? record.periods ?? record.meal_period),
+    experience_tags: cleanList(record.experience_tags ?? record.experienceTags ?? record.occasions),
+    cta: cleanString(record.cta ?? record.action),
+  };
+}
+
+function hasRestaurantExperienceSignal(data: RestaurantExperienceData) {
+  return Boolean(
+    data.night_planner_enabled != null ||
+      data.planner_prompts?.length ||
+      data.visit_types?.length ||
+      data.occasion_tags?.length ||
+      data.menu_filters?.length ||
+      data.featured_menu_items?.length ||
+      data.reservation_or_visit_cta ||
+      data.ordering_supported != null ||
+      data.reservation_supported != null ||
+      data.private_events_supported != null ||
+      data.catering_supported != null
+  );
 }
 
 function normalizeMediaAsset(value: unknown): MockupMediaAsset | null {

@@ -97,12 +97,12 @@ const DEFAULT_LAYOUT_SIGNATURES: Record<MockupTemplateVariant, readonly MockupLa
   fitness_studio: ['fitness_energy_landing', 'immersive_photo_hero', 'editorial_service_grid'],
   professional_service: ['professional_trust_page', 'clean_clinic_trust', 'split_proof_hero'],
   local_service: ['editorial_service_grid', 'split_proof_hero', 'warm_local_story'],
-  coffee_shop: ['warm_local_story', 'immersive_photo_hero', 'editorial_service_grid'],
-  restaurant: ['immersive_photo_hero', 'luxury_service_page', 'warm_local_story'],
-  bar_grill: ['dark_premium_transform', 'immersive_photo_hero', 'split_proof_hero'],
-  premium_dining: ['luxury_service_page', 'immersive_photo_hero', 'split_proof_hero'],
-  nonprofit_cafe: ['warm_local_story', 'editorial_service_grid', 'immersive_photo_hero'],
-  food_truck: ['immersive_photo_hero', 'editorial_service_grid', 'warm_local_story'],
+  coffee_shop: ['immersive_photo_hero'],
+  restaurant: ['immersive_photo_hero'],
+  bar_grill: ['immersive_photo_hero'],
+  premium_dining: ['immersive_photo_hero'],
+  nonprofit_cafe: ['immersive_photo_hero'],
+  food_truck: ['immersive_photo_hero'],
 };
 
 export type MockupTemplateSelectionInput = {
@@ -290,7 +290,7 @@ const FOOD_VARIANT_KEYWORDS: KeywordGroup[] = [
   {
     variant: 'coffee_shop',
     reason: 'coffee/cafe keywords',
-    keywords: ['coffee', 'cafe', 'coffeehouse', 'espresso', 'roaster', 'java'],
+    keywords: ['coffee', 'cafe', 'coffeehouse', 'espresso', 'roaster', 'java', 'bakery', 'bakeshop', 'pastry', 'patisserie'],
   },
   {
     variant: 'restaurant',

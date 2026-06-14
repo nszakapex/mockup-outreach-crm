@@ -204,7 +204,7 @@ Recommended fields:
   "proof_style": "reviews, food photography, atmosphere, and visit details near the CTA",
   "palette_direction": "warm cream paper, dark ink, orange accent, block shadows",
   "typography_direction": "large editorial hospitality serif with compact sans navigation",
-  "section_priority": ["editorial food hero", "local dining story", "menu highlights", "visit planning", "guest proof", "plan-a-visit CTA"],
+  "section_priority": ["editorial food hero", "local dining story", "interactive night planner", "filtered menu highlights", "visit planning", "guest proof", "plan-a-visit CTA"],
   "photo_strategy": "Use public food, dish, dining room, and atmosphere photos where available. If public media is thin, keep fallback visuals clearly conceptual and do not imply fake dishes.",
   "visual_profile": {
     "brand_mood": "warm, polished, food-forward hospitality",
@@ -226,7 +226,7 @@ Recommended fields:
     "palette_direction": "warm cream paper, dark ink, orange accent, block shadows",
     "typography_direction": "large editorial hospitality serif with compact sans navigation",
     "photo_strategy": "Hero collage plus 3 to 6 proof/gallery cards from public food, dining room, staff, or atmosphere photos when available.",
-    "ui_personality": "boxed restaurant header, editorial food collage hero, menu card rhythm, visit panel, final plan-a-visit CTA",
+    "ui_personality": "boxed restaurant header, editorial food collage hero, interactive planner, filtered menu cards, visit panel, final plan-a-visit CTA",
     "trust_style": "reviews, food photography, atmosphere, and practical visit details near the CTA",
     "cta_style": "Plan a Visit plus View Menu unless public ordering or reservations are verified"
   },
@@ -250,17 +250,44 @@ Recommended fields:
       "confidence": "high"
     }
   ],
-  "proposed_site_nav": ["Menu", "Story", "Visit", "Reviews", "Plan a Visit"],
+  "proposed_site_nav": ["Planner", "Menu", "Story", "Visit", "Reviews", "Plan a Visit"],
   "homepage_sections": [
     "Boxed restaurant header",
     "Editorial food and atmosphere hero",
     "Local dining story",
-    "Menu highlight cards",
+    "Interactive Night Planner",
+    "Filtered menu highlight cards",
     "Visit planning panel",
     "Guest proof",
     "Final Plan a Visit CTA"
   ],
   "menu_or_offer_items": ["Seasonal dinner plates", "Shareable starters", "Weekend brunch", "Dessert and coffee"],
+  "restaurant_experience": {
+    "night_planner_enabled": true,
+    "planner_prompts": [
+      "Help first-time guests choose a visit path from food, atmosphere, and timing instead of making them hunt through separate pages.",
+      "What kind of visit are they planning?",
+      "What should the visit feel like?"
+    ],
+    "visit_types": ["First visit", "Casual dinner", "Weekend brunch", "Group meal"],
+    "occasion_tags": ["Something easy", "A table with atmosphere", "A shareable order", "Dessert and coffee"],
+    "menu_filters": ["Dinner", "Shareable", "Brunch", "Dessert", "Coffee"],
+    "featured_menu_items": [
+      {
+        "title": "Seasonal dinner plates",
+        "description": "Category-level dinner cards that can be replaced with verified public menu items.",
+        "category": "Dinner",
+        "tags": ["Food", "Seasonal"],
+        "meal_periods": ["Dinner"],
+        "experience_tags": ["Occasion"]
+      }
+    ],
+    "reservation_or_visit_cta": "Plan a Visit",
+    "ordering_supported": false,
+    "reservation_supported": false,
+    "private_events_supported": false,
+    "catering_supported": false
+  },
   "website_issue_examples": ["Food photography should appear before generic location links", "Menu highlights should support visit intent instead of sitting on a separate page", "The primary CTA should fit restaurant behavior with a Plan a Visit path"],
   "trust_signals": ["Visible food photography", "Atmosphere before visit details", "Guest proof near the CTA"],
   "cta_strategy": "Show food and atmosphere first -> Review menu highlights -> Check visit details -> Plan a visit",
@@ -303,7 +330,9 @@ Rules for future Code X prospecting:
 - Vary `layout_signature` across a batch; repeated section order is flagged in import preview.
 - Vary `design_family` across a batch; import preview warns when one family dominates a public mockup paste.
 - Public mockups now choose a layout renderer such as `PetCareBookingLayout`, `ContractorProjectBoardLayout`, `DarkPremiumTransformLayout`, `CleanClinicTrustLayout`, `FitnessEnergyLandingLayout`, `ProfessionalTrustPageLayout`, or `RestaurantExperienceLayout`. The DOM/header/hero/section plan should differ by renderer.
-- Restaurant, cafe, bar/grill, premium dining, food truck, and hospitality records use `RestaurantExperienceLayout`, based on the UI UX Pro Max restaurant-food baseline: boxed nav, editorial serif hero, food/atmosphere collage, grouped menu cards, visit/order/reservation path, proof/social section, and final CTA.
+- Restaurant, cafe, bar/grill, premium dining, food truck, and hospitality records resolve to `approved_archetype: "hospitality_experience"`, `design_family: "hospitality_experience"`, `design_style_key: "ui_ux_pro_max_restaurant_food_baseline"`, and `RestaurantExperienceLayout`.
+- The restaurant baseline includes boxed nav, editorial serif hero, food/atmosphere collage, an interactive Night Planner, filtered menu cards, visit path, proof/social section, and final CTA.
+- Use the optional `restaurant_experience` object for planner prompts, visit types, occasion tags, menu filters, featured menu items, and explicit support flags for ordering, reservations, private events, and catering.
 - Use `Plan a Visit` when reservation, ordering, delivery, catering, gift cards, or private dining are not publicly verified. Do not invent dishes, awards, reservation systems, catering, delivery, gift cards, or private dining.
 
 ### Apex Public Mockup Quality Gate
@@ -328,6 +357,8 @@ Hard gate requirements:
 - Public mockups need at least three specific `website_issue_examples`, non-generic nav/sections/offers/trust signals, a real CTA strategy, useful visual direction, media assets or a clearly explained fallback, specific social audit data, and a specific four-week content plan.
 - Non-food businesses cannot use food labels such as Menu, Order, Reservations, Happy Hour, Catering, Gift Cards, or Best Time to Visit.
 - Food and hospitality public mockups must use `approved_archetype: "hospitality_experience"` and restaurant-appropriate nav, homepage sections, offer/menu items, CTA language, and food/atmosphere/menu/visit media strategy.
+- Food and hospitality public mockups use the permanent UI UX Pro restaurant baseline and must have renderable Night Planner and menu filtering data, either through `restaurant_experience` or safe menu/category fallback.
+- Food and hospitality records must not claim ordering, reservations, private events, catering, dietary filters, awards, hours, or menu items unless the claim is public/imported and specific.
 - Food and hospitality public mockups fail the gate if they use service-business labels such as Services, Request Quote, Free Estimate, Project Proof, Treatment Cards, Grooming Services, Service Area, or contractor-style lead paths.
 - Banned generic phrases such as "Make the result easier to trust", "Your trusted local experts", "Modern solutions", and "Experience the difference" fail the gate.
 - Public emails that appear guessed instead of publicly sourced are blocked.

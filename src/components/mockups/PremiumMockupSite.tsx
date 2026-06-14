@@ -1,6 +1,6 @@
 'use client';
 
-import type { CSSProperties, ReactNode } from 'react';
+import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   ArrowRight,
   BriefcaseBusiness,
@@ -29,6 +29,8 @@ import {
   parseMockupConceptNotes,
   splitStrategyText,
   type MockupMediaAsset,
+  type RestaurantExperienceData,
+  type RestaurantMenuItem,
   type MockupVisualProfile,
   type RichMockupData,
 } from '@/lib/mockup-rich-data';
@@ -46,6 +48,7 @@ import {
   getMockupLayoutRendererName,
   getMockupLayoutSectionPlan,
   getUsableMockupMediaAssets,
+  RESTAURANT_BASELINE_DESIGN_STYLE_KEY,
   selectHeroMediaAsset,
   type MockupDesignFamily,
   type MockupLayoutRendererName,
@@ -90,6 +93,14 @@ type HomepageItem = {
   photoRole: PhotoRole;
 };
 
+type RestaurantMenuCardData = HomepageItem & {
+  category: string;
+  tags: string[];
+  mealPeriods: string[];
+  experienceTags: string[];
+  cta?: string | null;
+};
+
 type IssueFix = {
   label: string;
   current: string;
@@ -132,6 +143,7 @@ type SiteContext = {
   variant: MockupTemplateVariant;
   config: VariantConfig;
   rich: RichMockupData;
+  restaurantExperience: RestaurantExperienceData | null;
   audit?: PublicAudit | null;
   conceptNotes: string | null;
   designFamily: MockupDesignFamily;
@@ -588,7 +600,7 @@ const VARIANT_CONFIG: Record<MockupTemplateVariant, VariantConfig> = {
     tone: 'service',
   },
   coffee_shop: {
-    navItems: ['Menu', 'Story', 'Visit', 'Reviews', 'Plan a Visit'],
+    navItems: ['Planner', 'Menu', 'Story', 'Visit', 'Reviews', 'Plan a Visit'],
     primaryCta: 'Plan a Visit',
     secondaryCta: 'View Menu',
     eyebrow: 'Neighborhood coffee homepage concept',
@@ -653,7 +665,7 @@ const VARIANT_CONFIG: Record<MockupTemplateVariant, VariantConfig> = {
     tone: 'coffee',
   },
   restaurant: {
-    navItems: ['Menu', 'Story', 'Visit', 'Reviews', 'Plan a Visit'],
+    navItems: ['Planner', 'Menu', 'Story', 'Visit', 'Reviews', 'Plan a Visit'],
     primaryCta: 'Plan a Visit',
     secondaryCta: 'View Menu',
     eyebrow: 'Restaurant experience',
@@ -712,7 +724,7 @@ const VARIANT_CONFIG: Record<MockupTemplateVariant, VariantConfig> = {
     tone: 'restaurant',
   },
   bar_grill: {
-    navItems: ['Menu', 'Story', 'Visit', 'Reviews', 'Plan a Visit'],
+    navItems: ['Planner', 'Menu', 'Story', 'Visit', 'Reviews', 'Plan a Visit'],
     primaryCta: 'Plan a Visit',
     secondaryCta: 'View Menu',
     eyebrow: 'Bar and grill homepage concept',
@@ -771,7 +783,7 @@ const VARIANT_CONFIG: Record<MockupTemplateVariant, VariantConfig> = {
     tone: 'tavern',
   },
   premium_dining: {
-    navItems: ['Menu', 'Story', 'Visit', 'Reviews', 'Plan a Visit'],
+    navItems: ['Planner', 'Menu', 'Story', 'Visit', 'Reviews', 'Plan a Visit'],
     primaryCta: 'Plan a Visit',
     secondaryCta: 'View Menu',
     eyebrow: 'Premium dining homepage concept',
@@ -830,7 +842,7 @@ const VARIANT_CONFIG: Record<MockupTemplateVariant, VariantConfig> = {
     tone: 'luxury',
   },
   nonprofit_cafe: {
-    navItems: ['Mission', 'Menu', 'Donate', 'Volunteer', 'Visit'],
+    navItems: ['Planner', 'Mission', 'Menu', 'Donate', 'Volunteer', 'Visit'],
     primaryCta: 'Visit or support',
     secondaryCta: 'See the mission',
     eyebrow: 'Community cafe homepage concept',
@@ -889,7 +901,7 @@ const VARIANT_CONFIG: Record<MockupTemplateVariant, VariantConfig> = {
     tone: 'mission',
   },
   food_truck: {
-    navItems: ['Menu', 'Location', 'Schedule', 'Reviews', 'Contact'],
+    navItems: ['Planner', 'Menu', 'Location', 'Schedule', 'Reviews', 'Contact'],
     primaryCta: 'Find the Truck',
     secondaryCta: 'View Menu',
     eyebrow: 'Mobile food homepage concept',
@@ -1037,6 +1049,7 @@ function buildSiteContext(mockup: Mockup, prospect: PublicProspect | null, audit
     text: [audit?.main_problem, audit?.conversion_opportunity, audit?.recommended_offer, audit?.mockup_angle, audit?.audit_notes],
   });
   const variant = selection.variant;
+  const isFoodTemplate = isFoodMockupTemplate(variant);
   const config = VARIANT_CONFIG[variant];
   const layoutSignature = selection.layoutSignature;
   const designFamilySelection = getMockupDesignFamilySelection({
@@ -1046,11 +1059,16 @@ function buildSiteContext(mockup: Mockup, prospect: PublicProspect | null, audit
     businessName,
   });
   const layoutRendererName = getMockupLayoutRendererName(layoutSignature, variant, designFamilySelection.family);
-  const visualProfile = rich.visual_profile || inferVisualProfile(variant, layoutSignature, rich, config);
+  const inferredVisualProfile = rich.visual_profile || inferVisualProfile(variant, layoutSignature, rich, config);
+  const visualProfile = isFoodTemplate
+    ? withRestaurantBaselineVisualProfile(inferredVisualProfile, variant, rich, config)
+    : inferredVisualProfile;
   const mediaAssets = getUsableMockupMediaAssets(rich);
   const heroAsset = selectHeroMediaAsset(mediaAssets);
   const galleryAssets = prioritizeGalleryAssets(mediaAssets, heroAsset);
-  const designStyleKey = cleanText(rich.design_style_key) || cleanText(visualProfile?.design_style_key) || layoutSignature;
+  const designStyleKey = isFoodTemplate
+    ? RESTAURANT_BASELINE_DESIGN_STYLE_KEY
+    : cleanText(rich.design_style_key) || cleanText(visualProfile?.design_style_key) || layoutSignature;
   const photoStrategy =
     cleanText(rich.photo_strategy) || cleanText(visualProfile?.photo_strategy) || buildFallbackPhotoStrategy(variant, heroAsset);
   const headline = publicHeroCopy(cleanText(mockup.hero_headline)) || config.fallbackHeadline(businessName, city);
@@ -1058,7 +1076,9 @@ function buildSiteContext(mockup: Mockup, prospect: PublicProspect | null, audit
     publicHeroCopy(cleanText(mockup.hero_subheadline)) ||
     publicHeroCopy(cleanText(audit?.conversion_opportunity)) ||
     config.fallbackSubheadline(businessName, location);
-  const primaryCta = cleanText(mockup.primary_cta) || config.primaryCta;
+  const primaryCta = isFoodTemplate
+    ? sanitizeRestaurantPrimaryCta(cleanText(mockup.primary_cta) || config.primaryCta, rich.restaurant_experience, variant)
+    : cleanText(mockup.primary_cta) || config.primaryCta;
   const navItems = filterNavItemsForVariant(mergeText(rich.proposed_site_nav, config.navItems, [], 6), variant);
   const richOffers = cleanRichList(rich.menu_or_offer_items);
   const offers = mergeOfferItems(richOffers, config.offers, variant);
@@ -1091,6 +1111,7 @@ function buildSiteContext(mockup: Mockup, prospect: PublicProspect | null, audit
     variant,
     config,
     rich,
+    restaurantExperience: isFoodTemplate ? rich.restaurant_experience ?? null : null,
     audit,
     conceptNotes: parsed.notes,
     designFamily: designFamilySelection.family,
@@ -1165,6 +1186,7 @@ function RestaurantExperienceLayout({ context }: { context: SiteContext }) {
       <RestaurantHeader context={context} />
       <RestaurantExperienceHero context={context} />
       <RestaurantStorySection context={context} />
+      <RestaurantNightPlannerSection context={context} />
       <RestaurantMenuSection context={context} />
       <RestaurantVisitSection context={context} />
       <RestaurantProofSection context={context} />
@@ -1643,9 +1665,89 @@ function RestaurantStorySection({ context }: { context: SiteContext }) {
   );
 }
 
+function RestaurantNightPlannerSection({ context }: { context: SiteContext }) {
+  const menuCards = useMemo(() => getRestaurantMenuCards(context), [context]);
+  const visitOptions = useMemo(() => getRestaurantPlannerVisitTypes(context), [context]);
+  const occasionOptions = useMemo(() => getRestaurantPlannerOccasions(context), [context]);
+  const prompts = useMemo(() => getRestaurantPlannerPrompts(context), [context]);
+  const [selectedVisit, setSelectedVisit] = useState(visitOptions[0] || 'First visit');
+  const [selectedOccasion, setSelectedOccasion] = useState(occasionOptions[0] || 'Something easy');
+  const recommendedCards = useMemo(
+    () => getPlannerMenuMatches(menuCards, selectedVisit, selectedOccasion),
+    [menuCards, selectedOccasion, selectedVisit]
+  );
+  const plannerCta = sanitizeRestaurantPrimaryCta(
+    cleanText(context.restaurantExperience?.reservation_or_visit_cta) || context.primaryCta,
+    context.restaurantExperience,
+    context.variant
+  );
+
+  return (
+    <section id="night-planner" className={styles.restaurantPlannerSection}>
+      <div className={styles.restaurantPlannerIntro}>
+        <p className={styles.restaurantSectionKicker}>Night Planner</p>
+        <h2>Find your perfect visit before the menu gets long.</h2>
+        <span>{prompts[0]}</span>
+      </div>
+      <div className={styles.restaurantPlannerPanel} aria-label="Find your perfect visit planner">
+        <fieldset className={styles.restaurantPlannerGroup}>
+          <legend>{prompts[1] || 'Choose the visit type'}</legend>
+          <div className={styles.restaurantPlannerChips}>
+            {visitOptions.map((option) => (
+              <button
+                key={option}
+                type="button"
+                className={styles.restaurantPlannerChip}
+                data-selected={selectedVisit === option}
+                aria-pressed={selectedVisit === option}
+                onClick={() => setSelectedVisit(option)}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+        <fieldset className={styles.restaurantPlannerGroup}>
+          <legend>{prompts[2] || 'Choose the mood'}</legend>
+          <div className={styles.restaurantPlannerChips}>
+            {occasionOptions.map((option) => (
+              <button
+                key={option}
+                type="button"
+                className={styles.restaurantPlannerChip}
+                data-selected={selectedOccasion === option}
+                aria-pressed={selectedOccasion === option}
+                onClick={() => setSelectedOccasion(option)}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+        <article className={styles.restaurantPlannerResult}>
+          <small>Suggested path</small>
+          <h3>
+            {selectedVisit} with {selectedOccasion.toLowerCase()}
+          </h3>
+          <p>{restaurantPlannerResultBody(context, recommendedCards)}</p>
+          <div className={styles.restaurantPlannerMenuList}>
+            {recommendedCards.map((item) => (
+              <span key={item.title}>{item.title}</span>
+            ))}
+          </div>
+          <a href="#primary-action">{plannerCta}</a>
+        </article>
+      </div>
+    </section>
+  );
+}
+
 function RestaurantMenuSection({ context }: { context: SiteContext }) {
   const assets = context.galleryAssets.slice(1, 7);
-  const items = context.offers.slice(0, 6);
+  const items = useMemo(() => getRestaurantMenuCards(context), [context]);
+  const filters = useMemo(() => getRestaurantMenuFilters(context, items), [context, items]);
+  const [selectedFilter, setSelectedFilter] = useState('All');
+  const filteredItems = useMemo(() => filterRestaurantMenuCards(items, selectedFilter), [items, selectedFilter]);
 
   return (
     <section id="menu" className={styles.restaurantMenuSection}>
@@ -1654,14 +1756,36 @@ function RestaurantMenuSection({ context }: { context: SiteContext }) {
         <h2>{menuTitle(context)}</h2>
         <span>{menuLeadBody(context)}</span>
       </div>
+      <div className={styles.restaurantMenuFilterBar} aria-label="Filter menu highlights">
+        {filters.map((filter) => (
+          <button
+            key={filter}
+            type="button"
+            className={styles.restaurantMenuFilterButton}
+            data-selected={selectedFilter === filter}
+            aria-pressed={selectedFilter === filter}
+            onClick={() => setSelectedFilter(filter)}
+          >
+            {filter}
+          </button>
+        ))}
+      </div>
       <div className={styles.restaurantMenuGrid}>
-        {items.map((item, index) => (
+        {filteredItems.map((item, index) => (
           <article key={item.title} className={styles.restaurantMenuCard}>
             <MediaFrame asset={assets[index]} fallbackRole={item.photoRole} label={item.label || item.title} />
             <div>
-              <small>{item.label || 'Featured food'}</small>
+              <small>{item.category || item.label || 'Featured food'}</small>
               <h3>{item.title}</h3>
               <p>{item.body}</p>
+              {item.tags.length > 0 && (
+                <div className={styles.restaurantMenuCardTags} aria-label={`${item.title} tags`}>
+                  {item.tags.slice(0, 3).map((tag) => (
+                    <span key={tag}>{tag}</span>
+                  ))}
+                </div>
+              )}
+              {item.cta && <a href="#primary-action">{item.cta}</a>}
             </div>
           </article>
         ))}
@@ -2281,7 +2405,7 @@ function WebsiteFooter({ context }: { context: SiteContext }) {
       </div>
       <nav aria-label="Concept footer navigation">
         {context.navItems.slice(0, 5).map((item) => (
-          <a key={item} href={navHref(item)}>
+          <a key={item} href={isFoodMockupTemplate(context.variant) ? restaurantNavHref(item) : navHref(item)}>
             {item}
           </a>
         ))}
@@ -2433,6 +2557,53 @@ function inferVisualProfile(
     ui_personality: layoutSignature.replace(/_/g, ' '),
     trust_style: isServiceMockupTemplate(variant) ? 'proof before CTA' : 'atmosphere and proof near the action',
     cta_style: config.primaryCta,
+  };
+}
+
+function withRestaurantBaselineVisualProfile(
+  profile: MockupVisualProfile | null,
+  variant: MockupTemplateVariant,
+  rich: RichMockupData,
+  config: VariantConfig
+): MockupVisualProfile {
+  const baselineMood =
+    cleanText(profile?.brand_mood) ||
+    cleanText(rich.brand_tone) ||
+    (variant === 'coffee_shop'
+      ? 'warm, editorial, neighborhood hospitality'
+      : variant === 'food_truck'
+        ? 'mobile, food-forward, route-ready hospitality'
+        : 'warm, polished, food-forward hospitality');
+
+  return {
+    brand_mood: baselineMood,
+    brand_tone: cleanText(profile?.brand_tone) || baselineMood,
+    design_family: 'hospitality_experience',
+    design_style_key: RESTAURANT_BASELINE_DESIGN_STYLE_KEY,
+    color_palette: profile?.color_palette ?? null,
+    typography_mood: cleanText(profile?.typography_mood) || 'editorial hospitality serif with compact sans navigation',
+    layout_signature: profile?.layout_signature || 'immersive_photo_hero',
+    hero_mode: cleanText(profile?.hero_mode) || cleanText(rich.hero_mode) || 'editorial_food_collage',
+    image_treatment:
+      cleanText(profile?.image_treatment) ||
+      cleanText(rich.image_treatment) ||
+      'boxed editorial food and atmosphere collage',
+    proof_style:
+      cleanText(profile?.proof_style) ||
+      cleanText(rich.proof_style) ||
+      'reviews, food photography, atmosphere, and visit details near the CTA',
+    palette_direction: cleanText(profile?.palette_direction) || cleanText(rich.palette_direction) || 'warm cream, dark ink, appetizing red-orange, and muted green',
+    typography_direction:
+      cleanText(profile?.typography_direction) ||
+      cleanText(rich.typography_direction) ||
+      'large editorial hospitality serif with compact sans navigation',
+    photo_strategy:
+      cleanText(profile?.photo_strategy) ||
+      cleanText(rich.photo_strategy) ||
+      'Use public food, dining room, staff, or atmosphere photos where available; keep fallback visuals category-level.',
+    ui_personality: cleanText(profile?.ui_personality) || 'boxed restaurant header, interactive planner, filtered menu cards, visit panel, guest proof',
+    trust_style: cleanText(profile?.trust_style) || 'food, atmosphere, and practical visit details near the CTA',
+    cta_style: sanitizeRestaurantPrimaryCta(cleanText(rich.cta_style) || config.primaryCta, rich.restaurant_experience, variant),
   };
 }
 
@@ -2645,6 +2816,318 @@ function offerBody(title: string, fallback: string | undefined, variant: MockupT
     return 'A service card that routes high-intent visitors toward a quote request.';
   }
   return fallback || 'A homepage-ready feature that helps visitors choose faster.';
+}
+
+function getRestaurantMenuCards(context: SiteContext): RestaurantMenuCardData[] {
+  const importedItems = context.restaurantExperience?.featured_menu_items || [];
+
+  if (importedItems.length > 0) {
+    return importedItems.slice(0, 8).map((item, index) => restaurantMenuItemToCard(item, index, context));
+  }
+
+  return context.offers.slice(0, 8).map((item) => {
+    const category = inferRestaurantMenuCategory(item.title, item.label, context.variant);
+    return {
+      ...item,
+      category,
+      tags: dedupeText([category, item.label, ...inferRestaurantMenuTags(item.title, context.variant)]).slice(0, 4),
+      mealPeriods: inferRestaurantMealPeriods(item.title, context.variant),
+      experienceTags: inferRestaurantExperienceTags(item.title, context.variant),
+      cta: null,
+    };
+  });
+}
+
+function restaurantMenuItemToCard(
+  item: RestaurantMenuItem,
+  index: number,
+  context: SiteContext
+): RestaurantMenuCardData {
+  const category = cleanText(item.category) || inferRestaurantMenuCategory(item.title, null, context.variant);
+  const tags = dedupeText([
+    category,
+    ...(item.tags || []),
+    ...(item.meal_periods || []),
+    ...(item.experience_tags || []),
+    ...inferRestaurantMenuTags(item.title, context.variant),
+  ]).slice(0, 5);
+  const fallback = context.config.offers[index % context.config.offers.length];
+
+  return {
+    title: item.title,
+    body: cleanText(item.description) || offerBody(item.title, fallback?.body, context.variant),
+    label: category,
+    photoRole: restaurantPhotoRoleForText(`${item.title} ${category}`, context.variant, fallback?.photoRole),
+    category,
+    tags,
+    mealPeriods: dedupeText([...(item.meal_periods || []), ...inferRestaurantMealPeriods(item.title, context.variant)]),
+    experienceTags: dedupeText([
+      ...(item.experience_tags || []),
+      ...inferRestaurantExperienceTags(item.title, context.variant),
+    ]),
+    cta: sanitizeRestaurantMenuItemCta(cleanText(item.cta), context.restaurantExperience, context.variant),
+  };
+}
+
+function getRestaurantMenuFilters(context: SiteContext, cards: RestaurantMenuCardData[]) {
+  const importedFilters = context.restaurantExperience?.menu_filters || [];
+  const categoryFilters = cards.map((card) => card.category);
+  const tagFilters = cards.flatMap((card) => [...card.mealPeriods, ...card.experienceTags]).filter((tag) => tag.length <= 22);
+  const fallbackFilters = fallbackRestaurantMenuFilters(context.variant);
+  const filters = dedupeText([...importedFilters, ...categoryFilters, ...tagFilters, ...fallbackFilters])
+    .filter((filter) => !/^all$/i.test(filter))
+    .slice(0, 7);
+
+  return ['All', ...filters];
+}
+
+function filterRestaurantMenuCards(cards: RestaurantMenuCardData[], selectedFilter: string) {
+  if (!selectedFilter || /^all$/i.test(selectedFilter)) return cards;
+  const matches = cards.filter((card) => restaurantCardMatchesFilter(card, selectedFilter));
+  return matches.length > 0 ? matches : cards;
+}
+
+function restaurantCardMatchesFilter(card: RestaurantMenuCardData, filter: string) {
+  const target = normalizeComparisonText(filter);
+  if (!target) return true;
+  const haystack = normalizeComparisonText(
+    [card.title, card.body, card.label, card.category, ...card.tags, ...card.mealPeriods, ...card.experienceTags].join(' ')
+  );
+  return haystack.includes(target);
+}
+
+function getRestaurantPlannerVisitTypes(context: SiteContext) {
+  const fallback: Record<MockupTemplateVariant, string[]> = {
+    home_service: [],
+    contractor: [],
+    medical_aesthetics: [],
+    auto_service: [],
+    pet_service: [],
+    fitness_studio: [],
+    professional_service: [],
+    local_service: [],
+    coffee_shop: ['Morning coffee', 'Quick lunch', 'Stay awhile'],
+    restaurant: ['First visit', 'Casual dinner', 'Group meal'],
+    bar_grill: ['Dinner with friends', 'Game night', 'Weekend stop'],
+    premium_dining: ['Date night', 'Client dinner', 'Special occasion'],
+    nonprofit_cafe: ['Coffee visit', 'Community meetup', 'Support the mission'],
+    food_truck: ['Quick stop', 'Lunch run', 'Event visit'],
+  };
+
+  return mergeText(context.restaurantExperience?.visit_types, fallback[context.variant], [], 4);
+}
+
+function getRestaurantPlannerOccasions(context: SiteContext) {
+  const fallback: Record<MockupTemplateVariant, string[]> = {
+    home_service: [],
+    contractor: [],
+    medical_aesthetics: [],
+    auto_service: [],
+    pet_service: [],
+    fitness_studio: [],
+    professional_service: [],
+    local_service: [],
+    coffee_shop: ['Coffee first', 'Food pairing', 'Work session'],
+    restaurant: ['Something easy', 'A table with atmosphere', 'A shareable order'],
+    bar_grill: ['Food and drinks', 'Live energy', 'Low-key night'],
+    premium_dining: ['Polished atmosphere', 'Wine or cocktails', 'A longer meal'],
+    nonprofit_cafe: ['Food and coffee', 'A welcoming table', 'Community impact'],
+    food_truck: ['Fast ordering', 'Easy pickup', 'Food worth following'],
+  };
+
+  return mergeText(context.restaurantExperience?.occasion_tags, fallback[context.variant], [], 4);
+}
+
+function getRestaurantPlannerPrompts(context: SiteContext) {
+  const fallback = [
+    'Help guests choose the visit path that matches why they are looking right now.',
+    'What kind of visit are they planning?',
+    'What should the visit feel like?',
+  ];
+
+  return mergeText(context.restaurantExperience?.planner_prompts, fallback, [], 3);
+}
+
+function getPlannerMenuMatches(
+  cards: RestaurantMenuCardData[],
+  selectedVisit: string,
+  selectedOccasion: string
+): RestaurantMenuCardData[] {
+  const tokens = plannerSearchTokens(`${selectedVisit} ${selectedOccasion}`);
+  const matches = cards.filter((card) => {
+    const haystack = normalizeComparisonText(
+      [card.title, card.body, card.category, ...card.tags, ...card.mealPeriods, ...card.experienceTags].join(' ')
+    );
+    return tokens.some((token) => haystack.includes(token));
+  });
+
+  return dedupeMenuCards([...matches, ...cards]).slice(0, 2);
+}
+
+function restaurantPlannerResultBody(context: SiteContext, cards: RestaurantMenuCardData[]) {
+  const [first, second] = cards;
+  if (first && second) {
+    return `Start with ${first.title}, pair it with ${second.title}, then keep the practical visit step close so guests do not have to hunt for it.`;
+  }
+  if (first) {
+    return `Start with ${first.title}, then keep the practical visit step close so guests do not have to hunt for it.`;
+  }
+  return `Start with the strongest menu or experience cue, then keep ${context.primaryCta.toLowerCase()} visible as the next step.`;
+}
+
+function plannerSearchTokens(value: string) {
+  const lower = value.toLowerCase();
+  const tokens = lower.split(/[^a-z0-9]+/).filter((token) => token.length >= 3);
+  if (/morning|breakfast|coffee|espresso|work/.test(lower)) tokens.push('coffee', 'breakfast', 'drink', 'pastry', 'morning');
+  if (/lunch|quick|pickup|fast|stop/.test(lower)) tokens.push('lunch', 'quick', 'pickup', 'sandwich', 'stop');
+  if (/dinner|date|occasion|client|longer|wine|cocktail/.test(lower)) tokens.push('dinner', 'occasion', 'atmosphere', 'wine');
+  if (/group|friends|share|community|meetup/.test(lower)) tokens.push('group', 'share', 'community', 'table');
+  if (/game|music|weekend|energy/.test(lower)) tokens.push('event', 'special', 'drink', 'night');
+  return Array.from(new Set(tokens.map(normalizeComparisonText).filter(Boolean)));
+}
+
+function dedupeMenuCards(cards: RestaurantMenuCardData[]) {
+  const seen = new Set<string>();
+  return cards.filter((card) => {
+    const key = card.title.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function fallbackRestaurantMenuFilters(variant: MockupTemplateVariant) {
+  if (variant === 'coffee_shop') return ['Drinks', 'Food', 'Morning'];
+  if (variant === 'bar_grill') return ['Food', 'Drinks', 'Tonight'];
+  if (variant === 'premium_dining') return ['Dinner', 'Occasions', 'Atmosphere'];
+  if (variant === 'food_truck') return ['Fast', 'Lunch', 'Events'];
+  if (variant === 'nonprofit_cafe') return ['Food', 'Coffee', 'Community'];
+  return ['Food', 'Dinner', 'Atmosphere'];
+}
+
+function inferRestaurantMenuCategory(title: string, label: string | null | undefined, variant: MockupTemplateVariant) {
+  const text = `${title} ${label || ''}`.toLowerCase();
+  if (/coffee|espresso|latte|cold brew|tea|drink|cocktail|beer|wine|bar/.test(text)) return 'Drinks';
+  if (/pastr|baked|bakery|dessert|sweet|breakfast/.test(text)) return 'Bites';
+  if (/special|happy|weekly|music|event|game|tonight/.test(text)) return 'Specials';
+  if (/atmosphere|interior|room|service|story|occasion|visit|hours|location|route|stop/.test(text)) return 'Experience';
+  if (/private|cater|group|party/.test(text)) return 'Groups';
+  if (variant === 'coffee_shop') return 'Cafe';
+  if (variant === 'food_truck') return 'Menu';
+  return 'Food';
+}
+
+function inferRestaurantMenuTags(title: string, variant: MockupTemplateVariant) {
+  const text = title.toLowerCase();
+  const tags: string[] = [];
+  if (/coffee|espresso|latte|cold brew|drink|cocktail|beer|wine/.test(text)) tags.push('Drinks');
+  if (/breakfast|morning|pastr|baked|brunch/.test(text)) tags.push('Morning');
+  if (/lunch|sandwich|salad|wrap|quick/.test(text)) tags.push('Lunch');
+  if (/dinner|date|occasion|entree|plate/.test(text)) tags.push('Dinner');
+  if (/group|share|friends|event|music|special/.test(text)) tags.push('Group-friendly');
+  if (variant === 'food_truck') tags.push('Fast stop');
+  if (variant === 'premium_dining') tags.push('Occasion');
+  return tags;
+}
+
+function inferRestaurantMealPeriods(title: string, variant: MockupTemplateVariant) {
+  const text = title.toLowerCase();
+  const periods: string[] = [];
+  if (/breakfast|morning|coffee|espresso|pastr|brunch/.test(text)) periods.push('Morning');
+  if (/lunch|sandwich|salad|wrap|quick|truck/.test(text)) periods.push('Lunch');
+  if (/dinner|date|night|occasion|entree|cocktail|wine/.test(text)) periods.push('Dinner');
+  if (periods.length === 0 && variant === 'coffee_shop') periods.push('All day');
+  if (periods.length === 0 && variant === 'bar_grill') periods.push('Tonight');
+  return dedupeText(periods);
+}
+
+function inferRestaurantExperienceTags(title: string, variant: MockupTemplateVariant) {
+  const text = title.toLowerCase();
+  const tags: string[] = [];
+  if (/date|occasion|premium|wine|dining/.test(text) || variant === 'premium_dining') tags.push('Occasion');
+  if (/group|friend|share|community|event|music|game/.test(text) || variant === 'bar_grill') tags.push('Group night');
+  if (/quick|pickup|truck|stop|lunch/.test(text) || variant === 'food_truck') tags.push('Fast visit');
+  if (/coffee|work|morning|cafe/.test(text) || variant === 'coffee_shop') tags.push('Everyday visit');
+  if (variant === 'nonprofit_cafe') tags.push('Community');
+  return dedupeText(tags);
+}
+
+function restaurantPhotoRoleForText(
+  text: string,
+  variant: MockupTemplateVariant,
+  fallback: PhotoRole | undefined
+): PhotoRole {
+  const lower = text.toLowerCase();
+  if (/coffee|espresso|latte|cold brew|tea/.test(lower)) return 'coffee';
+  if (/pastr|baked|bakery|dessert|breakfast/.test(lower)) return 'pastry';
+  if (/cocktail|beer|wine|music|event|atmosphere/.test(lower)) return 'event';
+  if (/interior|room|table|visit|occasion|private/.test(lower)) return variant === 'premium_dining' ? 'privateDining' : 'interior';
+  if (/truck|route|stop|pickup/.test(lower)) return 'truck';
+  if (/mission|community|support|volunteer/.test(lower)) return 'mission';
+  return fallback || 'dish';
+}
+
+function sanitizeRestaurantMenuItemCta(
+  value: string | null,
+  experience: RestaurantExperienceData | null,
+  variant: MockupTemplateVariant
+) {
+  if (!value) return null;
+  const sanitized = sanitizeRestaurantPrimaryCta(value, experience, variant);
+  return sanitized === fallbackRestaurantPrimaryCta(variant) && normalizeComparisonText(value) !== normalizeComparisonText(sanitized)
+    ? null
+    : sanitized;
+}
+
+function sanitizeRestaurantPrimaryCta(
+  value: string,
+  experience: RestaurantExperienceData | null | undefined,
+  variant: MockupTemplateVariant
+) {
+  const clean = cleanText(value) || fallbackRestaurantPrimaryCta(variant);
+  const lower = clean.toLowerCase();
+  if (/\b(order|online ordering|takeout|pickup)\b/.test(lower) && experience?.ordering_supported !== true) {
+    return fallbackRestaurantPrimaryCta(variant);
+  }
+  if (/\b(reserve|reservation|book a table)\b/.test(lower) && experience?.reservation_supported !== true) {
+    return fallbackRestaurantPrimaryCta(variant);
+  }
+  if (/\b(private dining|private event|private events)\b/.test(lower) && experience?.private_events_supported !== true) {
+    return fallbackRestaurantPrimaryCta(variant);
+  }
+  if (/\bcater|catering\b/.test(lower) && experience?.catering_supported !== true) {
+    return fallbackRestaurantPrimaryCta(variant);
+  }
+  return clean;
+}
+
+function fallbackRestaurantPrimaryCta(variant: MockupTemplateVariant) {
+  if (variant === 'food_truck') return 'Find the Next Stop';
+  if (variant === 'coffee_shop') return 'Plan a Visit';
+  if (variant === 'nonprofit_cafe') return 'Plan a Visit';
+  return 'Plan a Visit';
+}
+
+function normalizeComparisonText(value: string | null | undefined) {
+  return (value || '')
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+function dedupeText(values: Array<string | null | undefined>) {
+  const seen = new Set<string>();
+  return values
+    .map((value) => cleanText(value))
+    .filter((value): value is string => Boolean(value))
+    .filter((value) => {
+      const key = value.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 }
 
 function isFoodOnlyOffer(title: string) {
@@ -3085,7 +3568,7 @@ function restaurantBadgeLabel(context: SiteContext) {
   }
   if (context.variant === 'coffee_shop') return 'Drinks, visits, and local routine';
   if (context.variant === 'bar_grill') return 'Food, events, and tonight path';
-  if (context.variant === 'food_truck') return 'Menu, route, and booking path';
+  if (context.variant === 'food_truck') return 'Menu, route, and contact path';
   return 'Menu, atmosphere, and visit path';
 }
 
@@ -3106,11 +3589,12 @@ function navHref(item: string) {
 }
 
 function restaurantNavHref(item: string) {
+  if (/planner|find|perfect|night|plan/i.test(item)) return '#night-planner';
   if (/menu|food|drink|special/i.test(item)) return '#menu';
   if (/story|about|chef|philosophy|atmosphere/i.test(item)) return '#story';
   if (/review|proof|press|guest|social/i.test(item)) return '#reviews';
   if (/visit|location|hour|contact/i.test(item)) return '#primary-action';
-  if (/reserve|reservation|order|book|private|event|cater|plan/i.test(item)) return '#primary-action';
+  if (/reserve|reservation|order|book|private|event|cater/i.test(item)) return '#primary-action';
   return '#menu';
 }
 
