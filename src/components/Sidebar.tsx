@@ -14,6 +14,7 @@ import {
   X,
   Zap,
 } from 'lucide-react';
+import { EXPECTED_LOCAL_URL } from '@/lib/supabase';
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -78,7 +79,7 @@ export default function Sidebar() {
               Mockup Outreach
             </div>
             <div className="text-xs" style={{ color: 'var(--color-ink-3)' }}>
-              localhost:3001
+              {EXPECTED_LOCAL_URL}
             </div>
           </div>
 

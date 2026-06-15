@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 export const APP_NAME = 'mockup-outreach-crm';
-export const EXPECTED_LOCAL_URL = 'localhost:3001';
+export const EXPECTED_LOCAL_URL = 'localhost:3000';
 export const SUPABASE_QUERY_TIMEOUT_MS = 12000;
 
 export type DataSource = 'supabase' | 'seed';

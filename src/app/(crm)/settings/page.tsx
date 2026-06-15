@@ -72,18 +72,18 @@ export default function SettingsPage() {
         {/* Outreach Settings */}
         <Card title="Outreach Defaults">
           <div className="space-y-4">
-            <SettingField label="Daily Send Goal" type="number" value={settings.daily_send_goal} onChange={(v) => update('daily_send_goal', parseInt(v) || 0)} />
-            <SettingField label="Default Niche" value={settings.default_niche} onChange={(v) => update('default_niche', v)} />
-            <SettingField label="Default City" value={settings.default_city} onChange={(v) => update('default_city', v)} />
-            <SettingField label="Default CTA" value={settings.default_cta} onChange={(v) => update('default_cta', v)} />
+            <SettingField id="settings-daily-send-goal" name="daily_send_goal" label="Daily Send Goal" type="number" value={settings.daily_send_goal} onChange={(v) => update('daily_send_goal', parseInt(v) || 0)} />
+            <SettingField id="settings-default-niche" name="default_niche" label="Default Niche" value={settings.default_niche} onChange={(v) => update('default_niche', v)} />
+            <SettingField id="settings-default-city" name="default_city" label="Default City" value={settings.default_city} onChange={(v) => update('default_city', v)} />
+            <SettingField id="settings-default-cta" name="default_cta" label="Default CTA" value={settings.default_cta} onChange={(v) => update('default_cta', v)} />
           </div>
         </Card>
 
         {/* Agency Info */}
         <Card title="Agency Information">
           <div className="space-y-4">
-            <SettingField label="Sender Name" value={settings.sender_name} onChange={(v) => update('sender_name', v)} />
-            <SettingField label="Agency Name" value={settings.agency_name} onChange={(v) => update('agency_name', v)} />
+            <SettingField id="settings-sender-name" name="sender_name" label="Sender Name" value={settings.sender_name} onChange={(v) => update('sender_name', v)} />
+            <SettingField id="settings-agency-name" name="agency_name" label="Agency Name" value={settings.agency_name} onChange={(v) => update('agency_name', v)} />
           </div>
         </Card>
 
@@ -164,8 +164,10 @@ export default function SettingsPage() {
               </ul>
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--color-ink-3)' }}>Notes for Hermes Integration</label>
+              <label htmlFor="settings-hermes-notes" className="block text-xs font-medium mb-1.5" style={{ color: 'var(--color-ink-3)' }}>Notes for Hermes Integration</label>
               <textarea
+                id="settings-hermes-notes"
+                name="hermes_notes"
                 value={settings.hermes_notes}
                 onChange={(e) => update('hermes_notes', e.target.value)}
                 rows={4}
@@ -196,11 +198,13 @@ function CodeBlock({ value }: { value: string }) {
   );
 }
 
-function SettingField({ label, value, onChange, type = 'text' }: { label: string; value: string | number; onChange: (val: string) => void; type?: string }) {
+function SettingField({ id, name, label, value, onChange, type = 'text' }: { id: string; name: keyof AppSettings; label: string; value: string | number; onChange: (val: string) => void; type?: string }) {
   return (
     <div>
-      <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--color-ink-3)' }}>{label}</label>
+      <label htmlFor={id} className="block text-xs font-medium mb-1.5" style={{ color: 'var(--color-ink-3)' }}>{label}</label>
       <input
+        id={id}
+        name={name}
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
