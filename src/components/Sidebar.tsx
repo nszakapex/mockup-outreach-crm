@@ -4,25 +4,26 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard,
-  Users,
   CheckCircle,
   FileJson,
-  Settings,
+  LayoutDashboard,
   Mail,
   Menu,
+  Settings,
+  ShieldCheck,
+  Sparkles,
+  Users,
   X,
-  Zap,
 } from 'lucide-react';
-import { EXPECTED_LOCAL_URL } from '@/lib/supabase';
+import { APP_NAME, EXPECTED_LOCAL_URL } from '@/lib/supabase';
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/prospects', label: 'Prospects', icon: Users },
-  { href: '/import', label: 'Hermes Import', icon: FileJson },
-  { href: '/approval', label: 'Approval Queue', icon: CheckCircle },
-  { href: '/send-queue', label: 'Send Queue', icon: Mail },
-  { href: '/settings', label: 'Settings', icon: Settings },
+  { href: '/dashboard', label: 'Dashboard', detail: 'Command center', icon: LayoutDashboard },
+  { href: '/prospects', label: 'Prospects', detail: 'Research workspace', icon: Users },
+  { href: '/import', label: 'Hermes Import', detail: 'Preview and gate', icon: FileJson },
+  { href: '/approval', label: 'Approval Queue', detail: 'Manual review', icon: CheckCircle },
+  { href: '/send-queue', label: 'Send Queue', detail: 'Controlled sends', icon: Mail },
+  { href: '/settings', label: 'Settings', detail: 'Sender and env', icon: Settings },
 ];
 
 export default function Sidebar() {
@@ -31,62 +32,67 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile toggle */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed top-4 left-4 z-50 p-2 rounded-lg lg:hidden"
-        style={{ background: 'var(--color-paper-3)', color: 'var(--color-ink)' }}
+        className="fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-xl border lg:hidden"
+        style={{
+          background: 'var(--color-paper-glass)',
+          borderColor: 'var(--color-border)',
+          color: 'var(--color-ink)',
+          boxShadow: 'var(--shadow-sm)',
+          backdropFilter: 'blur(16px)',
+        }}
         aria-label="Open menu"
       >
         <Menu size={20} />
       </button>
 
-      {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/35 backdrop-blur-sm lg:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 z-50 h-full flex flex-col
+          fixed left-0 top-0 z-50 flex h-full flex-col
           transition-transform duration-300
-          lg:translate-x-0 lg:static lg:z-auto
+          lg:static lg:z-auto lg:translate-x-0
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
         style={{
           width: 'var(--sidebar-width)',
-          background: 'var(--color-paper-2)',
+          background: 'var(--color-paper-glass)',
           borderRight: '1px solid var(--color-border)',
+          backdropFilter: 'blur(24px)',
         }}
       >
-        {/* Logo area */}
-        <div
-          className="flex items-center gap-3 px-5 h-16 shrink-0"
-          style={{ borderBottom: '1px solid var(--color-border)' }}
-        >
+        <div className="flex min-h-24 items-start gap-3 px-5 py-5" style={{ borderBottom: '1px solid var(--color-divider)' }}>
           <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: 'var(--color-accent)' }}
+            className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+            style={{
+              background: 'var(--color-ink)',
+              color: 'var(--color-paper-2)',
+              boxShadow: 'var(--shadow-sm)',
+            }}
           >
-            <Zap size={16} style={{ color: 'var(--color-paper)' }} />
+            <Sparkles size={17} />
           </div>
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="text-sm font-semibold" style={{ color: 'var(--color-ink)' }}>
               Mockup Outreach
             </div>
-            <div className="text-xs" style={{ color: 'var(--color-ink-3)' }}>
+            <div className="mt-1 text-xs leading-5" style={{ color: 'var(--color-ink-3)' }}>
+              Premium outreach OS
+            </div>
+            <div className="mt-2 truncate font-mono text-[11px]" style={{ color: 'var(--color-ink-muted)' }}>
               {EXPECTED_LOCAL_URL}
             </div>
           </div>
-
-          {/* Mobile close */}
           <button
             onClick={() => setMobileOpen(false)}
-            className="ml-auto p-1 rounded lg:hidden"
+            className="ml-auto flex h-8 w-8 items-center justify-center rounded-lg lg:hidden"
             style={{ color: 'var(--color-ink-3)' }}
             aria-label="Close menu"
           >
@@ -94,45 +100,77 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {/* Nav links */}
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-            const active = pathname === href || pathname.startsWith(href + '/');
+        <div className="px-4 py-4">
+          <div
+            className="rounded-xl border p-3"
+            style={{
+              background: 'var(--color-paper-2)',
+              borderColor: 'var(--color-border)',
+              boxShadow: 'var(--shadow-sm)',
+            }}
+          >
+            <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: 'var(--color-ink)' }}>
+              <ShieldCheck size={14} style={{ color: 'var(--color-emerald)' }} />
+              Local QA workspace
+            </div>
+            <div className="mt-2 text-xs leading-5" style={{ color: 'var(--color-ink-3)' }}>
+              Imports, approvals, and sends stay behind explicit page actions.
+            </div>
+          </div>
+        </div>
+
+        <nav className="flex-1 space-y-1 px-3 pb-4">
+          {NAV_ITEMS.map(({ href, label, detail, icon: Icon }) => {
+            const active = pathname === href || pathname.startsWith(`${href}/`);
             return (
               <Link
                 key={href}
                 href={href}
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
+                className="group flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-all"
                 style={{
-                  background: active ? 'var(--color-accent-muted)' : 'transparent',
-                  color: active ? 'var(--color-accent)' : 'var(--color-ink-2)',
+                  background: active ? 'var(--color-paper-2)' : 'transparent',
+                  color: active ? 'var(--color-ink)' : 'var(--color-ink-2)',
+                  boxShadow: active ? 'var(--shadow-sm)' : 'none',
+                  border: active ? '1px solid var(--color-border)' : '1px solid transparent',
                 }}
-                onMouseEnter={(e) => {
-                  if (!active) e.currentTarget.style.background = 'var(--color-paper-hover)';
+                onMouseEnter={(event) => {
+                  if (!active) event.currentTarget.style.background = 'var(--color-paper-hover)';
                 }}
-                onMouseLeave={(e) => {
-                  if (!active) e.currentTarget.style.background = 'transparent';
+                onMouseLeave={(event) => {
+                  if (!active) event.currentTarget.style.background = 'transparent';
                 }}
               >
-                <Icon size={18} />
-                {label}
+                <span
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+                  style={{
+                    background: active ? 'var(--color-accent-subtle)' : 'var(--color-paper-3)',
+                    color: active ? 'var(--color-accent)' : 'var(--color-ink-3)',
+                  }}
+                >
+                  <Icon size={17} />
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate">{label}</span>
+                  <span className="mt-0.5 block truncate text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>
+                    {detail}
+                  </span>
+                </span>
               </Link>
             );
           })}
         </nav>
 
-        {/* Footer */}
-        <div
-          className="px-5 py-4 text-xs shrink-0"
-          style={{
-            color: 'var(--color-ink-muted)',
-            borderTop: '1px solid var(--color-border)',
-          }}
-        >
-          {/* TODO: [Hermes Integration] Show Hermes connection status here */}
-          <div>mockup-outreach-crm</div>
-          <div className="mt-1 opacity-60">v1.0.0</div>
+        <div className="px-5 py-4 text-xs" style={{ borderTop: '1px solid var(--color-divider)' }}>
+          <div className="font-semibold" style={{ color: 'var(--color-ink)' }}>
+            {APP_NAME}
+          </div>
+          <div className="mt-1 leading-5" style={{ color: 'var(--color-ink-3)' }}>
+            Apex, Resinate, and future lanes.
+          </div>
+          <div className="mt-3 inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold" style={{ background: 'var(--color-warning-subtle)', color: 'var(--color-warning)' }}>
+            Sender state verified per page
+          </div>
         </div>
       </aside>
     </>

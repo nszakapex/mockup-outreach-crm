@@ -11,7 +11,7 @@ export default function DataSourceBadge({ source }: DataSourceBadgeProps) {
     <span
       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
       style={{
-        background: isLive ? 'var(--color-emerald-muted)' : 'oklch(75% 0.16 85 / 0.12)',
+        background: isLive ? 'var(--color-emerald-muted)' : 'var(--color-warning-subtle)',
         color: isLive ? 'var(--color-emerald)' : 'var(--color-warning)',
       }}
     >

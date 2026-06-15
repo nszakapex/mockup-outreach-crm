@@ -8,13 +8,13 @@ export default function LeadScoreBadge({ score }: LeadScoreBadgeProps) {
 
   if (score >= 80) {
     color = 'var(--color-success)';
-    bg = 'oklch(70% 0.18 150 / 0.12)';
+    bg = 'var(--color-emerald-subtle)';
   } else if (score >= 60) {
     color = 'var(--color-accent)';
     bg = 'var(--color-accent-muted)';
   } else if (score >= 40) {
     color = 'var(--color-warning)';
-    bg = 'oklch(75% 0.16 85 / 0.12)';
+    bg = 'var(--color-warning-subtle)';
   } else {
     color = 'var(--color-ink-3)';
     bg = 'var(--color-paper-3)';
@@ -22,7 +22,7 @@ export default function LeadScoreBadge({ score }: LeadScoreBadgeProps) {
 
   return (
     <span
-      className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold tabular-nums"
+    className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold tabular-nums"
       style={{ color, background: bg }}
     >
       {score}

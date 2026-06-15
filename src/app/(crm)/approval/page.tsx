@@ -11,12 +11,15 @@ import {
   ExternalLink,
   Inbox,
   AlertTriangle,
+  Bot,
+  ShieldCheck,
 } from 'lucide-react';
 import Card from '@/components/Card';
 import Button from '@/components/Button';
 import StatusBadge from '@/components/StatusBadge';
 import EmptyState from '@/components/EmptyState';
 import ErrorBanner from '@/components/ErrorBanner';
+import { PageHeader, SafetyBanner, StatusPill } from '@/components/CommandPrimitives';
 import { useApprovalQueue } from '@/lib/hooks';
 import { getApexDeliveryMode, parseApexDeliveryConceptNotes } from '@/lib/apex-delivery-data';
 import { parseMockupConceptNotes } from '@/lib/mockup-rich-data';
@@ -87,12 +90,21 @@ export default function ApprovalPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--color-ink)' }}>Approval Queue</h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--color-ink-3)' }}>
-          {prospects.length} prospect{prospects.length !== 1 ? 's' : ''} awaiting review
-        </p>
-      </div>
+      <PageHeader
+        eyebrow={
+          <>
+            <StatusPill tone="warning" icon={<ShieldCheck size={12} />}>Manual review required</StatusPill>
+            <StatusPill tone="accent" icon={<Bot size={12} />}>Telegram approval channel</StatusPill>
+            <StatusPill tone="neutral">{prospects.length} awaiting review</StatusPill>
+          </>
+        }
+        title="Approval Queue"
+        description="Inspect prospect identity, public artifacts, email draft quality, and delivery-mode requirements before approving or sending a Telegram review card."
+      />
+
+      <SafetyBanner tone="warning" title="Approval does not send Gmail" className="mb-6">
+        Send-to-Telegram posts a review card only when required fields, public artifacts, and Apex mockup quality gates pass. Gmail sending remains controlled in Send Queue.
+      </SafetyBanner>
 
       {error && <div className="mb-6"><ErrorBanner message={error} onRetry={refetch} /></div>}
       {actionError && <div className="mb-6"><ErrorBanner message={actionError} /></div>}
@@ -196,6 +208,24 @@ export default function ApprovalPage() {
                   </div>
                 </div>
 
+                <div
+                  className="mb-4 grid grid-cols-1 gap-2 rounded-xl border p-3 sm:grid-cols-2 lg:grid-cols-4"
+                  style={{ background: 'var(--color-paper-3)', borderColor: 'var(--color-divider)' }}
+                >
+                  <ApprovalCheck label="Lane" value={isResinate ? 'Resinate' : 'Apex'} tone={isResinate ? 'success' : 'accent'} />
+                  <ApprovalCheck label="Recipient" value={prospect.public_email ? 'Ready' : 'Missing'} tone={prospect.public_email ? 'success' : 'warning'} />
+                  <ApprovalCheck label="Draft" value={email?.subject && email?.body ? 'Complete' : 'Needs edit'} tone={email?.subject && email?.body ? 'success' : 'warning'} />
+                  <ApprovalCheck label="Public asset" value={!publicArtifactRequired || mockup?.slug ? 'Ready' : 'Missing'} tone={!publicArtifactRequired || mockup?.slug ? 'success' : 'warning'} />
+                  {mockupV2?.qualityGate.required && (
+                    <ApprovalCheck
+                      label="Apex QC"
+                      value={mockupV2.qualityGate.outreachReady ? 'Outreach-ready' : 'Blocked'}
+                      tone={mockupV2.qualityGate.outreachReady ? 'success' : 'danger'}
+                    />
+                  )}
+                  <ApprovalCheck label="Telegram" value={canSendToTelegram ? 'Eligible' : 'Blocked'} tone={canSendToTelegram ? 'success' : 'danger'} />
+                </div>
+
                 {mockup?.slug && publicArtifactRequired && (
                   <div className="flex items-center gap-2 mb-4 p-3 rounded-lg" style={{ background: 'var(--color-accent-subtle)' }}>
                     <span className="text-xs font-medium" style={{ color: 'var(--color-accent)' }}>Mockup:</span>
@@ -227,31 +257,31 @@ export default function ApprovalPage() {
                 )}
 
                 {!email && (
-                  <div className="mb-4 rounded-lg p-3 text-xs" style={{ background: 'oklch(75% 0.16 85 / 0.08)', border: '1px solid oklch(75% 0.16 85 / 0.2)', color: 'var(--color-warning)' }}>
+                  <div className="mb-4 rounded-lg p-3 text-xs" style={{ background: 'var(--color-warning-subtle)', border: '1px solid var(--color-warning-muted)', color: 'var(--color-warning)' }}>
                     Missing email draft. Add a draft before sending this prospect to Telegram.
                   </div>
                 )}
 
                 {!prospect.public_email && (
-                  <div className="mb-4 rounded-lg p-3 text-xs" style={{ background: 'oklch(75% 0.16 85 / 0.08)', border: '1px solid oklch(75% 0.16 85 / 0.2)', color: 'var(--color-warning)' }}>
+                  <div className="mb-4 rounded-lg p-3 text-xs" style={{ background: 'var(--color-warning-subtle)', border: '1px solid var(--color-warning-muted)', color: 'var(--color-warning)' }}>
                     Missing public email. Add a destination before sending this prospect to Telegram.
                   </div>
                 )}
 
                 {email && (!email.subject || !email.body) && (
-                  <div className="mb-4 rounded-lg p-3 text-xs" style={{ background: 'oklch(75% 0.16 85 / 0.08)', border: '1px solid oklch(75% 0.16 85 / 0.2)', color: 'var(--color-warning)' }}>
+                  <div className="mb-4 rounded-lg p-3 text-xs" style={{ background: 'var(--color-warning-subtle)', border: '1px solid var(--color-warning-muted)', color: 'var(--color-warning)' }}>
                     Email subject and body are required before Telegram approval.
                   </div>
                 )}
 
                 {publicArtifactRequired && !mockup?.slug && (
-                  <div className="mb-4 rounded-lg p-3 text-xs" style={{ background: 'oklch(75% 0.16 85 / 0.08)', border: '1px solid oklch(75% 0.16 85 / 0.2)', color: 'var(--color-warning)' }}>
+                  <div className="mb-4 rounded-lg p-3 text-xs" style={{ background: 'var(--color-warning-subtle)', border: '1px solid var(--color-warning-muted)', color: 'var(--color-warning)' }}>
                     Missing public artifact link. Add a slug before sending this prospect to Telegram.
                   </div>
                 )}
 
                 {publicMockupBlocked && mockupV2 && (
-                  <div className="mb-4 rounded-lg p-3 text-xs" style={{ background: 'oklch(65% 0.22 25 / 0.08)', border: '1px solid oklch(65% 0.22 25 / 0.2)', color: 'var(--color-error)' }}>
+                  <div className="mb-4 rounded-lg p-3 text-xs" style={{ background: 'var(--color-error-subtle)', border: '1px solid var(--color-error-muted)', color: 'var(--color-error)' }}>
                     <div className="font-semibold">Mockup not outreach-ready</div>
                     <div className="mt-1 leading-5">{mockupV2.qualityGate.failures.join(' ')}</div>
                   </div>
@@ -302,6 +332,31 @@ export default function ApprovalPage() {
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function ApprovalCheck({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone: 'neutral' | 'accent' | 'success' | 'warning' | 'danger';
+}) {
+  const styles = {
+    neutral: { background: 'var(--color-paper-2)', color: 'var(--color-ink-2)', borderColor: 'var(--color-divider)' },
+    accent: { background: 'var(--color-accent-subtle)', color: 'var(--color-accent)', borderColor: 'var(--color-accent-muted)' },
+    success: { background: 'var(--color-emerald-subtle)', color: 'var(--color-success)', borderColor: 'var(--color-emerald-muted)' },
+    warning: { background: 'var(--color-warning-subtle)', color: 'var(--color-warning)', borderColor: 'var(--color-warning-muted)' },
+    danger: { background: 'var(--color-error-subtle)', color: 'var(--color-error)', borderColor: 'var(--color-error-muted)' },
+  }[tone];
+
+  return (
+    <div className="rounded-lg border px-3 py-2" style={styles}>
+      <div className="text-[11px] font-semibold uppercase tracking-[0.08em] opacity-80">{label}</div>
+      <div className="mt-1 text-sm font-semibold">{value}</div>
     </div>
   );
 }

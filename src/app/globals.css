@@ -1,64 +1,53 @@
-/* Hallmark · macrostructure: Workbench · genre: modern-minimal · tone: technical-luxury
- * theme: custom (vibe: "dark navy command center" · paper oklch(15% 0.02 250) · accent oklch(65% 0.20 250) electric-blue + oklch(65% 0.18 155) emerald)
- * nav: N7 Sidebar rail · footer: none (app shell)
- * pre-emit critique: P5 H4 E5 S4 R5 V4
+/* Hallmark: macrostructure Workbench, genre modern-minimal, tone technical-luxury.
+ * UI UX Pro Max: premium internal outreach operating system.
+ * design-system: design.md. App shell, no marketing hero.
  */
 
 @import "tailwindcss";
 
-/* ═══════════════════════════════════════════
-   DESIGN TOKENS — Apex Mockup Outreach CRM
-   Dark navy command center with electric blue
-   and emerald green accents.
-   ═══════════════════════════════════════════ */
-
 :root {
-  /* Paper (backgrounds) */
-  --color-paper:         oklch(15% 0.02 250);
-  --color-paper-2:       oklch(18% 0.02 250);
-  --color-paper-3:       oklch(22% 0.02 250);
-  --color-paper-4:       oklch(26% 0.015 250);
-  --color-paper-hover:   oklch(24% 0.025 250);
+  --color-paper:         oklch(98.4% 0.005 255);
+  --color-paper-2:       oklch(100% 0 0);
+  --color-paper-3:       oklch(96.6% 0.006 255);
+  --color-paper-4:       oklch(93.8% 0.01 255);
+  --color-paper-hover:   oklch(95.2% 0.009 255);
+  --color-paper-glass:   oklch(100% 0 0 / 0.78);
 
-  /* Ink (text) */
-  --color-ink:           oklch(95% 0.005 250);
-  --color-ink-2:         oklch(75% 0.01 250);
-  --color-ink-3:         oklch(55% 0.01 250);
-  --color-ink-muted:     oklch(45% 0.01 250);
+  --color-ink:           oklch(19% 0.026 255);
+  --color-ink-2:         oklch(35% 0.025 255);
+  --color-ink-3:         oklch(50% 0.02 255);
+  --color-ink-muted:     oklch(64% 0.015 255);
 
-  /* Accent — Electric Blue */
-  --color-accent:        oklch(65% 0.20 250);
-  --color-accent-hover:  oklch(70% 0.22 250);
-  --color-accent-muted:  oklch(65% 0.20 250 / 0.15);
-  --color-accent-subtle: oklch(65% 0.20 250 / 0.08);
+  --color-accent:        oklch(46% 0.16 255);
+  --color-accent-hover:  oklch(40% 0.17 255);
+  --color-accent-muted:  oklch(46% 0.16 255 / 0.14);
+  --color-accent-subtle: oklch(46% 0.16 255 / 0.07);
 
-  /* Secondary — Emerald Green */
-  --color-emerald:       oklch(65% 0.18 155);
-  --color-emerald-hover: oklch(70% 0.20 155);
-  --color-emerald-muted: oklch(65% 0.18 155 / 0.15);
-  --color-emerald-subtle:oklch(65% 0.18 155 / 0.08);
+  --color-emerald:       oklch(43% 0.13 158);
+  --color-emerald-hover: oklch(38% 0.13 158);
+  --color-emerald-muted: oklch(43% 0.13 158 / 0.14);
+  --color-emerald-subtle:oklch(43% 0.13 158 / 0.07);
 
-  /* Status palette */
-  --color-success:       oklch(70% 0.18 150);
-  --color-warning:       oklch(75% 0.16 85);
-  --color-error:         oklch(65% 0.22 25);
-  --color-info:          oklch(65% 0.16 250);
+  --color-success:       oklch(43% 0.13 158);
+  --color-warning:       oklch(48% 0.12 74);
+  --color-error:         oklch(48% 0.18 28);
+  --color-info:          oklch(45% 0.13 245);
 
-  /* Borders & dividers */
-  --color-border:        oklch(28% 0.015 250);
-  --color-border-hover:  oklch(35% 0.02 250);
-  --color-divider:       oklch(22% 0.01 250);
+  --color-warning-muted: oklch(55% 0.14 78 / 0.14);
+  --color-warning-subtle:oklch(55% 0.14 78 / 0.08);
+  --color-error-muted:   oklch(48% 0.18 28 / 0.14);
+  --color-error-subtle:  oklch(48% 0.18 28 / 0.08);
 
-  /* Focus ring */
-  --color-focus:         oklch(65% 0.20 250);
+  --color-border:        oklch(89% 0.012 255);
+  --color-border-hover:  oklch(80% 0.018 255);
+  --color-divider:       oklch(92.5% 0.01 255);
+  --color-focus:         oklch(46% 0.16 255);
 
-  /* Shadows */
-  --shadow-sm:   0 1px 2px oklch(0% 0 0 / 0.3);
-  --shadow-md:   0 4px 12px oklch(0% 0 0 / 0.35);
-  --shadow-lg:   0 8px 24px oklch(0% 0 0 / 0.4);
-  --shadow-card: 0 1px 3px oklch(0% 0 0 / 0.2), 0 0 0 1px oklch(100% 0 0 / 0.03);
+  --shadow-sm:   0 1px 2px oklch(20% 0.03 255 / 0.05);
+  --shadow-md:   0 8px 20px oklch(20% 0.03 255 / 0.07);
+  --shadow-lg:   0 18px 60px oklch(20% 0.03 255 / 0.14);
+  --shadow-card: 0 1px 2px oklch(20% 0.03 255 / 0.04), 0 12px 32px oklch(20% 0.03 255 / 0.06);
 
-  /* Spacing (4pt scale) */
   --space-xs:  4px;
   --space-sm:  8px;
   --space-md:  16px;
@@ -67,14 +56,12 @@
   --space-2xl: 48px;
   --space-3xl: 64px;
 
-  /* Radius */
   --radius-sm:  6px;
-  --radius-md:  10px;
-  --radius-lg:  14px;
-  --radius-xl:  20px;
+  --radius-md:  8px;
+  --radius-lg:  12px;
+  --radius-xl:  14px;
   --radius-full: 9999px;
 
-  /* Typography scale */
   --text-xs:      0.75rem;
   --text-sm:      0.875rem;
   --text-base:    1rem;
@@ -84,7 +71,6 @@
   --text-3xl:     1.875rem;
   --text-4xl:     2.25rem;
 
-  /* Motion */
   --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in:     cubic-bezier(0.55, 0.055, 0.675, 0.19);
   --ease-in-out: cubic-bezier(0.45, 0, 0.55, 1);
@@ -92,13 +78,11 @@
   --dur-normal:  200ms;
   --dur-slow:    350ms;
 
-  /* Fonts */
   --font-display: var(--font-geist-sans), system-ui, sans-serif;
   --font-body:    var(--font-geist-sans), system-ui, sans-serif;
   --font-mono:    var(--font-geist-mono), ui-monospace, monospace;
 
-  /* Sidebar */
-  --sidebar-width: 260px;
+  --sidebar-width: 284px;
   --sidebar-collapsed: 72px;
 }
 
@@ -109,20 +93,26 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* ═══════════════════════════════════════════
-   BASE STYLES
-   ═══════════════════════════════════════════ */
-
 html {
   overflow-x: clip;
 }
 
 body {
-  background: var(--color-paper);
+  background:
+    linear-gradient(180deg, oklch(100% 0 0) 0%, var(--color-paper) 340px),
+    var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
 *:focus-visible {
@@ -135,25 +125,68 @@ body {
   color: var(--color-ink);
 }
 
-/* Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--color-border);
   border-radius: var(--radius-full);
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-border-hover);
 }
 
-/* ═══════════════════════════════════════════
-   REDUCED MOTION
-   ═══════════════════════════════════════════ */
+.control-input {
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-paper-2);
+  color: var(--color-ink);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+
+.control-input:hover {
+  border-color: var(--color-border-hover);
+}
+
+.control-input:focus {
+  border-color: var(--color-focus);
+  box-shadow: 0 0 0 3px var(--color-accent-muted);
+}
+
+.command-surface {
+  background: var(--color-paper-2);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+}
+
+.subtle-surface {
+  background: var(--color-paper-3);
+  border: 1px solid var(--color-divider);
+}
+
+.data-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.data-table th {
+  background: var(--color-paper-3);
+}
+
+.data-table tbody tr:hover {
+  background: var(--color-paper-hover);
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

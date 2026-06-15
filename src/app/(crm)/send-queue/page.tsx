@@ -21,6 +21,7 @@ import EmptyState from '@/components/EmptyState';
 import ErrorBanner from '@/components/ErrorBanner';
 import StatusBadge from '@/components/StatusBadge';
 import type { ProspectStatus } from '@/lib/types';
+import { PageHeader, SafetyBanner, StatusPill } from '@/components/CommandPrimitives';
 
 type SendQueueItem = {
   prospectId: string;
@@ -184,32 +185,25 @@ export default function SendQueuePage() {
 
   return (
     <div>
-      <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-bold" style={{ color: 'var(--color-ink)' }}>
-              Send Queue
-            </h1>
-            <span
-              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
-              style={{
-                background: stats.testMode ? 'oklch(75% 0.16 85 / 0.12)' : 'var(--color-emerald-muted)',
-                color: stats.testMode ? 'var(--color-warning)' : 'var(--color-emerald)',
-              }}
-            >
-              <Mail size={12} />
+      <PageHeader
+        eyebrow={
+          <>
+            <StatusPill tone={stats.testMode ? 'warning' : 'danger'} icon={<Mail size={12} />}>
               {stats.testMode ? 'Test mode' : 'Live Gmail'}
-            </span>
-          </div>
-          <p className="text-sm mt-1" style={{ color: 'var(--color-ink-3)' }}>
-            {sendableCount} approved prospect{sendableCount !== 1 ? 's' : ''} ready for controlled Gmail sending
-          </p>
-        </div>
-        <Button variant="secondary" size="sm" onClick={loadQueue} disabled={loading}>
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          Refresh
-        </Button>
-      </div>
+            </StatusPill>
+            <StatusPill tone={sendDisabled ? 'danger' : 'success'}>{stats.remainingToday} remaining today</StatusPill>
+            <StatusPill tone="neutral">{sendableCount} sendable</StatusPill>
+          </>
+        }
+        title="Send Queue"
+        description={`${sendableCount} approved prospect${sendableCount !== 1 ? 's' : ''} ready for controlled Gmail sending after exact recipient, sender, subject, body, artifact, and cap checks.`}
+        actions={
+          <Button variant="secondary" size="sm" onClick={loadQueue} disabled={loading}>
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            Refresh
+          </Button>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-3 mb-6 sm:grid-cols-4">
         <QueueMetric icon={<Send size={16} />} label="Sent today" value={String(stats.sentToday)} />
@@ -219,29 +213,15 @@ export default function SendQueuePage() {
       </div>
 
       {stats.testMode && (
-        <div
-          className="mb-6 rounded-xl p-4 text-sm"
-          style={{
-            background: 'oklch(75% 0.16 85 / 0.08)',
-            border: '1px solid oklch(75% 0.16 85 / 0.2)',
-            color: 'var(--color-warning)',
-          }}
-        >
+        <SafetyBanner tone="warning" title="Test mode is enabled" className="mb-6">
           Test mode is enabled. Send Now validates eligibility and records a test send, but no Gmail message is delivered.
-        </div>
+        </SafetyBanner>
       )}
 
       {sendDisabled && !loading && !error && (
-        <div
-          className="mb-6 rounded-xl p-4 text-sm"
-          style={{
-            background: 'oklch(65% 0.22 25 / 0.08)',
-            border: '1px solid oklch(65% 0.22 25 / 0.2)',
-            color: 'var(--color-error)',
-          }}
-        >
+        <SafetyBanner tone="danger" title="Daily send cap reached" className="mb-6">
           Daily send cap reached. Increase OUTREACH_DAILY_SEND_CAP or wait until tomorrow.
-        </div>
+        </SafetyBanner>
       )}
 
       {notice && (
@@ -373,6 +353,17 @@ export default function SendQueuePage() {
                 </div>
 
                 <div
+                  className="mt-4 grid grid-cols-1 gap-2 rounded-xl border p-3 sm:grid-cols-2 xl:grid-cols-5"
+                  style={{ background: 'var(--color-paper-3)', borderColor: 'var(--color-divider)' }}
+                >
+                  <QueueCheck label="Sendable" value={item.sendable ? 'Yes' : 'Blocked'} tone={item.sendable ? 'success' : 'danger'} />
+                  <QueueCheck label="Sender" value={item.senderConfigured ? item.senderLabel : 'Missing config'} tone={item.senderConfigured ? 'success' : 'warning'} />
+                  <QueueCheck label="Mode" value={stats.testMode ? 'Test' : 'Live'} tone={stats.testMode ? 'warning' : 'danger'} />
+                  <QueueCheck label="Opt-out" value={item.optOutIncluded ? 'Included' : 'Missing'} tone={item.optOutIncluded ? 'success' : 'danger'} />
+                  <QueueCheck label="Artifact" value={item.selectedPrimaryArtifactLabel} tone={item.selectedPrimaryArtifactUrl || !item.publicArtifactRequired ? 'success' : 'warning'} />
+                </div>
+
+                <div
                   className="mt-4 grid grid-cols-1 gap-4 pt-4 lg:grid-cols-[minmax(0,1fr)_minmax(220px,320px)]"
                   style={{ borderTop: '1px solid var(--color-divider)' }}
                 >
@@ -443,8 +434,8 @@ export default function SendQueuePage() {
                       <div
                         className="mt-3 rounded-lg p-3 text-xs"
                         style={{
-                          background: 'oklch(75% 0.16 85 / 0.08)',
-                          border: '1px solid oklch(75% 0.16 85 / 0.22)',
+                          background: 'var(--color-warning-subtle)',
+                          border: '1px solid var(--color-warning-muted)',
                           color: 'var(--color-warning)',
                         }}
                       >
@@ -463,8 +454,8 @@ export default function SendQueuePage() {
                       <div
                         className="mt-3 rounded-lg p-3 text-xs"
                         style={{
-                          background: 'oklch(75% 0.16 85 / 0.08)',
-                          border: '1px solid oklch(75% 0.16 85 / 0.22)',
+                          background: 'var(--color-warning-subtle)',
+                          border: '1px solid var(--color-warning-muted)',
                           color: 'var(--color-warning)',
                         }}
                       >
@@ -575,8 +566,8 @@ export default function SendQueuePage() {
                       <div
                         className="mt-3 rounded-lg p-3 text-xs"
                         style={{
-                          background: 'oklch(65% 0.22 25 / 0.08)',
-                          border: '1px solid oklch(65% 0.22 25 / 0.2)',
+                          background: 'var(--color-error-subtle)',
+                          border: '1px solid var(--color-error-muted)',
                           color: 'var(--color-error)',
                         }}
                       >
@@ -616,7 +607,7 @@ function yesNo(value: boolean) {
 function QueueMetric({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
     <div
-      className="rounded-xl p-4"
+      className="command-surface rounded-xl p-4"
       style={{
         background: 'var(--color-paper-2)',
         border: '1px solid var(--color-border)',
@@ -630,6 +621,30 @@ function QueueMetric({ icon, label, value }: { icon: ReactNode; label: string; v
       <div className="mt-2 text-xl font-semibold" style={{ color: 'var(--color-ink)' }}>
         {value}
       </div>
+    </div>
+  );
+}
+
+function QueueCheck({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone: 'success' | 'warning' | 'danger' | 'neutral';
+}) {
+  const styles = {
+    success: { background: 'var(--color-emerald-subtle)', color: 'var(--color-success)', borderColor: 'var(--color-emerald-muted)' },
+    warning: { background: 'var(--color-warning-subtle)', color: 'var(--color-warning)', borderColor: 'var(--color-warning-muted)' },
+    danger: { background: 'var(--color-error-subtle)', color: 'var(--color-error)', borderColor: 'var(--color-error-muted)' },
+    neutral: { background: 'var(--color-paper-2)', color: 'var(--color-ink-2)', borderColor: 'var(--color-divider)' },
+  }[tone];
+
+  return (
+    <div className="rounded-lg border px-3 py-2" style={styles}>
+      <div className="text-[11px] font-semibold uppercase tracking-[0.08em] opacity-80">{label}</div>
+      <div className="mt-1 truncate text-sm font-semibold" title={value}>{value}</div>
     </div>
   );
 }
@@ -750,9 +765,9 @@ function getSendStatusStyle(status: string) {
     case 'sent':
       return { label: 'Sent', color: 'var(--color-emerald)', bg: 'var(--color-emerald-muted)' };
     case 'test_sent':
-      return { label: 'Test Sent', color: 'var(--color-warning)', bg: 'oklch(75% 0.16 85 / 0.12)' };
+      return { label: 'Test Sent', color: 'var(--color-warning)', bg: 'var(--color-warning-subtle)' };
     case 'failed':
-      return { label: 'Failed', color: 'var(--color-error)', bg: 'oklch(65% 0.22 25 / 0.12)' };
+      return { label: 'Failed', color: 'var(--color-error)', bg: 'var(--color-error-subtle)' };
     case 'skipped':
       return { label: 'Skipped', color: 'var(--color-ink-3)', bg: 'var(--color-paper-3)' };
     case 'queued':

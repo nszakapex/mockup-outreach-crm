@@ -11,6 +11,7 @@ import {
   Plus,
   X,
   AlertTriangle,
+  ShieldCheck,
 } from 'lucide-react';
 import Card from '@/components/Card';
 import StatusBadge from '@/components/StatusBadge';
@@ -19,6 +20,7 @@ import Button from '@/components/Button';
 import EmptyState from '@/components/EmptyState';
 import ErrorBanner from '@/components/ErrorBanner';
 import DataSourceBadge from '@/components/DataSourceBadge';
+import { PageHeader, SafetyBanner, StatusPill } from '@/components/CommandPrimitives';
 import { useProspects } from '@/lib/hooks';
 import { createProspectBundle } from '@/lib/prospect-intake';
 import { PROSPECT_STATUSES, type ProspectStatus } from '@/lib/types';
@@ -136,22 +138,29 @@ export default function ProspectsPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <div>
-            <h1 className="text-2xl font-bold" style={{ color: 'var(--color-ink)' }}>Prospects</h1>
-            <p className="text-sm mt-1" style={{ color: 'var(--color-ink-3)' }}>
-              {filtered.length} of {prospects.length} prospects
-            </p>
-          </div>
-          <DataSourceBadge source={dataSource} />
-        </div>
-        <Button size="md" onClick={() => setShowCreate(true)} disabled={dataSource === 'seed'}>
-          <Plus size={16} />
-          Add Prospect
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow={
+          <>
+            <DataSourceBadge source={dataSource} />
+            <StatusPill tone="neutral">{filtered.length} shown</StatusPill>
+            <StatusPill tone="accent">{prospects.length} total</StatusPill>
+          </>
+        }
+        title="Prospects"
+        description="Research workspace for scanning business identity, campaign lane, readiness, and next review status."
+        actions={
+          <Button size="md" onClick={() => setShowCreate(true)} disabled={dataSource === 'seed'}>
+            <Plus size={16} />
+            Add Prospect
+          </Button>
+        }
+      />
+
+      {dataSource === 'seed' && (
+        <SafetyBanner tone="warning" title="Seed fallback is read-only for manual adds" className="mb-6" icon={<ShieldCheck size={17} />}>
+          Manual prospect creation is disabled while the app is using fallback seed data.
+        </SafetyBanner>
+      )}
 
       {error && <div className="mb-6"><ErrorBanner message={error} onRetry={refetch} /></div>}
 
@@ -170,23 +179,25 @@ export default function ProspectsPage() {
             <div className="p-6 space-y-4">
               {createError && <ErrorBanner message={createError} />}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField label="Business Name *" value={form.business_name} onChange={(v) => setForm({ ...form, business_name: v })} />
-                <FormField label="Niche" value={form.niche} onChange={(v) => setForm({ ...form, niche: v })} />
-                <FormField label="Website URL" value={form.website_url} onChange={(v) => setForm({ ...form, website_url: v })} placeholder="https://..." />
-                <FormField label="Email" value={form.public_email} onChange={(v) => setForm({ ...form, public_email: v })} />
-                <FormField label="Phone" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
-                <FormField label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} />
-                <FormField label="State" value={form.state} onChange={(v) => setForm({ ...form, state: v })} />
-                <FormField label="Source" value={form.source} onChange={(v) => setForm({ ...form, source: v })} />
-                <FormField label="Instagram URL" value={form.instagram_url} onChange={(v) => setForm({ ...form, instagram_url: v })} />
-                <FormField label="Facebook URL" value={form.facebook_url} onChange={(v) => setForm({ ...form, facebook_url: v })} />
-                <FormField label="Google Maps URL" value={form.google_maps_url} onChange={(v) => setForm({ ...form, google_maps_url: v })} />
+                <FormField id="prospect-business-name" name="business_name" label="Business Name *" value={form.business_name} onChange={(v) => setForm({ ...form, business_name: v })} />
+                <FormField id="prospect-niche" name="niche" label="Niche" value={form.niche} onChange={(v) => setForm({ ...form, niche: v })} />
+                <FormField id="prospect-website-url" name="website_url" label="Website URL" value={form.website_url} onChange={(v) => setForm({ ...form, website_url: v })} placeholder="https://..." />
+                <FormField id="prospect-public-email" name="public_email" label="Email" value={form.public_email} onChange={(v) => setForm({ ...form, public_email: v })} />
+                <FormField id="prospect-phone" name="phone" label="Phone" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
+                <FormField id="prospect-city" name="city" label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} />
+                <FormField id="prospect-state" name="state" label="State" value={form.state} onChange={(v) => setForm({ ...form, state: v })} />
+                <FormField id="prospect-source" name="source" label="Source" value={form.source} onChange={(v) => setForm({ ...form, source: v })} />
+                <FormField id="prospect-instagram-url" name="instagram_url" label="Instagram URL" value={form.instagram_url} onChange={(v) => setForm({ ...form, instagram_url: v })} />
+                <FormField id="prospect-facebook-url" name="facebook_url" label="Facebook URL" value={form.facebook_url} onChange={(v) => setForm({ ...form, facebook_url: v })} />
+                <FormField id="prospect-google-maps-url" name="google_maps_url" label="Google Maps URL" value={form.google_maps_url} onChange={(v) => setForm({ ...form, google_maps_url: v })} />
                 <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--color-ink-3)' }}>Status</label>
+                  <label htmlFor="prospect-status" className="block text-xs font-medium mb-1.5" style={{ color: 'var(--color-ink-3)' }}>Status</label>
                   <select
+                    id="prospect-status"
+                    name="status"
                     value={form.status}
                     onChange={(e) => setForm({ ...form, status: e.target.value as ProspectStatus })}
-                    className="w-full px-3 py-2.5 rounded-lg text-sm outline-none"
+                    className="control-input px-3 py-2.5 text-sm outline-none"
                     style={{ background: 'var(--color-paper-3)', border: '1px solid var(--color-border)', color: 'var(--color-ink)' }}
                   >
                     {PROSPECT_STATUSES.map((status) => (
@@ -197,25 +208,29 @@ export default function ProspectsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--color-ink-3)' }}>Lead Score (0-100)</label>
+                  <label htmlFor="prospect-lead-score" className="block text-xs font-medium mb-1.5" style={{ color: 'var(--color-ink-3)' }}>Lead Score (0-100)</label>
                   <input
+                    id="prospect-lead-score"
+                    name="lead_score"
                     type="number"
                     min={0}
                     max={100}
                     value={form.lead_score}
                     onChange={(e) => setForm({ ...form, lead_score: Math.max(0, Math.min(100, parseInt(e.target.value) || 0)) })}
-                    className="w-full px-3 py-2.5 rounded-lg text-sm outline-none"
+                    className="control-input px-3 py-2.5 text-sm outline-none"
                     style={{ background: 'var(--color-paper-3)', border: '1px solid var(--color-border)', color: 'var(--color-ink)' }}
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--color-ink-3)' }}>Notes</label>
+                <label htmlFor="prospect-notes" className="block text-xs font-medium mb-1.5" style={{ color: 'var(--color-ink-3)' }}>Notes</label>
                 <textarea
+                  id="prospect-notes"
+                  name="notes"
                   value={form.notes}
                   onChange={(e) => setForm({ ...form, notes: e.target.value })}
                   rows={3}
-                  className="w-full px-3 py-2.5 rounded-lg text-sm outline-none resize-none"
+                  className="control-input w-full px-3 py-2.5 rounded-lg text-sm outline-none resize-none"
                   style={{ background: 'var(--color-paper-3)', border: '1px solid var(--color-border)', color: 'var(--color-ink)' }}
                 />
               </div>
@@ -235,11 +250,13 @@ export default function ProspectsPage() {
         <div className="relative flex-1">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-ink-3)' }} />
           <input
+            id="prospects-search"
+            name="prospects_search"
             type="text"
             placeholder="Search by name, niche, city, or email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-lg text-sm outline-none transition-colors"
+            className="control-input w-full pl-9 pr-4 py-2.5 rounded-lg text-sm outline-none transition-colors"
             style={{ background: 'var(--color-paper-2)', border: '1px solid var(--color-border)', color: 'var(--color-ink)' }}
           />
         </div>
@@ -253,22 +270,22 @@ export default function ProspectsPage() {
       {showFilters && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6 p-4 rounded-xl" style={{ background: 'var(--color-paper-2)', border: '1px solid var(--color-border)' }}>
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--color-ink-3)' }}>Status</label>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as ProspectStatus | '')} className="w-full px-3 py-2 rounded-lg text-sm" style={{ background: 'var(--color-paper-3)', border: '1px solid var(--color-border)', color: 'var(--color-ink)' }}>
+            <label htmlFor="prospects-status-filter" className="block text-xs font-medium mb-1.5" style={{ color: 'var(--color-ink-3)' }}>Status</label>
+            <select id="prospects-status-filter" name="status_filter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as ProspectStatus | '')} className="control-input w-full px-3 py-2 rounded-lg text-sm" style={{ background: 'var(--color-paper-3)', border: '1px solid var(--color-border)', color: 'var(--color-ink)' }}>
               <option value="">All Statuses</option>
               {PROSPECT_STATUSES.map((s) => (<option key={s} value={s}>{s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}</option>))}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--color-ink-3)' }}>Niche</label>
-            <select value={nicheFilter} onChange={(e) => setNicheFilter(e.target.value)} className="w-full px-3 py-2 rounded-lg text-sm" style={{ background: 'var(--color-paper-3)', border: '1px solid var(--color-border)', color: 'var(--color-ink)' }}>
+            <label htmlFor="prospects-niche-filter" className="block text-xs font-medium mb-1.5" style={{ color: 'var(--color-ink-3)' }}>Niche</label>
+            <select id="prospects-niche-filter" name="niche_filter" value={nicheFilter} onChange={(e) => setNicheFilter(e.target.value)} className="control-input w-full px-3 py-2 rounded-lg text-sm" style={{ background: 'var(--color-paper-3)', border: '1px solid var(--color-border)', color: 'var(--color-ink)' }}>
               <option value="">All Niches</option>
               {niches.map((n) => (<option key={n} value={n}>{n.charAt(0).toUpperCase() + n.slice(1)}</option>))}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--color-ink-3)' }}>City</label>
-            <select value={cityFilter} onChange={(e) => setCityFilter(e.target.value)} className="w-full px-3 py-2 rounded-lg text-sm" style={{ background: 'var(--color-paper-3)', border: '1px solid var(--color-border)', color: 'var(--color-ink)' }}>
+            <label htmlFor="prospects-city-filter" className="block text-xs font-medium mb-1.5" style={{ color: 'var(--color-ink-3)' }}>City</label>
+            <select id="prospects-city-filter" name="city_filter" value={cityFilter} onChange={(e) => setCityFilter(e.target.value)} className="control-input w-full px-3 py-2 rounded-lg text-sm" style={{ background: 'var(--color-paper-3)', border: '1px solid var(--color-border)', color: 'var(--color-ink)' }}>
               <option value="">All Cities</option>
               {cities.map((c) => (<option key={c} value={c}>{c}</option>))}
             </select>
@@ -296,16 +313,34 @@ export default function ProspectsPage() {
         </Card>
       ) : (
         <Card noPadding>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="divide-y md:hidden" style={{ borderColor: 'var(--color-divider)' }}>
+            {filtered.map((p) => (
+              <Link key={p.id} href={`/prospects/${p.id}`} className="block p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="font-semibold" style={{ color: 'var(--color-ink)' }}>{p.business_name}</div>
+                    {p.public_email && <div className="mt-1 truncate text-xs" style={{ color: 'var(--color-ink-3)' }}>{p.public_email}</div>}
+                    <div className="mt-2 text-xs capitalize" style={{ color: 'var(--color-ink-2)' }}>{p.niche} - {p.city}, {p.state}</div>
+                  </div>
+                  <LeadScoreBadge score={p.lead_score} />
+                </div>
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <StatusBadge status={p.status} />
+                  {p.website_url && <ExternalLink size={14} style={{ color: 'var(--color-ink-3)' }} />}
+                </div>
+              </Link>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto md:block">
+            <table className="data-table w-full text-sm">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                  <th className="text-left px-5 py-3 text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Business</th>
-                  <th className="text-left px-5 py-3 text-xs font-medium uppercase tracking-wider hidden sm:table-cell" style={{ color: 'var(--color-ink-3)' }}>Niche</th>
-                  <th className="text-left px-5 py-3 text-xs font-medium uppercase tracking-wider hidden md:table-cell" style={{ color: 'var(--color-ink-3)' }}>City</th>
-                  <th className="text-center px-5 py-3 text-xs font-medium uppercase tracking-wider hidden sm:table-cell" style={{ color: 'var(--color-ink-3)' }}>Score</th>
-                  <th className="text-left px-5 py-3 text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Status</th>
-                  <th className="text-center px-5 py-3 text-xs font-medium uppercase tracking-wider hidden lg:table-cell" style={{ color: 'var(--color-ink-3)' }}>Links</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--color-ink-3)' }}>Business</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-[0.08em] hidden sm:table-cell" style={{ color: 'var(--color-ink-3)' }}>Niche</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-[0.08em] hidden md:table-cell" style={{ color: 'var(--color-ink-3)' }}>City</th>
+                  <th className="text-center px-5 py-3 text-xs font-semibold uppercase tracking-[0.08em] hidden sm:table-cell" style={{ color: 'var(--color-ink-3)' }}>Score</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--color-ink-3)' }}>Status</th>
+                  <th className="text-center px-5 py-3 text-xs font-semibold uppercase tracking-[0.08em] hidden lg:table-cell" style={{ color: 'var(--color-ink-3)' }}>Links</th>
                 </tr>
               </thead>
               <tbody>
@@ -341,16 +376,18 @@ export default function ProspectsPage() {
   );
 }
 
-function FormField({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
+function FormField({ id, name, label, value, onChange, placeholder }: { id: string; name: string; label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
     <div>
-      <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--color-ink-3)' }}>{label}</label>
+      <label htmlFor={id} className="block text-xs font-medium mb-1.5" style={{ color: 'var(--color-ink-3)' }}>{label}</label>
       <input
+        id={id}
+        name={name}
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full px-3 py-2.5 rounded-lg text-sm outline-none"
+        className="control-input w-full px-3 py-2.5 rounded-lg text-sm outline-none"
         style={{ background: 'var(--color-paper-3)', border: '1px solid var(--color-border)', color: 'var(--color-ink)' }}
       />
     </div>

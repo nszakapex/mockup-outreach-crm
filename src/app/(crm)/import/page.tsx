@@ -2,11 +2,12 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, CheckCircle, FileJson, Upload } from 'lucide-react';
+import { AlertTriangle, CheckCircle, FileJson, ShieldCheck, Upload, XCircle } from 'lucide-react';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
 import ErrorBanner from '@/components/ErrorBanner';
 import StatusBadge from '@/components/StatusBadge';
+import { MetricCard, PageHeader, SafetyBanner, StatusPill } from '@/components/CommandPrimitives';
 import {
   createProspectBundle,
   normalizeHermesJsonRecord,
@@ -143,6 +144,7 @@ export default function ImportPage() {
   const [result, setResult] = useState<ImportResult | null>(null);
 
   const importable = useMemo(() => preview.filter((item) => item.valid), [preview]);
+  const blocked = useMemo(() => preview.filter((item) => !item.valid), [preview]);
 
   async function buildPreview(text: string) {
     setPreviewing(true);
@@ -220,15 +222,20 @@ export default function ImportPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--color-ink)' }}>
-          Hermes JSON Import
-        </h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--color-ink-3)' }}>
-          Paste or upload a Hermes-generated prospect batch. Import creates prospect, audit, mockup,
-          and email draft rows without sending email.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow={
+          <>
+            <StatusPill tone="accent" icon={<FileJson size={12} />}>Hermes batch</StatusPill>
+            <StatusPill tone="warning">Preview required</StatusPill>
+          </>
+        }
+        title="Hermes JSON Import"
+        description="Paste or upload a researched prospect batch, inspect diagnostics, and import only records that pass identity, duplicate, delivery-mode, and quality checks."
+      />
+
+      <SafetyBanner tone="warning" title="Import preview never sends email" className="mb-6" icon={<ShieldCheck size={17} />}>
+        Import creates CRM rows only after you press the import button. Blocked records are skipped and Telegram/Gmail approval still remains required.
+      </SafetyBanner>
 
       {parseError && <div className="mb-6"><ErrorBanner message={parseError} /></div>}
 
@@ -236,12 +243,14 @@ export default function ImportPage() {
         <Card title="Paste JSON array">
           <div className="space-y-4">
             <textarea
+              id="hermes-json-input"
+              name="hermes_json_input"
               value={jsonText}
               onChange={(event) => setJsonText(event.target.value)}
               rows={18}
               spellCheck={false}
               placeholder={SAMPLE_JSON}
-              className="w-full rounded-xl px-4 py-3 font-mono text-xs leading-6 outline-none"
+              className="control-input w-full rounded-xl px-4 py-3 font-mono text-xs leading-6 outline-none"
               style={{
                 background: 'var(--color-paper-3)',
                 border: '1px solid var(--color-border)',
@@ -264,6 +273,8 @@ export default function ImportPage() {
                 <Upload size={16} />
                 Upload JSON
                 <input
+                  id="hermes-json-file"
+                  name="hermes_json_file"
                   type="file"
                   accept="application/json,.json"
                   className="hidden"
@@ -295,10 +306,16 @@ export default function ImportPage() {
       </div>
 
       {preview.length > 0 && (
-        <Card title="Preview" className="mt-6">
+        <>
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <MetricCard label="Total records" value={preview.length} icon={<FileJson size={16} />} tone="neutral" />
+            <MetricCard label="Importable" value={importable.length} icon={<CheckCircle size={16} />} tone="success" detail="Will be processed if you import." />
+            <MetricCard label="Blocked" value={blocked.length} icon={<XCircle size={16} />} tone={blocked.length > 0 ? 'danger' : 'neutral'} detail="Skipped automatically." />
+          </div>
+          <Card title="Preview" description="Records must be importable before they can create prospect, audit, mockup, and draft rows." className="mt-6">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm" style={{ color: 'var(--color-ink-3)' }}>
-              {importable.length} importable of {preview.length} records.
+              Apex public mockup QC, delivery mode, duplicate, and destination warnings remain visible per row.
             </p>
             <Button onClick={handleImport} disabled={importing || importable.length === 0}>
               <CheckCircle size={16} />
@@ -306,18 +323,18 @@ export default function ImportPage() {
             </Button>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="data-table w-full text-sm">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                  <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Record</th>
-                  <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Status</th>
-                  <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Mockup data</th>
-                  <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Template</th>
-                  <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>V2 profile</th>
-                  <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Social audit</th>
-                  <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Campaign</th>
-                  <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Mockup slug</th>
-                  <th className="px-3 py-2 text-left text-xs uppercase tracking-wider" style={{ color: 'var(--color-ink-3)' }}>Eligibility</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--color-ink-3)' }}>Record</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--color-ink-3)' }}>Status</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--color-ink-3)' }}>Mockup data</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--color-ink-3)' }}>Template</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--color-ink-3)' }}>V2 profile</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--color-ink-3)' }}>Social audit</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--color-ink-3)' }}>Campaign</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--color-ink-3)' }}>Mockup slug</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--color-ink-3)' }}>Eligibility</th>
                 </tr>
               </thead>
               <tbody>
@@ -361,6 +378,7 @@ export default function ImportPage() {
             </table>
           </div>
         </Card>
+        </>
       )}
 
       {result && (
@@ -461,7 +479,7 @@ function TemplateCell({ item }: { item: HermesImportPreview }) {
         className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap"
         style={{
           color: selection.mismatchWarning ? 'var(--color-warning)' : 'var(--color-accent)',
-          background: selection.mismatchWarning ? 'oklch(75% 0.16 85 / 0.12)' : 'var(--color-accent-subtle)',
+          background: selection.mismatchWarning ? 'var(--color-warning-subtle)' : 'var(--color-accent-subtle)',
         }}
       >
         {selection.label}
@@ -496,7 +514,7 @@ function MockupV2Cell({ item }: { item: HermesImportPreview }) {
           className="inline-flex rounded-full px-2.5 py-1 font-medium"
           style={{
             color: gate.outreachReady ? 'var(--color-emerald)' : 'var(--color-error)',
-            background: gate.outreachReady ? 'var(--color-emerald-muted)' : 'oklch(65% 0.22 25 / 0.12)',
+            background: gate.outreachReady ? 'var(--color-emerald-muted)' : 'var(--color-error-subtle)',
           }}
         >
           {gate.label}
@@ -546,8 +564,8 @@ function formatDeliveryMode(value: string) {
 function RichnessBadge({ level, label }: { level: 'rich' | 'basic' | 'missing'; label: string }) {
   const config = {
     rich: { color: 'var(--color-emerald)', bg: 'var(--color-emerald-muted)' },
-    basic: { color: 'var(--color-warning)', bg: 'oklch(75% 0.16 85 / 0.12)' },
-    missing: { color: 'var(--color-error)', bg: 'oklch(65% 0.22 25 / 0.12)' },
+    basic: { color: 'var(--color-warning)', bg: 'var(--color-warning-subtle)' },
+    missing: { color: 'var(--color-error)', bg: 'var(--color-error-subtle)' },
   }[level];
 
   return (

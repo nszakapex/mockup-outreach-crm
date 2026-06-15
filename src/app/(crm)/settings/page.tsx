@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Save, Check, Zap, RefreshCw, Bot, ShieldCheck } from 'lucide-react';
+import { Save, Check, Zap, RefreshCw, Bot, ShieldCheck, Settings } from 'lucide-react';
 import Card from '@/components/Card';
 import Button from '@/components/Button';
 import ConnectionPanel from '@/components/ConnectionPanel';
 import GmailStatusPanel from '@/components/GmailStatusPanel';
+import { PageHeader, SafetyBanner, StatusPill } from '@/components/CommandPrimitives';
 import { DEFAULT_SETTINGS, type AppSettings } from '@/lib/types';
 
 function getStoredSettings(): AppSettings {
@@ -47,12 +48,17 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--color-ink)' }}>Settings</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--color-ink-3)' }}>Configure your outreach defaults</p>
-        </div>
-        <div className="flex gap-2">
+      <PageHeader
+        eyebrow={
+          <>
+            <StatusPill tone="accent" icon={<Settings size={12} />}>Configuration</StatusPill>
+            <StatusPill tone="warning" icon={<ShieldCheck size={12} />}>Sender risk visible</StatusPill>
+          </>
+        }
+        title="Settings"
+        description="Configure local outreach defaults and verify Supabase, Telegram, Apex sender, Resinate sender, test mode, daily cap, and expected URL diagnostics."
+        actions={
+          <>
           <Button variant="secondary" size="sm" onClick={handleReset}>
             <RefreshCw size={14} /> Reset
           </Button>
@@ -60,8 +66,13 @@ export default function SettingsPage() {
             {saved ? <Check size={14} /> : <Save size={14} />}
             {saved ? 'Saved' : 'Save'}
           </Button>
-        </div>
-      </div>
+          </>
+        }
+      />
+
+      <SafetyBanner tone="warning" title="Secrets stay server-side" className="mb-6">
+        This page shows configured/missing states and local defaults only. It does not expose Gmail, Telegram, or Supabase secrets in browser text.
+      </SafetyBanner>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Connection Status */}
@@ -70,7 +81,7 @@ export default function SettingsPage() {
         <GmailStatusPanel />
 
         {/* Outreach Settings */}
-        <Card title="Outreach Defaults">
+        <Card title="Outreach Defaults" description="Local CRM defaults used by manual UI flows. Sender routing remains server-side.">
           <div className="space-y-4">
             <SettingField id="settings-daily-send-goal" name="daily_send_goal" label="Daily Send Goal" type="number" value={settings.daily_send_goal} onChange={(v) => update('daily_send_goal', parseInt(v) || 0)} />
             <SettingField id="settings-default-niche" name="default_niche" label="Default Niche" value={settings.default_niche} onChange={(v) => update('default_niche', v)} />
@@ -80,14 +91,14 @@ export default function SettingsPage() {
         </Card>
 
         {/* Agency Info */}
-        <Card title="Agency Information">
+        <Card title="Agency Information" description="Displayed identity defaults for local CRM notes and drafts.">
           <div className="space-y-4">
             <SettingField id="settings-sender-name" name="sender_name" label="Sender Name" value={settings.sender_name} onChange={(v) => update('sender_name', v)} />
             <SettingField id="settings-agency-name" name="agency_name" label="Agency Name" value={settings.agency_name} onChange={(v) => update('agency_name', v)} />
           </div>
         </Card>
 
-        <Card title="Telegram Approval Webhook">
+        <Card title="Telegram Approval Webhook" description="Operational checklist for review-card callbacks.">
           <div className="space-y-4">
             <div className="p-4 rounded-lg" style={{ background: 'var(--color-paper-3)', border: '1px solid var(--color-border)' }}>
               <div className="flex items-center gap-2 mb-2">
@@ -146,6 +157,7 @@ export default function SettingsPage() {
         {/* Hermes / AI Integration */}
         <Card
           title="Hermes / AI Integration"
+          description="Future automation context. Current imports still require explicit preview and import actions."
           action={<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: 'var(--color-paper-3)', color: 'var(--color-ink-muted)' }}>Coming Soon</span>}
         >
           <div className="space-y-4">
@@ -172,7 +184,7 @@ export default function SettingsPage() {
                 onChange={(e) => update('hermes_notes', e.target.value)}
                 rows={4}
                 placeholder="Add any notes about how you want Hermes/AI to handle prospecting, audits, or email generation..."
-                className="w-full px-3 py-2.5 rounded-lg text-sm resize-none outline-none"
+                className="control-input w-full px-3 py-2.5 rounded-lg text-sm resize-none outline-none"
                 style={{ background: 'var(--color-paper-3)', border: '1px solid var(--color-border)', color: 'var(--color-ink)' }}
               />
             </div>
@@ -208,7 +220,7 @@ function SettingField({ id, name, label, value, onChange, type = 'text' }: { id:
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3 py-2.5 rounded-lg text-sm outline-none transition-colors"
+        className="control-input w-full px-3 py-2.5 rounded-lg text-sm outline-none transition-colors"
         style={{ background: 'var(--color-paper-3)', border: '1px solid var(--color-border)', color: 'var(--color-ink)' }}
       />
     </div>

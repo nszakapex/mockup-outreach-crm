@@ -10,8 +10,8 @@ export default function ErrorBanner({ message, onRetry }: ErrorBannerProps) {
     <div
       className="flex items-start gap-3 p-4 rounded-xl text-sm"
       style={{
-        background: 'oklch(65% 0.22 25 / 0.08)',
-        border: '1px solid oklch(65% 0.22 25 / 0.2)',
+        background: 'var(--color-error-subtle)',
+        border: '1px solid var(--color-error-muted)',
         color: 'var(--color-error)',
       }}
     >
@@ -25,7 +25,7 @@ export default function ErrorBanner({ message, onRetry }: ErrorBannerProps) {
           onClick={onRetry}
           className="shrink-0 px-3 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer"
           style={{
-            background: 'oklch(65% 0.22 25 / 0.15)',
+            background: 'var(--color-error-muted)',
             color: 'var(--color-error)',
           }}
         >

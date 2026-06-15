@@ -3,7 +3,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'warning';
   size?: 'sm' | 'md' | 'lg';
   children: ReactNode;
 }
@@ -16,8 +16,8 @@ const VARIANTS = {
     border: 'none',
   },
   secondary: {
-    bg: 'var(--color-paper-3)',
-    bgHover: 'var(--color-paper-4)',
+    bg: 'var(--color-paper-2)',
+    bgHover: 'var(--color-paper-hover)',
     color: 'var(--color-ink)',
     border: '1px solid var(--color-border)',
   },
@@ -28,17 +28,23 @@ const VARIANTS = {
     border: 'none',
   },
   danger: {
-    bg: 'oklch(65% 0.22 25 / 0.12)',
-    bgHover: 'oklch(65% 0.22 25 / 0.2)',
+    bg: 'var(--color-error-subtle)',
+    bgHover: 'var(--color-error-muted)',
     color: 'var(--color-error)',
-    border: '1px solid oklch(65% 0.22 25 / 0.2)',
+    border: '1px solid var(--color-error-muted)',
+  },
+  warning: {
+    bg: 'var(--color-warning-subtle)',
+    bgHover: 'var(--color-warning-muted)',
+    color: 'var(--color-warning)',
+    border: '1px solid var(--color-warning-muted)',
   },
 };
 
 const SIZES = {
-  sm: 'px-3 py-1.5 text-xs',
-  md: 'px-4 py-2 text-sm',
-  lg: 'px-5 py-2.5 text-sm',
+  sm: 'px-3 py-2 text-xs min-h-9',
+  md: 'px-4 py-2.5 text-sm min-h-10',
+  lg: 'px-5 py-3 text-sm min-h-11',
 };
 
 export default function Button({
@@ -53,9 +59,9 @@ export default function Button({
 
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 font-medium rounded-lg
-        transition-all cursor-pointer whitespace-nowrap
-        disabled:opacity-40 disabled:cursor-not-allowed
+      className={`inline-flex items-center justify-center gap-2 rounded-lg font-semibold
+        transition-all cursor-pointer whitespace-nowrap shadow-sm
+        disabled:opacity-45 disabled:cursor-not-allowed disabled:shadow-none
         ${SIZES[size]} ${className}`}
       style={{
         background: v.bg,

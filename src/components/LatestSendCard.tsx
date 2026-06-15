@@ -136,9 +136,9 @@ function getStatusStyle(status: string) {
     case 'sent':
       return { label: 'Sent', color: 'var(--color-emerald)', bg: 'var(--color-emerald-muted)' };
     case 'test_sent':
-      return { label: 'Test Sent', color: 'var(--color-warning)', bg: 'oklch(75% 0.16 85 / 0.12)' };
+      return { label: 'Test Sent', color: 'var(--color-warning)', bg: 'var(--color-warning-subtle)' };
     case 'failed':
-      return { label: 'Failed', color: 'var(--color-error)', bg: 'oklch(65% 0.22 25 / 0.12)' };
+      return { label: 'Failed', color: 'var(--color-error)', bg: 'var(--color-error-subtle)' };
     case 'skipped':
       return { label: 'Skipped', color: 'var(--color-ink-3)', bg: 'var(--color-paper-3)' };
     case 'queued':

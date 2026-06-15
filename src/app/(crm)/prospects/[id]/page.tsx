@@ -3,7 +3,6 @@
 import { use, useState } from 'react';
 import Link from 'next/link';
 import {
-  ArrowLeft,
   Globe,
   Mail,
   Phone,
@@ -24,6 +23,7 @@ import StatusBadge from '@/components/StatusBadge';
 import LeadScoreBadge from '@/components/LeadScoreBadge';
 import ScoreBar from '@/components/ScoreBar';
 import ErrorBanner from '@/components/ErrorBanner';
+import { PageHeader, ReadinessPanel, SafetyBanner, StatusPill } from '@/components/CommandPrimitives';
 import { upsertAudit, upsertEmailDraft, upsertMockup, useProspect } from '@/lib/hooks';
 import {
   buildInlineApexBrief,
@@ -179,29 +179,81 @@ export default function ProspectDetailPage({
         notes: prospect.notes,
       })
     : null;
+  const isApexPublicMockupBlocked = Boolean(
+    !isResinate &&
+      mockupV2Diagnostics?.qualityGate.required &&
+      !mockupV2Diagnostics.qualityGate.outreachReady
+  );
+  const emailReady = Boolean(emailDraft?.subject && emailDraft.body);
+  const destinationReady = Boolean(prospect.public_email);
+  const artifactRequired = isResinate ? resinatePublicArtifactRequired : apexPublicArtifactRequired;
+  const artifactReady = !artifactRequired || Boolean(mockup?.slug);
+  const deliveryLabel = isResinate
+    ? (resinateDeliveryMode ? getResinateDeliveryModeLabel(resinateDeliveryMode) : 'Resinate')
+    : (apexDeliveryMode ? getApexDeliveryModeLabel(apexDeliveryMode) : 'Apex');
 
   return (
     <div>
-      {/* Header */}
-      <div className="mb-6">
-        <Link href="/prospects" className="inline-flex items-center gap-1.5 text-sm mb-4 hover:underline" style={{ color: 'var(--color-ink-3)' }}>
-          <ArrowLeft size={14} /> Back to Prospects
-        </Link>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold" style={{ color: 'var(--color-ink)' }}>{prospect.business_name}</h1>
-              <LeadScoreBadge score={prospect.lead_score} />
-            </div>
-            <div className="flex items-center gap-2 mt-1">
-              <StatusBadge status={prospect.status} size="md" />
-              <span className="text-sm capitalize" style={{ color: 'var(--color-ink-3)' }}>{prospect.niche}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        backHref="/prospects"
+        backLabel="Back to Prospects"
+        eyebrow={
+          <>
+            <StatusPill tone={isResinate ? 'success' : 'accent'}>{isResinate ? 'Resinate lane' : 'Apex lane'}</StatusPill>
+            <StatusBadge status={prospect.status} size="md" />
+            <LeadScoreBadge score={prospect.lead_score} />
+          </>
+        }
+        title={prospect.business_name}
+        description={`${prospect.niche} in ${prospect.city}, ${prospect.state}. Review research, public artifacts, draft copy, diagnostics, and approval readiness before changing status.`}
+        actions={
+          <Link
+            href="/approval"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold"
+            style={{
+              background: 'var(--color-paper-2)',
+              border: '1px solid var(--color-border)',
+              color: 'var(--color-ink)',
+              boxShadow: 'var(--shadow-sm)',
+            }}
+          >
+            Open Approval Queue
+          </Link>
+        }
+      />
 
       {actionError && <div className="mb-6"><ErrorBanner message={actionError} /></div>}
+
+      {isApexPublicMockupBlocked && mockupV2Diagnostics && (
+        <SafetyBanner tone="danger" title="Apex public mockup quality gate is blocking outreach" className="mb-6">
+          {mockupV2Diagnostics.qualityGate.failures.join(' ')}
+        </SafetyBanner>
+      )}
+
+      <ReadinessPanel
+        title="Review readiness"
+        description="UI-only summary of destination, draft, delivery mode, artifact, and quality gates. Existing status and save behavior is unchanged."
+        items={[
+          { label: 'Recipient', value: destinationReady ? 'Ready' : 'Missing', tone: destinationReady ? 'success' : 'warning', detail: prospect.public_email || 'Add a public email before approval.' },
+          { label: 'Email draft', value: emailReady ? 'Complete' : 'Needs copy', tone: emailReady ? 'success' : 'warning', detail: emailDraft?.subject || 'Subject and body are required.' },
+          { label: 'Delivery mode', value: deliveryLabel, tone: isResinate ? 'success' : 'accent', detail: artifactRequired ? 'Public artifact required.' : 'Inline brief delivery supported.' },
+          { label: 'Public artifact', value: artifactReady ? 'Ready' : 'Missing', tone: artifactReady ? 'success' : 'warning', detail: mockup?.slug || 'Add a slug for public links.' },
+          ...(mockupV2Diagnostics?.qualityGate.required
+            ? [{
+                label: 'Apex QC',
+                value: mockupV2Diagnostics.qualityGate.outreachReady ? 'Ready' : 'Blocked',
+                tone: mockupV2Diagnostics.qualityGate.outreachReady ? 'success' as const : 'danger' as const,
+                detail: `${mockupV2Diagnostics.approvedArchetypeLabel} / personalization ${mockupV2Diagnostics.personalizationScore ?? 'missing'}`,
+              }]
+            : []),
+        ]}
+      />
+
+      <div className="mb-4 mt-6">
+        <div className="text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--color-ink-3)' }}>
+          Editable source of truth
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
         <ProspectEditCard prospect={prospect} onSave={updateProspect} onSaved={refetch} />
@@ -334,8 +386,8 @@ export default function ProspectDetailPage({
                   <div
                     className="rounded-lg p-3 text-xs"
                     style={{
-                      background: 'oklch(65% 0.22 25 / 0.08)',
-                      border: '1px solid oklch(65% 0.22 25 / 0.2)',
+                      background: 'var(--color-error-subtle)',
+                      border: '1px solid var(--color-error-muted)',
                       color: 'var(--color-error)',
                     }}
                   >
@@ -349,8 +401,8 @@ export default function ProspectDetailPage({
                   <div
                     className="rounded-lg p-3 text-xs"
                     style={{
-                      background: 'oklch(75% 0.16 85 / 0.08)',
-                      border: '1px solid oklch(75% 0.16 85 / 0.2)',
+                      background: 'var(--color-warning-subtle)',
+                      border: '1px solid var(--color-warning-muted)',
                       color: 'var(--color-warning)',
                     }}
                   >
@@ -377,8 +429,8 @@ export default function ProspectDetailPage({
                     <div
                       className="mt-2 rounded-lg p-2 text-xs leading-5"
                       style={{
-                        background: 'oklch(75% 0.16 85 / 0.08)',
-                        border: '1px solid oklch(75% 0.16 85 / 0.2)',
+                        background: 'var(--color-warning-subtle)',
+                        border: '1px solid var(--color-warning-muted)',
                         color: 'var(--color-warning)',
                       }}
                     >
@@ -450,8 +502,8 @@ export default function ProspectDetailPage({
                   <div
                     className="rounded-lg p-3 text-xs"
                     style={{
-                      background: 'oklch(75% 0.16 85 / 0.08)',
-                      border: '1px solid oklch(75% 0.16 85 / 0.2)',
+                      background: 'var(--color-warning-subtle)',
+                      border: '1px solid var(--color-warning-muted)',
                       color: 'var(--color-warning)',
                     }}
                   >
@@ -713,7 +765,7 @@ function MockupV2DiagnosticsPanel({ diagnostics }: { diagnostics: MockupV2Diagno
               <div
                 key={warning}
                 className="flex items-start gap-1.5 rounded-lg p-2"
-                style={{ background: 'oklch(75% 0.16 85 / 0.08)', color: 'var(--color-warning)' }}
+                style={{ background: 'var(--color-warning-subtle)', color: 'var(--color-warning)' }}
               >
                 <AlertTriangle size={12} className="mt-0.5 shrink-0" />
                 <span>{warning}</span>
@@ -1316,17 +1368,20 @@ function EditField({
   onChange: (value: string) => void;
   type?: 'text' | 'number';
 }) {
+  const id = editFieldId(label);
   return (
-    <label className="block text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>
-      {label}
+    <div className="block text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>
+      <label htmlFor={id}>{label}</label>
       <input
+        id={id}
+        name={id.replace(/-/g, '_')}
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-1.5 w-full rounded-lg px-3 py-2.5 text-sm outline-none"
+        className="control-input mt-1.5 w-full rounded-lg px-3 py-2.5 text-sm outline-none"
         style={{ background: 'var(--color-paper-3)', border: '1px solid var(--color-border)', color: 'var(--color-ink)' }}
       />
-    </label>
+    </div>
   );
 }
 
@@ -1341,13 +1396,16 @@ function EditSelect({
   options: readonly string[];
   onChange: (value: string) => void;
 }) {
+  const id = editFieldId(label);
   return (
-    <label className="block text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>
-      {label}
+    <div className="block text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>
+      <label htmlFor={id}>{label}</label>
       <select
+        id={id}
+        name={id.replace(/-/g, '_')}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-1.5 w-full rounded-lg px-3 py-2.5 text-sm outline-none"
+        className="control-input mt-1.5 w-full rounded-lg px-3 py-2.5 text-sm outline-none"
         style={{ background: 'var(--color-paper-3)', border: '1px solid var(--color-border)', color: 'var(--color-ink)' }}
       >
         {options.map((option) => (
@@ -1356,7 +1414,7 @@ function EditSelect({
           </option>
         ))}
       </select>
-    </label>
+    </div>
   );
 }
 
@@ -1371,17 +1429,20 @@ function EditTextArea({
   onChange: (value: string) => void;
   rows?: number;
 }) {
+  const id = editFieldId(label);
   return (
-    <label className="mt-3 block text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>
-      {label}
+    <div className="mt-3 block text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>
+      <label htmlFor={id}>{label}</label>
       <textarea
+        id={id}
+        name={id.replace(/-/g, '_')}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         rows={rows}
-        className="mt-1.5 w-full resize-y rounded-lg px-3 py-2.5 text-sm leading-6 outline-none"
+        className="control-input mt-1.5 w-full resize-y rounded-lg px-3 py-2.5 text-sm leading-6 outline-none"
         style={{ background: 'var(--color-paper-3)', border: '1px solid var(--color-border)', color: 'var(--color-ink)' }}
       />
-    </label>
+    </div>
   );
 }
 
@@ -1421,4 +1482,8 @@ function numberOrZero(value: string) {
 function nullableNumber(value: string) {
   if (!value.trim()) return null;
   return numberOrZero(value);
+}
+
+function editFieldId(label: string) {
+  return `prospect-edit-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
 }

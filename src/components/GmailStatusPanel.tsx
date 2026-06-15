@@ -75,7 +75,7 @@ export default function GmailStatusPanel() {
           <span
             className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
             style={{
-              background: data?.testMode === false ? 'var(--color-emerald-muted)' : 'oklch(75% 0.16 85 / 0.12)',
+              background: data?.testMode === false ? 'var(--color-emerald-muted)' : 'var(--color-warning-subtle)',
               color: data?.testMode === false ? 'var(--color-emerald)' : 'var(--color-warning)',
             }}
           >
@@ -103,8 +103,8 @@ export default function GmailStatusPanel() {
           <div
             className="rounded-lg p-3 text-xs break-all"
             style={{
-              background: 'oklch(75% 0.16 85 / 0.08)',
-              border: '1px solid oklch(75% 0.16 85 / 0.2)',
+              background: 'var(--color-warning-subtle)',
+              border: '1px solid var(--color-warning-muted)',
               color: 'var(--color-warning)',
             }}
           >
@@ -132,7 +132,7 @@ function SenderIdentityBlock({ label, profile }: { label: string; profile?: Send
         <span
           className="rounded-full px-2 py-0.5 text-xs font-medium"
           style={{
-            background: profile?.configured ? 'var(--color-emerald-muted)' : 'oklch(65% 0.22 25 / 0.1)',
+            background: profile?.configured ? 'var(--color-emerald-muted)' : 'var(--color-error-subtle)',
             color: profile?.configured ? 'var(--color-success)' : 'var(--color-error)',
           }}
         >

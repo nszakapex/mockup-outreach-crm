@@ -52,7 +52,7 @@ export default function ConnectionPanel({
   const [telegramDebug, setTelegramDebug] = useState<TelegramDebugResponse | null>(null);
   const [diagnosticsError, setDiagnosticsError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [timestamp, setTimestamp] = useState(() => new Date());
+  const [timestamp, setTimestamp] = useState<Date | null>(null);
 
   const loadDiagnostics = async () => {
     setLoading(true);
@@ -88,8 +88,12 @@ export default function ConnectionPanel({
   }, []);
 
   useEffect(() => {
+    const timeoutId = setTimeout(() => setTimestamp(new Date()), 0);
     const intervalId = setInterval(() => setTimestamp(new Date()), 1000);
-    return () => clearInterval(intervalId);
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(intervalId);
+    };
   }, []);
 
   const activeSource: DataSource =
@@ -181,7 +185,7 @@ export default function ConnectionPanel({
           <DiagnosticRow label="Number of prospects loaded" value={count === null ? 'Checking...' : String(count)} mono />
           <DiagnosticRow
             label="Current timestamp"
-            value={timestamp.toLocaleString()}
+            value={timestamp ? timestamp.toLocaleString() : 'Checking...'}
             mono
           />
           {telegramDebug?.botUsername && (
@@ -192,9 +196,9 @@ export default function ConnectionPanel({
         <div
           className="rounded-lg p-3 text-xs"
           style={{
-            background: supabaseErrorMessage ? 'oklch(65% 0.22 25 / 0.08)' : 'var(--color-paper-3)',
+            background: supabaseErrorMessage ? 'var(--color-error-subtle)' : 'var(--color-paper-3)',
             border: supabaseErrorMessage
-              ? '1px solid oklch(65% 0.22 25 / 0.2)'
+              ? '1px solid var(--color-error-muted)'
               : '1px solid var(--color-border)',
             color: supabaseErrorMessage ? 'var(--color-error)' : 'var(--color-ink-3)',
           }}
@@ -210,8 +214,8 @@ export default function ConnectionPanel({
           <div
             className="rounded-lg p-3 text-xs"
             style={{
-              background: telegramDebug.botGetMeOk ? 'var(--color-paper-3)' : 'oklch(75% 0.16 85 / 0.08)',
-              border: telegramDebug.botGetMeOk ? '1px solid var(--color-border)' : '1px solid oklch(75% 0.16 85 / 0.2)',
+              background: telegramDebug.botGetMeOk ? 'var(--color-paper-3)' : 'var(--color-warning-subtle)',
+              border: telegramDebug.botGetMeOk ? '1px solid var(--color-border)' : '1px solid var(--color-warning-muted)',
               color: telegramDebug.botGetMeOk ? 'var(--color-ink-3)' : 'var(--color-warning)',
             }}
           >
@@ -295,7 +299,7 @@ function StatusPill({
       color: 'var(--color-emerald)',
     },
     warning: {
-      background: 'oklch(75% 0.16 85 / 0.12)',
+      background: 'var(--color-warning-subtle)',
       color: 'var(--color-warning)',
     },
   }[tone];

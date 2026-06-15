@@ -17,7 +17,7 @@ const ACCENT_STYLES = {
     iconColor: 'var(--color-emerald)',
   },
   warning: {
-    iconBg: 'oklch(75% 0.16 85 / 0.12)',
+    iconBg: 'var(--color-warning-subtle)',
     iconColor: 'var(--color-warning)',
   },
   default: {
@@ -31,7 +31,7 @@ export default function StatCard({ label, value, icon, accent = 'default' }: Sta
 
   return (
     <div
-      className="rounded-xl p-4 flex items-start gap-4 transition-colors"
+      className="command-surface rounded-xl p-4 flex items-start gap-4 transition-colors"
       style={{
         background: 'var(--color-paper-2)',
         border: '1px solid var(--color-border)',
@@ -46,13 +46,13 @@ export default function StatCard({ label, value, icon, accent = 'default' }: Sta
       </div>
       <div className="min-w-0">
         <div
-          className="text-xs font-medium uppercase tracking-wider"
+          className="text-xs font-semibold uppercase tracking-[0.08em]"
           style={{ color: 'var(--color-ink-3)' }}
         >
           {label}
         </div>
         <div
-          className="text-2xl font-bold mt-0.5 tabular-nums"
+          className="text-2xl font-semibold mt-1 tabular-nums"
           style={{ color: 'var(--color-ink)' }}
         >
           {value}
