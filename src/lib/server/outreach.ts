@@ -985,6 +985,7 @@ function replaceOutreachReferences(
     .replace(/\[commercial surface brief link\]/gi, flooringAuditUrl)
     .replace(/https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/mockups\/[^\s)]+/gi, mockupUrl)
     .replace(/https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/social-audits\/[^\s)]+/gi, socialAuditUrl)
+    .replace(/https?:\/\/mockupcrm67\.netlify\.app\/social-audits\/[^\s)]+/gi, socialAuditUrl)
     .replace(/https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/flooring-audits\/[^\s)]+/gi, flooringAuditUrl);
 }
 

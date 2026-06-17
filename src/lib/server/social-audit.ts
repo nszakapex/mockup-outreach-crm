@@ -57,7 +57,10 @@ type PublicSocialAuditRow = PublicSocialAudit['mockup'] & {
 };
 
 export async function getPublicSocialAuditBySlug(slug: string): Promise<PublicSocialAudit | null> {
-  if (!hasSupabaseEnv()) return getSeedSocialAuditBySlug(slug);
+  const cleanSlug = cleanSocialAuditSlug(slug);
+  if (!cleanSlug) return null;
+
+  if (!hasSupabaseEnv()) return getSeedSocialAuditBySlug(cleanSlug);
 
   const supabase = getServerSupabase();
   const { data, error } = await supabase
@@ -65,7 +68,7 @@ export async function getPublicSocialAuditBySlug(slug: string): Promise<PublicSo
     .select(
       'slug, title, hero_headline, hero_subheadline, primary_cta, features_included, concept_notes, prospects(business_name, niche, website_url, instagram_url, facebook_url, google_maps_url, city, state, audits(website_score, mobile_score, seo_score, social_score, main_problem, conversion_opportunity, recommended_offer, mockup_angle, audit_notes))'
     )
-    .eq('slug', slug)
+    .eq('slug', cleanSlug)
     .maybeSingle();
 
   if (error) throw new Error(`Social audit query: ${error.message}`);
@@ -75,7 +78,8 @@ export async function getPublicSocialAuditBySlug(slug: string): Promise<PublicSo
 }
 
 function getSeedSocialAuditBySlug(slug: string): PublicSocialAudit | null {
-  const mockup = SEED_MOCKUPS.find((item) => item.slug === slug);
+  const cleanSlug = cleanSocialAuditSlug(slug);
+  const mockup = SEED_MOCKUPS.find((item) => item.slug === cleanSlug);
   if (!mockup) return null;
 
   const prospect = SEED_PROSPECTS.find((item) => item.id === mockup.prospect_id);
@@ -114,6 +118,26 @@ function getSeedSocialAuditBySlug(slug: string): PublicSocialAudit | null {
         : [],
     },
   });
+}
+
+function cleanSocialAuditSlug(slug: string | null | undefined) {
+  const raw = (slug || '').trim();
+  if (!raw) return '';
+
+  const decoded = safeDecodeURIComponent(raw);
+  return decoded
+    .replace(/^https?:\/\/[^/]+\/social-audits\//i, '')
+    .replace(/^\/?social-audits\//i, '')
+    .replace(/^\/+/, '')
+    .replace(/\/+$/, '');
+}
+
+function safeDecodeURIComponent(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 }
 
 function mapSocialAuditRow(row: PublicSocialAuditRow): PublicSocialAudit | null {

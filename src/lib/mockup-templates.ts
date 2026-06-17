@@ -405,8 +405,16 @@ export function buildPublicFlooringAuditUrl(slug: string | null | undefined, fal
 }
 
 function getPublicBaseUrl(fallbackOrigin?: string | null) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
-  return (appUrl || fallbackOrigin || 'https://mockupcrm67.netlify.app').replace(/\/+$/, '');
+  const requestOrigin = normalizePublicBaseUrl(fallbackOrigin);
+  const browserOrigin =
+    typeof window === 'undefined' ? '' : normalizePublicBaseUrl(window.location.origin);
+  const appUrl = normalizePublicBaseUrl(process.env.NEXT_PUBLIC_APP_URL);
+
+  return requestOrigin || browserOrigin || appUrl || 'https://mockupcrm67.netlify.app';
+}
+
+function normalizePublicBaseUrl(value: string | null | undefined) {
+  return (value || '').trim().replace(/\/+$/, '');
 }
 
 function cleanPublicSlug(slug: string | null | undefined, route: 'mockups' | 'social-audits' | 'flooring-audits') {
